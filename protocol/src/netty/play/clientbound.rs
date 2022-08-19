@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::str::FromStr;
 
 use crate::netty::{Angle, InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, Var, WriteError};
 use protocol_derive::Protocol;
@@ -62,7 +63,6 @@ impl ProtocolWrite for JoinGame0 {
             + <u8 as ProtocolWrite>::size_hint()
     }
 }
-
 
 struct JoinGame1<'a> {
     entity_id: i32,
@@ -260,6 +260,108 @@ struct SpawnPlayer0<'a> {
     /// crashes clients.
     current_item: u16,
     metadata: EntityMetadata,
+}
+
+struct SpawnPlayer5<'a> {
+    // varint
+    entity_id: i32,
+    player_uuid: Option<Uuid>,
+    name: Cow<'a, str>,
+    properties: Vec<PlayerProperty<'a>>,
+    // todo! add #[fixed(5)]
+    /// Player X as a Fixed-Point number
+    x: i32,
+    /// Player Y as a Fixed-Point number
+    y: i32,
+    /// Player Z as a Fixed-Point number
+    z: i32,
+    yaw: Angle,
+    pitch: Angle,
+    /// The item the player is currently holding. Note that this should be 0
+    /// for "no item", unlike -1 used in other packets. A negative value
+    /// crashes clients.
+    current_item: u16,
+    metadata: EntityMetadata,
+}
+impl<'read, 'a> ProtocolRead<'read> for SpawnPlayer5<'a>
+where
+    'read: 'a,
+{
+    fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
+        let entity_id = Var::read(buf)?.0;
+        let uuid = <&str>::read(buf)?;
+
+        Ok(Self {
+            entity_id,
+            player_uuid: if !uuid.is_empty() {
+                Some(Uuid::from_str(uuid)?)
+            } else {
+                None
+            },
+            properties: Vec::read(buf)?,
+            name: ProtocolRead::read(buf)?,
+            x: ProtocolRead::read(buf)?,
+            y: ProtocolRead::read(buf)?,
+            z: ProtocolRead::read(buf)?,
+            yaw: ProtocolRead::read(buf)?,
+            pitch: ProtocolRead::read(buf)?,
+            current_item: ProtocolRead::read(buf)?,
+            metadata: ProtocolRead::read(buf)?,
+        })
+    }
+}
+impl<'a> ProtocolWrite for SpawnPlayer5<'a> {
+    fn write(self, buf: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+        let Self {
+            entity_id,
+            player_uuid,
+            name,
+            properties,
+            x,
+            y,
+            z,
+            yaw,
+            pitch,
+            current_item,
+            metadata,
+        } = self;
+        ProtocolWrite::write(Var(entity_id), buf)?;
+        if let Some(player_uuid) = player_uuid {
+            ProtocolWrite::write(player_uuid, buf)?;
+        } else {
+            "".write(buf)?;
+        }
+        ProtocolWrite::write(name, buf)?;
+        properties.write(buf)?;
+        ProtocolWrite::write(x, buf)?;
+        ProtocolWrite::write(y, buf)?;
+        ProtocolWrite::write(z, buf)?;
+        ProtocolWrite::write(yaw, buf)?;
+        ProtocolWrite::write(pitch, buf)?;
+        ProtocolWrite::write(current_item, buf)?;
+        ProtocolWrite::write(metadata, buf)?;
+        Ok(())
+    }
+    #[inline(always)]
+    fn size_hint() -> usize {
+        0 + <Var<i32> as ProtocolWrite>::size_hint()
+            + <&str as ProtocolWrite>::size_hint()
+            + <Cow<'a, str> as ProtocolWrite>::size_hint()
+            + <i32 as ProtocolWrite>::size_hint()
+            + <i32 as ProtocolWrite>::size_hint()
+            + <i32 as ProtocolWrite>::size_hint()
+            + <Angle as ProtocolWrite>::size_hint()
+            + <Angle as ProtocolWrite>::size_hint()
+            + <u16 as ProtocolWrite>::size_hint()
+            + <EntityMetadata as ProtocolWrite>::size_hint()
+    }
+}
+
+#[derive(Protocol)]
+struct PlayerProperty<'a> {
+    name: Cow<'a, str>,
+    value: Cow<'a, str>,
+    signature: Cow<'a, str>,
 }
 
 #[derive(Protocol)]
