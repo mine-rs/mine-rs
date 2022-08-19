@@ -63,6 +63,66 @@ impl ProtocolWrite for JoinGame0 {
     }
 }
 
+
+struct JoinGame1<'a> {
+    entity_id: i32,
+    hardcore: bool,
+    gamemode: GameMode0,
+    dimension: Dimension0,
+    difficulty: super::Difficulty0,
+    max_players: u8,
+    /// "default", "flat", "largeBiomes", "amplified", "default_1_1"
+    level_type: Cow<'a, str>,
+}
+
+impl<'a> ProtocolRead<'a> for JoinGame1<'a> {
+    fn read(cursor: &mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let entity_id = i32::read(cursor)?;
+        let bitfield = u8::read(cursor)?;
+        let hardcore = bitfield & 0x08 != 0;
+        let gamemode = match bitfield & 0b11 {
+            0 => GameMode0::Survival,
+            1 => GameMode0::Adventure,
+            2 => GameMode0::Creative,
+            _ => return Err(InvalidEnumId.into()),
+        };
+        Ok(Self {
+            entity_id,
+            hardcore,
+            gamemode,
+            dimension: Dimension0::read(cursor)?,
+            difficulty: Difficulty0::read(cursor)?,
+            max_players: u8::read(cursor)?,
+            level_type: Cow::read(cursor)?,
+        })
+    }
+}
+
+impl ProtocolWrite for JoinGame1<'_> {
+    fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+        self.entity_id.write(writer)?;
+        (match self.gamemode {
+            GameMode0::Survival => 0,
+            GameMode0::Creative => 1,
+            GameMode0::Adventure => 2,
+        } & ((self.hardcore as u8) << 3))
+            .write(writer)?;
+        self.dimension.write(writer)?;
+        self.difficulty.write(writer)?;
+        self.max_players.write(writer)?;
+        self.level_type.write(writer)?;
+        Ok(())
+    }
+    #[inline(always)]
+    fn size_hint() -> usize {
+        <i32 as ProtocolWrite>::size_hint()
+            + <GameMode0 as ProtocolWrite>::size_hint()
+            + <Difficulty0 as ProtocolWrite>::size_hint()
+            + <u8 as ProtocolWrite>::size_hint()
+            + 1
+    }
+}
+
 #[derive(Protocol)]
 #[from(u8)]
 enum GameMode0 {
@@ -134,6 +194,16 @@ struct Respawn0 {
     difficulty: Difficulty0,
     // no hardcore flag here
     gamemode: GameMode0,
+}
+
+#[derive(Protocol)]
+struct Respawn1<'a> {
+    dimension: i32,
+    difficulty: Difficulty0,
+    // no hardcore flag here
+    gamemode: GameMode0,
+    /// "default", "flat", "largeBiomes", "amplified", "default_1_1"
+    level_type: Cow<'a, str>,
 }
 
 #[derive(Protocol)]
@@ -793,6 +863,22 @@ enum SoundCategory0 {
     Mobs,
     Animals,
     Players,
+}
+
+#[derive(Protocol)]
+struct SoundEffect1<'a> {
+    effect_id: Cow<'a, str>,
+    // todo! relative? fixed point?
+    /// The X location of the effect multiplied by 8
+    x: i32,
+    /// The Y location of the effect multiplied by 8
+    y: i32,
+    /// The Z location of the effect multiplied by 8
+    z: i32,
+    /// 1 is 100%, can be more
+    volume: f32,
+    /// 63 is 100%, can be more
+    pitch: u8,
 }
 
 #[derive(Protocol)]
