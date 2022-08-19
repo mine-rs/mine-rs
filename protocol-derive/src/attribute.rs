@@ -3,7 +3,7 @@ use quote::spanned::Spanned;
 use syn::{
     parenthesized,
     parse::{Parse, ParseStream},
-    parse_quote, Expr,
+    parse_quote, Expr, Type,
 };
 
 // #[derive(Clone)]
@@ -16,7 +16,7 @@ pub struct Attribute {
 pub enum AttributeData {
     VarInt,
     Case(Expr),
-    From(Ident),
+    From(Type),
 }
 
 impl TryFrom<syn::Attribute> for Attribute {

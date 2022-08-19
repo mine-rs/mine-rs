@@ -4,6 +4,7 @@ use crate::attribute::*;
 
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Literal, Span, TokenStream as TokenStream2};
+use quote::spanned::Spanned;
 use quote::{quote, quote_spanned, ToTokens};
 use syn::Generics;
 use syn::{parse_quote, DataEnum, ExprLit, Lit, Type};
@@ -93,7 +94,7 @@ pub fn enum_protocol(
                     let lit = Literal::i128_unsuffixed(*prev);
                     parse_quote!(#lit)
                 } else {
-                    let span = typ.span();
+                    let span = (&typ).into_token_stream().__span();
                     error!(span, "couldn't deduce id, annotate with `case` attribute")
                         .to_tokens(&mut res);
                     continue;
@@ -104,7 +105,7 @@ pub fn enum_protocol(
         let (construct, destruct, write) = if let Some((kind, punct_fields)) = match variant.fields
         {
             syn::Fields::Named(fields) => Some((Naming::Named, fields.named)),
-            syn::Fields::Unnamed(fields) => Some((Naming::Named, fields.unnamed)),
+            syn::Fields::Unnamed(fields) => Some((Naming::Unnamed, fields.unnamed)),
             syn::Fields::Unit => None,
         } {
             let mut fields: Vec<(Option<Span>, Ident, Type)> = vec![];
@@ -239,17 +240,22 @@ fn enum_protocol_read(kind: Naming, fields: Vec<(Option<Span>, Ident, Type)>) ->
     let mut construct = quote!();
 
     for (varint_attr_span, field, _ty) in fields {
-        let code = if let Some(span) = varint_attr_span {
+        match kind {
+            Naming::Named => quote!(#field: ).to_tokens(&mut construct),
+            Naming::Unnamed => {}
+        };
+
+        if let Some(span) = varint_attr_span {
             quote_spanned! {span=>
-                #field: <Var<_> as ProtocolRead>::read(buf)?.0,
+                <Var<_> as ProtocolRead>::read(cursor)?.0,
             }
         } else {
             let span = field.span();
             quote_spanned! {span=>
-                #field: ProtocolRead::read(buf)?,
+                ProtocolRead::read(cursor)?,
             }
-        };
-        code.to_tokens(&mut construct);
+        }
+        .to_tokens(&mut construct);
     }
 
     match kind {
@@ -311,13 +317,13 @@ fn enum_protocol_write(
         let code = if let Some(span) = varint_attr_span {
             quote!( + <Var<#ty> as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
             quote_spanned! {span=>
-                ProtocolWrite::write(Var(#field), buf)?;
+                ProtocolWrite::write(Var(#field), writer)?;
             }
         } else {
             quote!( + <#ty as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
             let span = field.span();
             quote_spanned! {span=>
-                ProtocolWrite::write(#field, buf)?;
+                ProtocolWrite::write(#field, writer)?;
             }
         };
         code.to_tokens(&mut deser);

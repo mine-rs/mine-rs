@@ -1,8 +1,14 @@
+pub mod handshaking;
+pub mod login;
+pub mod play;
+pub mod status;
+
 use protocol_derive::Protocol;
 use std::borrow::Cow;
 use std::io::Read;
+use std::marker::PhantomData;
 use std::mem::{size_of, MaybeUninit};
-use std::str::Utf8Error;
+use std::str::{FromStr, Utf8Error};
 use std::string::FromUtf8Error;
 
 #[derive(Protocol, Debug)]
@@ -16,14 +22,8 @@ pub struct Handshake0<'a> {
 }
 
 #[derive(Protocol, Debug)]
-pub struct EntityAnimation0 {
-    entity_id: i32,
-    animation: Animation0,
-}
-
-#[derive(Protocol, Debug)]
 #[varint]
-pub enum Animation0 {
+pub enum AnimationId0 {
     None = 0,
     SwingArm,
     Damage,
@@ -102,6 +102,7 @@ pub enum ReadError {
     InvalidEnumId,
     Utf8Error(Utf8Error),
     FromUtf8Error(FromUtf8Error),
+    UuidError(uuid::Error),
 }
 impl From<std::io::Error> for ReadError {
     fn from(err: std::io::Error) -> Self {
@@ -121,6 +122,11 @@ impl From<Utf8Error> for ReadError {
 impl From<FromUtf8Error> for ReadError {
     fn from(e: FromUtf8Error) -> Self {
         Self::FromUtf8Error(e)
+    }
+}
+impl From<uuid::Error> for ReadError {
+    fn from(e: uuid::Error) -> Self {
+        Self::UuidError(e)
     }
 }
 
@@ -297,6 +303,23 @@ impl<'a> ProtocolWrite for Cow<'a, str> {
     }
 }
 
+impl<'a> ProtocolWrite for &'a str {
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        let len = self
+            .as_bytes()
+            .len()
+            .try_into()
+            .map(Var)
+            .map_err(|_| WriteError::StringTooLong)?;
+        <Var<i32> as ProtocolWrite>::write(len, writer)?;
+        writer.write_all(self.as_bytes())?;
+        Ok(())
+    }
+    #[inline(always)]
+    fn size_hint() -> usize {
+        1
+    }
+}
 impl ProtocolRead<'_> for bool {
     fn read(cursor: &mut ::std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
         let mut id = [0];
@@ -310,6 +333,159 @@ impl ProtocolWrite for bool {
         Ok(())
     }
     #[inline(always)]
+    fn size_hint() -> usize {
+        1
+    }
+}
+impl<'a, T> ProtocolRead<'a> for Vec<T>
+where
+    T: ProtocolRead<'a>,
+{
+    fn read(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len = <Var<u32> as ProtocolRead>::read(cursor)?.0;
+        (0..len)
+            .map(|_| <T as ProtocolRead>::read(cursor))
+            .collect()
+    }
+}
+impl<T> ProtocolWrite for Vec<T>
+where
+    T: ProtocolWrite,
+{
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        let len = self.len() as u32;
+        <Var<_> as ProtocolWrite>::write(Var(len), writer)?;
+        for item in self {
+            item.write(writer)?;
+        }
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        <Var<u32> as ProtocolWrite>::size_hint()
+    }
+}
+
+struct Count<T, const C: usize> {
+    inner: T,
+}
+
+pub struct CountType<T, C> {
+    inner: T,
+    _marker: PhantomData<C>,
+}
+
+impl<'a, T, C> ProtocolRead<'a> for CountType<Vec<T>, C>
+where
+    C: Into<usize>,
+    C: ProtocolRead<'a>,
+    T: ProtocolRead<'a>,
+{
+    fn read(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len: usize = <C as ProtocolRead>::read(cursor)?.into();
+
+        Ok(CountType {
+            inner: (0..len)
+                .map(|_| <T as ProtocolRead>::read(cursor))
+                .collect::<Result<_, _>>()?,
+            _marker: Default::default(),
+        })
+    }
+}
+
+impl<T, C> ProtocolWrite for CountType<Vec<T>, C>
+where
+    C: TryFrom<usize>,
+    WriteError: From<<C as TryFrom<usize>>::Error>,
+    C: ProtocolWrite,
+    T: ProtocolWrite,
+{
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        <C as ProtocolWrite>::write(self.inner.len().try_into()?, writer)?;
+        for item in self.inner {
+            item.write(writer)?;
+        }
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        <C as ProtocolWrite>::size_hint()
+    }
+}
+pub use uuid::Uuid;
+
+impl ProtocolRead<'_> for uuid::Uuid {
+    fn read(cursor: &mut std::io::Cursor<&'_ [u8]>) -> Result<Self, ReadError> {
+        let s = <String as ProtocolRead>::read(cursor)?;
+        Ok(uuid::Uuid::from_str(&s)?)
+    }
+}
+
+impl ProtocolWrite for uuid::Uuid {
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        let mut buffer = [0u8; uuid::fmt::Hyphenated::LENGTH];
+        self.hyphenated().encode_lower(&mut buffer);
+        writer.write_all(&[uuid::fmt::Hyphenated::LENGTH as u8])?;
+        writer.write_all(&buffer)?;
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        uuid::fmt::Hyphenated::LENGTH
+    }
+}
+
+impl<'a> ProtocolRead<'a> for &'a [u8] {
+    fn read(cursor: &mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len = <Var<u32> as ProtocolRead>::read(cursor)?.0;
+        let bytes = &cursor.get_ref()[0..len as usize];
+        cursor.set_position(cursor.position() + len as u64);
+        Ok(bytes)
+    }
+}
+
+impl ProtocolWrite for &[u8] {
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        Var(self.len() as u32).write(writer)?;
+        Ok(writer.write_all(self)?)
+    }
+
+    fn size_hint() -> usize {
+        1
+    }
+}
+
+impl<'a> ProtocolRead<'a> for Cow<'a, [u8]> {
+    fn read(cursor: &mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len = <Var<u32> as ProtocolRead>::read(cursor)?.0;
+        let bytes = &cursor.get_ref()[0..len as usize];
+        cursor.set_position(cursor.position() + len as u64);
+        Ok(Cow::Borrowed(bytes))
+    }
+}
+
+impl ProtocolWrite for Cow<'_, [u8]> {
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        Var(self.len() as u32).write(writer)?;
+        Ok(writer.write_all(&self)?)
+    }
+
+    fn size_hint() -> usize {
+        1
+    }
+}
+
+struct Angle(u8);
+impl ProtocolRead<'_> for Angle {
+    fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
+        ProtocolRead::read(cursor).map(Self)
+    }
+}
+impl ProtocolWrite for Angle {
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        self.0.write(writer)
+    }
+
     fn size_hint() -> usize {
         1
     }
