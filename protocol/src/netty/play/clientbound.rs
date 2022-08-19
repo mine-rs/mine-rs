@@ -102,6 +102,7 @@ struct EntityEquipment0 {
 }
 
 #[derive(Protocol)]
+#[from(u16)]
 enum EquipmentSlot0 {
     Held = 0,
     Boots,
@@ -157,7 +158,7 @@ struct HeldItemChange0 {
 struct UseBed0 {
     entity_id: i32,
     x: i32,
-    y: u8,
+    y: i8,
     z: i32,
 }
 
@@ -203,6 +204,7 @@ struct CollectItem0 {
 
 #[derive(Protocol)]
 struct SpawnObject0 {
+    #[varint]
     entity_id: i32,
     // todo! (see [`Object0`])
     kind: Object0,
@@ -346,6 +348,7 @@ struct SpawnPainting<'a> {
 }
 
 #[derive(Protocol)]
+#[from(u32)]
 enum Direction0 {
     NegZ = 0,
     NegX,
@@ -480,7 +483,7 @@ struct EntityEffect0 {
 #[derive(Protocol)]
 struct RemoveEntityEffect0 {
     entity_id: i32,
-    effect_id: i32,
+    effect_id: i8,
 }
 
 #[derive(Protocol)]
@@ -563,8 +566,11 @@ struct ChunkData0 {
 }
 
 struct MultiBlockChange0 {
+    // varint
     chunk_x: i32,
+    // varint
     chunk_y: i32,
+    // count(u16)
     records: Vec<Record>,
 }
 
@@ -602,7 +608,7 @@ impl ProtocolWrite for MultiBlockChange0 {
     }
 
     fn size_hint() -> usize {
-        todo!()
+        8
     }
 }
 
@@ -652,7 +658,7 @@ struct BlockChange0 {
 #[derive(Protocol)]
 struct BlockAction0 {
     x: i32,
-    y: u8,
+    y: i16,
     z: i32,
     action_id: u8,
     action_param: u8,
@@ -760,8 +766,8 @@ struct Effect0 {
 }
 
 #[derive(Protocol)]
-struct SoundEffect0 {
-    effect_id: i32,
+struct SoundEffect0<'a> {
+    effect_id: Cow<'a, str>,
     // todo! relative? fixed point?
     /// The X location of the effect multiplied by 8
     x: i32,
@@ -1018,7 +1024,7 @@ enum InventoryKind0 {
 }
 
 #[derive(Protocol)]
-struct CloseWindow {
+struct CloseWindow0 {
     /// This is the id of the window that was closed. 0 for inventory.
     window_id: u8,
 }

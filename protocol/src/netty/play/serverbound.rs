@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 
-use crate::netty::{Angle, InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, Var, WriteError};
+use crate::netty::{InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, WriteError};
 use protocol_derive::Protocol;
-use uuid::Uuid;
 
 #[derive(Protocol)]
 struct KeepAlive0 {
@@ -10,9 +9,9 @@ struct KeepAlive0 {
 }
 
 #[derive(Protocol)]
-struct ChatMessage0 {
+struct ChatMessage0<'a> {
     // todo! add ChatMessage json thing
-    message: String,
+    message: Cow<'a, str>,
 }
 
 #[derive(Protocol)]
@@ -496,13 +495,15 @@ pub use super::PlayerAbilities0;
 
 #[derive(Protocol)]
 struct TabComplete0<'a> {
-    text: Cow<'a, str>
+    text: Cow<'a, str>,
 }
 
 #[derive(Protocol)]
 struct ClientSettings0<'a> {
     locale: Cow<'a, str>,
     view_distance: ViewDistance0,
+    // todo! custom chat flags
+    // https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Client_Settings
     chat_flags: u8,
     /// ????
     ___: bool,

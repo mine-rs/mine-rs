@@ -7,7 +7,7 @@ pub mod clientbound;
 pub mod serverbound;
 
 #[derive(Protocol)]
-#[varint]
+#[from(u8)]
 pub enum AnimationId0 {
     None = 0,
     SwingArm,
