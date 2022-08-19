@@ -682,6 +682,51 @@ impl ProtocolWrite for MultiBlockChange0 {
     }
 }
 
+struct MultiBlockChange4 {
+    chunk_x: i32,
+    chunk_y: i32,
+    // count(u16)
+    records: Vec<Record>,
+}
+
+impl ProtocolRead<'_> for MultiBlockChange4 {
+    fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
+        let chunk_x = i32::read(cursor)?;
+        let chunk_y = i32::read(cursor)?;
+        let record_count = u16::read(cursor)?;
+        let data_size: i32 = i32::read(cursor)?;
+        if data_size != record_count as i32 * 4 {
+            // todo! different error
+            return Err(ReadError::InvalidEnumId);
+        }
+        let records: Vec<_> = (0..record_count)
+            .map(|_| Record::read(cursor))
+            .collect::<Result<_, _>>()?;
+        Ok(Self {
+            chunk_x,
+            chunk_y,
+            records,
+        })
+    }
+}
+
+impl ProtocolWrite for MultiBlockChange4 {
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        self.chunk_x.write(writer)?;
+        self.chunk_y.write(writer)?;
+        (self.records.len() as u16).write(writer)?;
+        (self.records.len() as i32 * 4).write(writer)?;
+        for record in self.records {
+            record.write(writer)?;
+        }
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        14
+    }
+}
+
 struct Record {
     block_state: u16,
     y: u8,
