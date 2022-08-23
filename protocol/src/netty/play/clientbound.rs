@@ -28,8 +28,8 @@ impl<'read> ProtocolRead<'read> for JoinGame0 {
         let hardcore = bitfield & 0x08 != 0;
         let gamemode = match bitfield & 0b11 {
             0 => GameMode0::Survival,
-            1 => GameMode0::Adventure,
-            2 => GameMode0::Creative,
+            1 => GameMode0::Creative,
+            2 => GameMode0::Adventure,
             _ => return Err(InvalidEnumId.into()),
         };
         Ok(Self {
