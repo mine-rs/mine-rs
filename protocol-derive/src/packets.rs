@@ -71,8 +71,6 @@ pub fn packets(x: PacketsInput) -> TokenStream {
                 .clone();
             all_packets.insert(last_ident, packet.clone());
 
-            eprintln!("{}", (&packet).into_token_stream());
-
             pv_match_body.extend(quote!(
                 #ver_pat => {
                     protocol_derive::replace! {
