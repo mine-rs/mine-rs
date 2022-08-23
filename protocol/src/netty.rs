@@ -103,6 +103,7 @@ pub enum ReadError {
     Utf8Error(Utf8Error),
     FromUtf8Error(FromUtf8Error),
     UuidError(uuid::Error),
+    InvalidProtocolVersionIdCombination,
 }
 impl From<std::io::Error> for ReadError {
     fn from(err: std::io::Error) -> Self {
@@ -235,7 +236,7 @@ impl_var_num! {
 }
 
 #[repr(transparent)]
-struct Var<T>(pub T);
+pub struct Var<T>(pub T);
 
 const fn var_size<const BITS: u32>() -> usize {
     (BITS as usize * 8 + 6) / 7
@@ -366,12 +367,12 @@ where
     }
 }
 
-struct Count<T, const C: usize> {
-    inner: T,
+pub struct Count<T, const C: usize> {
+    pub inner: T,
 }
 
 pub struct CountType<T, C> {
-    inner: T,
+    pub inner: T,
     _marker: PhantomData<C>,
 }
 
@@ -475,7 +476,7 @@ impl ProtocolWrite for Cow<'_, [u8]> {
     }
 }
 
-struct Angle(u8);
+pub struct Angle(u8);
 impl ProtocolRead<'_> for Angle {
     fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
         ProtocolRead::read(cursor).map(Self)

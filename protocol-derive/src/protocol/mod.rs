@@ -28,7 +28,7 @@ pub use r#enum::enum_protocol;
 use syn::punctuated::Punctuated;
 
 #[derive(Clone, Copy)]
-enum Naming {
+pub enum Naming {
     Named,
     Unnamed,
 }

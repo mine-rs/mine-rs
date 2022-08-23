@@ -1,5 +1,10 @@
 mod attribute;
+mod packets;
 mod protocol;
+mod replace;
+
+use proc_macro::TokenStream;
+use syn::{parse_macro_input, DeriveInput};
 
 #[proc_macro_derive(Protocol, attributes(varint, case, from))]
 pub fn protocol(input: TokenStream) -> TokenStream {
@@ -16,74 +21,42 @@ pub fn protocol(input: TokenStream) -> TokenStream {
     }
 }
 
-use proc_macro::TokenStream;
-use proc_macro2::Ident;
-use syn::parse::Parse;
-use syn::punctuated::Punctuated;
-use syn::{braced, parse_macro_input, token, LitInt, Token};
-use syn::{DeriveInput, Expr};
+#[proc_macro]
+pub fn packets(input: TokenStream) -> TokenStream {
+    let x = parse_macro_input!(input as packets::PacketsInput);
 
-struct Binding {
-    expr: Expr,
-    arrow: token::FatArrow,
-    protocol_version: LitInt,
-}
-impl Parse for Binding {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        Ok(Self {
-            expr: input.parse()?,
-            arrow: input.parse()?,
-            protocol_version: input.parse()?,
-        })
-    }
-}
-struct PacketIdBindings {
-    ident: Ident,
-    arrow: token::FatArrow,
-    bracket_token: token::Brace,
-    bindings: Punctuated<Binding, Token![,]>,
-}
-impl Parse for PacketIdBindings {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let content;
-        Ok(Self {
-            ident: input.parse()?,
-            arrow: input.parse()?,
-            bracket_token: braced!(content in input),
-            bindings: content.parse_terminated(Binding::parse)?,
-        })
-    }
-}
-struct PacketIdInput {
-    inner: Punctuated<PacketIdBindings, Token![,]>,
-}
-impl Parse for PacketIdInput {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        Ok(Self {
-            inner: input.parse_terminated(PacketIdBindings::parse)?,
-        })
-    }
+    packets::packets(x)
 }
 
 #[proc_macro]
-pub fn packet_id(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as PacketIdInput);
+pub fn replace(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as replace::ReplaceInput);
 
-    // let mut unbounded: Vec<(RangeFrom<i32>,)> = vec![];
-    // let mut bounded: Vec<(Range<i32>,)> = vec![];
+    // let mut packets = vec![];
 
-    for inner in input.inner {
-        for binding in inner.bindings {
-            match binding.expr {
-                Expr::Lit(lit) => match lit.lit {
-                    syn::Lit::Int(_) => todo!(),
-                    _ => todo!(),
-                },
-                Expr::Range(_) => todo!(),
-                _ => todo!(),
-            }
-        }
-    }
+    // let input: proc_macro2::TokenStream = input.into();
+    // let mut ii = input.into_iter();
 
-    todo!()
+    // for t in ii.by_ref() {
+    //     use proc_macro2::TokenTree::*;
+    //     match t {
+    //         Ident(id) => packets.push(id.to_string()),
+    //         Punct(p) if p.as_char() == ';' => break,
+    //         _ => {
+    //             return quote::quote!(compile_error!(
+    //                 "invalid input! only accepts idents, terminated using `;`"
+    //             ))
+    //             .into()
+    //         }
+    //     }
+    // }
+
+    let mut output = proc_macro2::TokenStream::new();
+
+    replace::match_group(input.rest.into_iter(), &mut output, &input.types);
+
+    output
+        .into_iter()
+        .collect::<proc_macro2::TokenStream>()
+        .into()
 }

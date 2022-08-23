@@ -9,6 +9,8 @@ proc-macro = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+convert_case = "0.5.0"
 proc-macro2 = "1.0.43"
+proc-macro2-diagnostics = "0.9.1"
 quote = "1.0.21"
 syn = { version = "1.0.99", features = ["full"] }
