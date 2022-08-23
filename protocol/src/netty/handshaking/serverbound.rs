@@ -7,16 +7,16 @@ use protocol_derive::Protocol;
 /// this packet as the first one is actually pretty controversial,
 /// for 13w41a protocol_version was actually varint, starting 13w42a
 /// it is now ushort
-struct Handshake0<'a> {
+pub struct Handshake0<'a> {
     #[varint]
-    protocol_version: i32,
-    server_address: Cow<'a, str>,
-    server_port: u16,
-    next_state: NextState0,
+    pub protocol_version: i32,
+    pub server_address: Cow<'a, str>,
+    pub server_port: u16,
+    pub next_state: NextState0,
 }
 #[derive(Protocol)]
 #[varint]
-enum NextState0 {
+pub enum NextState0 {
     Status = 1,
     Login = 2,
 }

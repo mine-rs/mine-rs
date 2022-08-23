@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use super::{InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, Var, WriteError};
+use super::{InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, WriteError};
 use protocol_derive::Protocol;
 
 pub mod clientbound;
@@ -22,15 +22,15 @@ pub enum AnimationId0 {
 }
 
 pub struct PlayerAbilities0 {
-    invulnerable: bool,
-    flying: bool,
-    allow_flying: bool,
-    creative_mode: bool,
-    flying_speed: f32,
+    pub invulnerable: bool,
+    pub flying: bool,
+    pub allow_flying: bool,
+    pub creative_mode: bool,
+    pub flying_speed: f32,
     /// Modifies the field of view, like a speed potion. A Notchian server will
     /// use the same value as the movement speed (send in the Entity Properties
     /// packet).
-    fov: f32,
+    pub fov: f32,
 }
 impl ProtocolRead<'_> for PlayerAbilities0 {
     fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
@@ -74,6 +74,6 @@ pub enum Difficulty0 {
 #[derive(Protocol)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
-    channel: Cow<'a, str>,
-    data: Cow<'a, [u8]>,
+    pub channel: Cow<'a, str>,
+    pub data: Cow<'a, [u8]>,
 }

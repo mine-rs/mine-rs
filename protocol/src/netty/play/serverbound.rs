@@ -4,54 +4,54 @@ use crate::netty::{InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, WriteE
 use protocol_derive::Protocol;
 
 #[derive(Protocol)]
-struct KeepAlive0 {
-    id: i32,
+pub struct KeepAlive0 {
+    pub id: i32,
 }
 
 #[derive(Protocol)]
-struct ChatMessage0<'a> {
+pub struct ChatMessage0<'a> {
     // todo! add ChatMessage json thing
-    message: Cow<'a, str>,
+    pub message: Cow<'a, str>,
 }
 
 #[derive(Protocol)]
-struct UseEntity0 {
-    target_id: i32,
-    mouse: i8,
+pub struct UseEntity0 {
+    pub target_id: i32,
+    pub mouse: i8,
 }
 
 #[derive(Protocol)]
-struct Player0 {
-    on_ground: bool,
+pub struct Player0 {
+    pub on_ground: bool,
 }
 
 #[derive(Protocol)]
-struct PlayerPosition0 {
-    x: f64,
-    y: f64,
+pub struct PlayerPosition0 {
+    pub x: f64,
+    pub y: f64,
     /// Used to modify the players bounding box when going up stairs, crouching, etc…
-    stance: f64,
-    z: f64,
-    on_ground: bool,
+    pub stance: f64,
+    pub z: f64,
+    pub on_ground: bool,
 }
 
 #[derive(Protocol)]
-struct PlayerLook0 {
-    yaw: f32,
-    pitch: f32,
-    on_ground: bool,
+pub struct PlayerLook0 {
+    pub yaw: f32,
+    pub pitch: f32,
+    pub on_ground: bool,
 }
 
 #[derive(Protocol)]
-struct PlayerPositionAndLook0 {
-    x: f64,
-    y: f64,
+pub struct PlayerPositionAndLook0 {
+    pub x: f64,
+    pub y: f64,
     /// Used to modify the players bounding box when going up stairs, crouching, etc…
-    stance: f64,
-    z: f64,
-    yaw: f32,
-    pitch: f32,
-    on_ground: bool,
+    pub stance: f64,
+    pub z: f64,
+    pub yaw: f32,
+    pub pitch: f32,
+    pub on_ground: bool,
 }
 
 /// Notchian clients send a 0 (started digging) when they start digging and a 2 (finished digging) once they think they are finished. If digging is aborted, the client simply send a 1 (Cancel digging).
@@ -65,7 +65,7 @@ struct PlayerPositionAndLook0 {
 /// Offset -Y  +Y  -Z  +Z  -X  +X
 ///
 /// In 1.7.3, when a player opens a door with left click the server receives Packet 0xE+start digging and opens the door.
-enum PlayerDigging0 {
+pub enum PlayerDigging0 {
     Started {
         x: i32,
         y: u8,
@@ -172,7 +172,7 @@ impl ProtocolWrite for PlayerDigging0 {
 
 #[derive(Protocol)]
 #[from(u8)]
-enum DiggingAction0 {
+pub enum DiggingAction0 {
     Started = 0,
     Cancelled,
     Finished,
@@ -184,7 +184,7 @@ enum DiggingAction0 {
 
 #[derive(Protocol)]
 #[from(u8)]
-enum BlockFace0 {
+pub enum BlockFace0 {
     NegY = 0,
     PosY,
     NegZ,
@@ -201,36 +201,36 @@ enum BlockFace0 {
 // In a Notchian Beta client, the block or item ID corresponds to whatever the client is currently holding, and the client sends one of these packets any time a right-click is issued on a surface, so no assumptions can be made about the safety of the ID. However, with the implementation of server-side inventory, a Notchian server seems to ignore the item ID, instead operating on server-side inventory information and holding selection. The client has been observed (1.2.5 and 1.3.2) to send both real item IDs and -1 in a single session.
 //
 // Special note on using buckets: When using buckets, the Notchian client might send two packets: first a normal and then a special case. The first normal packet is sent when you're looking at a block (e.g. the water you want to scoop up). This normal packet does not appear to do anything with a Notchian server. The second, special case packet appears to perform the action - based on current position/orientation and with a distance check - it appears that buckets can only be used within a radius of 6 units.
-struct PlayerBlockPlacement0 {
-    x: i32,
-    y: u8,
-    z: i32,
+pub struct PlayerBlockPlacement0 {
+    pub x: i32,
+    pub y: u8,
+    pub z: i32,
     // todo! WTF
 }
 
 #[derive(Protocol)]
-struct HeldItemChange0 {
+pub struct HeldItemChange0 {
     /// The slot which the player has selected (0-8)
-    slot: u16,
+    pub slot: u16,
 }
 
 #[derive(Protocol)]
-struct Animation0 {
-    entity_id: i32,
+pub struct Animation0 {
+    pub entity_id: i32,
     animation: super::AnimationId0,
 }
 
 #[derive(Protocol)]
-struct EntityAction0 {
-    entity_id: i32,
-    action: EntityAction,
+pub struct EntityAction0 {
+    pub entity_id: i32,
+    pub action: EntityAction,
     /// Horse jump boost. Ranged from 0 -> 100.
-    jump_boost: i32,
+    pub jump_boost: i32,
 }
 
 #[derive(Protocol)]
 #[from(u8)]
-enum EntityAction {
+pub enum EntityAction {
     Crouch = 1,
     Uncrouch,
     LeaveBed,
@@ -239,23 +239,23 @@ enum EntityAction {
 }
 
 #[derive(Protocol)]
-struct SteerVehicle {
-    sideways: f32,
-    forward: f32,
-    jump: bool,
-    unmount: bool,
+pub struct SteerVehicle {
+    pub sideways: f32,
+    pub forward: f32,
+    pub jump: bool,
+    pub unmount: bool,
 }
 
 #[derive(Protocol)]
-struct CloseWindow {
+pub struct CloseWindow {
     /// This is the id of the window that was closed. 0 for inventory.
-    window_id: u8,
+    pub window_id: u8,
 }
 
-struct ClickWindow {
-    window_id: u8,
-    action: ClickAction0,
-    action_id: i16,
+pub struct ClickWindow {
+    pub window_id: u8,
+    pub action: ClickAction0,
+    pub action_id: i16,
     // todo! slot type
     // item: Slot
 }
@@ -404,7 +404,7 @@ impl ProtocolWrite for ClickWindow {
     }
 }
 
-enum ClickAction0 {
+pub enum ClickAction0 {
     Click {
         button: MouseButton,
         slot: i16,
@@ -430,12 +430,12 @@ enum ClickAction0 {
     },
 }
 
-enum MouseButton {
+pub enum MouseButton {
     Left,
     Right,
 }
 
-enum NumberKey {
+pub enum NumberKey {
     Key1 = 0,
     Key2,
     Key3,
@@ -446,73 +446,73 @@ enum NumberKey {
     Key8,
     Key9,
 }
-enum DropKind {
+pub enum DropKind {
     Q { slot: i16 },
     CtrlQ { slot: i16 },
     LeftNoOp,
     RightNoOp,
 }
 
-enum DragChange {
+pub enum DragChange {
     Start,
     Add { slot: i16 },
     End,
 }
 
 #[derive(Protocol)]
-struct ConfirmTransaction0 {
-    window_id: u8,
-    action_id: i16,
-    accepted: bool,
+pub struct ConfirmTransaction0 {
+    pub window_id: u8,
+    pub action_id: i16,
+    pub accepted: bool,
 }
 
 #[derive(Protocol)]
-struct CreativeInventoryAction0 {
-    slot: u16,
+pub struct CreativeInventoryAction0 {
+    pub slot: u16,
     // todo! slot type
     // item: Slot
 }
 
 #[derive(Protocol)]
-struct EnchantItem0 {
-    window_id: u8,
+pub struct EnchantItem0 {
+    pub window_id: u8,
     /// The position of the enchantment on the enchantment table window, starting with 0 as the topmost one.
-    enchantment: u8,
+    pub enchantment: u8,
 }
 
 #[derive(Protocol)]
-struct UpdateSign0<'a> {
-    x: i32,
-    y: i16,
-    z: i32,
-    line1: Cow<'a, str>,
-    line2: Cow<'a, str>,
-    line3: Cow<'a, str>,
-    line4: Cow<'a, str>,
+pub struct UpdateSign0<'a> {
+    pub x: i32,
+    pub y: i16,
+    pub z: i32,
+    pub line1: Cow<'a, str>,
+    pub line2: Cow<'a, str>,
+    pub line3: Cow<'a, str>,
+    pub line4: Cow<'a, str>,
 }
 
 pub use super::PlayerAbilities0;
 
 #[derive(Protocol)]
-struct TabComplete0<'a> {
-    text: Cow<'a, str>,
+pub struct TabComplete0<'a> {
+    pub text: Cow<'a, str>,
 }
 
 #[derive(Protocol)]
-struct ClientSettings0<'a> {
-    locale: Cow<'a, str>,
-    view_distance: ViewDistance0,
+pub struct ClientSettings0<'a> {
+    pub locale: Cow<'a, str>,
+    pub view_distance: ViewDistance0,
     // todo! custom chat flags
     // https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Client_Settings
-    chat_flags: u8,
+    pub chat_flags: u8,
     /// ????
     ___: bool,
     difficulty: super::Difficulty0,
-    show_cape: bool,
+    pub show_cape: bool,
 }
 #[derive(Protocol)]
 #[from(u8)]
-enum ViewDistance0 {
+pub enum ViewDistance0 {
     Far = 0,
     Normal,
     Short,
@@ -521,7 +521,7 @@ enum ViewDistance0 {
 
 #[derive(Protocol)]
 #[from(u8)]
-enum ClientStatus0 {
+pub enum ClientStatus0 {
     Respawn = 0,
     RequestStats,
     InventoryAchievement,
