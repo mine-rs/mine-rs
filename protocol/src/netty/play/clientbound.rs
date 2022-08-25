@@ -1,3 +1,4 @@
+use crate::netty::Fixed;
 use std::borrow::Cow;
 use std::str::FromStr;
 
@@ -28,8 +29,8 @@ impl<'read> ProtocolRead<'read> for JoinGame0 {
         let hardcore = bitfield & 0x08 != 0;
         let gamemode = match bitfield & 0b11 {
             0 => GameMode0::Survival,
-            1 => GameMode0::Adventure,
-            2 => GameMode0::Creative,
+            1 => GameMode0::Creative,
+            2 => GameMode0::Adventure,
             _ => return Err(InvalidEnumId.into()),
         };
         Ok(Self {
@@ -248,14 +249,15 @@ pub struct SpawnPlayer0<'a> {
     pub entity_id: i32,
     pub player_uuid: Uuid,
     pub name: Cow<'a, str>,
-    // todo! add #[fixed(5)]
+    #[fixed(5, i32)]
     /// Player X as a Fixed-Point number
-    pub x: i32,
+    pub x: f64,
+    #[fixed(5, i32)]
     /// Player Y as a Fixed-Point number
-    pub y: i32,
+    pub y: f64,
+    #[fixed(5, i32)]
     /// Player Z as a Fixed-Point number
-    pub z: i32,
-    // todo! angle
+    pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
     /// The item the player is currently holding. Note that this should be 0
@@ -271,13 +273,12 @@ pub struct SpawnPlayer5<'a> {
     pub player_uuid: Option<Uuid>,
     pub name: Cow<'a, str>,
     pub properties: Vec<PlayerProperty<'a>>,
-    // todo! add #[fixed(5)]
-    /// Player X as a Fixed-Point number
-    pub x: i32,
-    /// Player Y as a Fixed-Point number
-    pub y: i32,
-    /// Player Z as a Fixed-Point number
-    pub z: i32,
+    // fixed(5, i32)
+    pub x: f64,
+    // fixed(5, i32)
+    pub y: f64,
+    // fixed(5, i32)
+    pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
     /// The item the player is currently holding. Note that this should be 0
@@ -303,9 +304,9 @@ where
             },
             properties: Vec::read(buf)?,
             name: ProtocolRead::read(buf)?,
-            x: ProtocolRead::read(buf)?,
-            y: ProtocolRead::read(buf)?,
-            z: ProtocolRead::read(buf)?,
+            x: Fixed::<5, i32, _>::read(buf)?.data,
+            y: Fixed::<5, i32, _>::read(buf)?.data,
+            z: Fixed::<5, i32, _>::read(buf)?.data,
             yaw: ProtocolRead::read(buf)?,
             pitch: ProtocolRead::read(buf)?,
             current_item: ProtocolRead::read(buf)?,
@@ -336,9 +337,9 @@ impl<'a> ProtocolWrite for SpawnPlayer5<'a> {
         }
         ProtocolWrite::write(name, buf)?;
         properties.write(buf)?;
-        ProtocolWrite::write(x, buf)?;
-        ProtocolWrite::write(y, buf)?;
-        ProtocolWrite::write(z, buf)?;
+        ProtocolWrite::write(Fixed::<5, i32, _>::fixed(x), buf)?;
+        ProtocolWrite::write(Fixed::<5, i32, _>::fixed(y), buf)?;
+        ProtocolWrite::write(Fixed::<5, i32, _>::fixed(z), buf)?;
         ProtocolWrite::write(yaw, buf)?;
         ProtocolWrite::write(pitch, buf)?;
         ProtocolWrite::write(current_item, buf)?;
@@ -350,9 +351,7 @@ impl<'a> ProtocolWrite for SpawnPlayer5<'a> {
         <Var<i32> as ProtocolWrite>::size_hint()
             + <&str as ProtocolWrite>::size_hint()
             + <Cow<'a, str> as ProtocolWrite>::size_hint()
-            + <i32 as ProtocolWrite>::size_hint()
-            + <i32 as ProtocolWrite>::size_hint()
-            + <i32 as ProtocolWrite>::size_hint()
+            + 12
             + <Angle as ProtocolWrite>::size_hint()
             + <Angle as ProtocolWrite>::size_hint()
             + <u16 as ProtocolWrite>::size_hint()
@@ -383,13 +382,15 @@ pub struct SpawnObject0 {
     pub entity_id: i32,
     // todo! (see [`Object0`])
     pub kind: Object0,
-    // todo! add #[fixed(5)]
+    #[fixed(5, i32)]
     /// X position as a Fixed-Point number
-    pub x: i32,
+    pub x: f64,
+    #[fixed(5, i32)]
     /// Y position as a Fixed-Point number
-    pub y: i32,
+    pub y: f64,
+    #[fixed(5, i32)]
     /// Z position as a Fixed-Point number
-    pub z: i32,
+    pub z: f64,
     pub pitch: Angle,
     pub yaw: Angle,
     // todo! should be covered by kind, look above
@@ -492,13 +493,12 @@ pub struct SpawnMob0 {
     pub entity_id: i32,
     // todo! see #[separated] on Object
     pub kind: EntityKind0,
-    // todo! see #[fixed]
-    /// X position as a Fixed-Point number
-    pub x: i32,
-    /// Y position as a Fixed-Point number
-    pub y: i32,
-    /// Z position as a Fixed-Point number
-    pub z: i32,
+    #[fixed(5, i32)]
+    pub x: f64,
+    #[fixed(5, i32)]
+    pub y: f64,
+    #[fixed(5, i32)]
+    pub z: f64,
     pub pitch: Angle,
     pub head_pitch: Angle,
     pub yaw: Angle,
@@ -535,21 +535,49 @@ pub enum Direction0 {
 pub struct SpawnExpOrb0 {
     #[varint]
     pub entity_id: i32,
-    // todo! see #[fixed(5)]
-    pub x: i32,
-    pub y: i32,
-    pub z: i32,
+    #[fixed(5, i32)]
+    pub x: f64,
+    #[fixed(5, i32)]
+    pub y: f64,
+    #[fixed(5, i32)]
+    pub z: f64,
     /// The amount of experience this orb will reward once collected
     pub count: i16,
 }
 
-#[derive(Protocol)]
+// #[derive(Protocol)]
 pub struct EntityVelocity0 {
     pub entity_id: i32,
-    // todo! is this fixed point?
-    pub x: i16,
-    pub y: i16,
-    pub z: i16,
+    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    pub x: f32,
+    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    pub y: f32,
+    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    pub z: f32,
+}
+impl<'read> ProtocolRead<'read> for EntityVelocity0 {
+    fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
+        Ok(Self {
+            entity_id: ProtocolRead::read(buf)?,
+            x: Fixed::<0, i16, f32>::read(buf)?.data / 8000.0,
+            y: Fixed::<0, i16, f32>::read(buf)?.data / 8000.0,
+            z: Fixed::<0, i16, f32>::read(buf)?.data / 8000.0,
+        })
+    }
+}
+impl ProtocolWrite for EntityVelocity0 {
+    fn write(self, buf: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+        let Self { entity_id, x, y, z } = self;
+        ProtocolWrite::write(entity_id, buf)?;
+        Fixed::<0, i16, f32>::fixed(x * 8000.0).write(buf)?;
+        Fixed::<0, i16, f32>::fixed(y * 8000.0).write(buf)?;
+        Fixed::<0, i16, f32>::fixed(z * 8000.0).write(buf)?;
+        Ok(())
+    }
+    #[inline(always)]
+    fn size_hint() -> usize {
+        0
+    }
 }
 
 #[derive(Protocol)]
@@ -566,10 +594,19 @@ pub struct Entity0 {
 #[derive(Protocol)]
 pub struct EntityRelativeMove0 {
     pub entity_id: i32,
-    // todo! see #[fixed(5)]
-    pub dx: i8,
-    pub dy: i8,
-    pub dz: i8,
+    // todo! round x and z but floor y
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dx: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dy: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dz: f32,
 }
 
 #[derive(Protocol)]
@@ -582,10 +619,19 @@ pub struct EntityLook0 {
 #[derive(Protocol)]
 pub struct EntityLookAndRelativeMove0 {
     pub entity_id: i32,
-    // todo! see #[fixed(5)]
-    pub dx: i8,
-    pub dy: i8,
-    pub dz: i8,
+    // todo! round x and z but floor y
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dx: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dy: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dz: f32,
     pub yaw: Angle,
     pub pitch: Angle,
 }
@@ -593,10 +639,13 @@ pub struct EntityLookAndRelativeMove0 {
 #[derive(Protocol)]
 pub struct EntityTeleport0 {
     pub entity_id: i32,
-    // todo! see #[fixed(5)]
-    pub x: i32,
-    pub y: i32,
-    pub z: i32,
+    // todo! round x and z but floor y
+    #[fixed(5, i32)]
+    pub x: f64,
+    #[fixed(5, i32)]
+    pub y: f64,
+    #[fixed(5, i32)]
+    pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
 }
@@ -724,7 +773,7 @@ pub enum ModifierOperation0 {
 
 #[derive(Protocol)]
 // todo! make this nice to interact with
-pub struct ChunkData0 {
+pub struct ChunkData0<'a> {
     pub chunk_x: i32,
     pub chunk_y: i32,
     /// This is True if the packet represents all sections in this vertical
@@ -737,7 +786,7 @@ pub struct ChunkData0 {
     /// Same as above, but this is used exclusively for the 'add' portion of the payload
     pub add_bitmap: u16,
     // todo! #[count(i32)]
-    pub compressed_data: Vec<u8>,
+    pub compressed_data: Cow<'a, [u8]>,
 }
 
 pub struct MultiBlockChange0 {
@@ -1140,10 +1189,12 @@ pub struct SpawnGlobalEntity0 {
     pub entity_id: i32,
     /// The global entity type, currently always 1 for thunderbolt.
     pub kind: u8,
-    // todo! #[fixed(5)]
-    pub x: i32,
-    pub y: i32,
-    pub z: i32,
+    #[fixed(5, i32)]
+    pub x: f64,
+    #[fixed(5, i32)]
+    pub y: f64,
+    #[fixed(5, i32)]
+    pub z: f64,
 }
 
 pub struct OpenWindow0<'a> {

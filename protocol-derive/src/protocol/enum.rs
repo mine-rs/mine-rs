@@ -25,7 +25,14 @@ pub fn enum_protocol(
     let mut varint_span = None;
     let mut repr = None;
 
-    for Attribute { span, data } in attrs.into_iter().flat_map(TryFrom::try_from) {
+    for attr_res in attrs.into_iter().flat_map(parse_attr) {
+        let Attribute { span, data } = match attr_res {
+            Ok(attr) => attr,
+            Err(e) => {
+                e.into_compile_error().to_tokens(&mut res);
+                continue;
+            }
+        };
         let err = match data {
             AttributeData::VarInt => {
                 if varint_span.is_none() {
@@ -44,6 +51,7 @@ pub fn enum_protocol(
                     "`repr` specified more than once, only using the first one"
                 }
             }
+            AttributeData::Fixed(_) => "`fixed` attribute not allowed to annotate enum",
         };
         error!(span, err).to_tokens(&mut res);
     }
@@ -55,7 +63,14 @@ pub fn enum_protocol(
     for variant in enom.variants {
         let mut case = variant.discriminant.map(|(_, expr)| expr);
 
-        for Attribute { span, data } in variant.attrs.into_iter().flat_map(TryFrom::try_from) {
+        for attr_res in variant.attrs.into_iter().flat_map(parse_attr) {
+            let Attribute { span, data } = match attr_res {
+                Ok(attr) => attr,
+                Err(e) => {
+                    e.into_compile_error().to_tokens(&mut res);
+                    continue;
+                }
+            };
             let err = match data {
                 AttributeData::VarInt => "`varint` attribute not allowed to annotate enum variant",
                 AttributeData::Case(expr) => {
@@ -67,6 +82,7 @@ pub fn enum_protocol(
                     }
                 }
                 AttributeData::From(_) => "`from` attribute not allowed to annotate enum variant",
+                AttributeData::Fixed(_) => "`fixed` attribute not allowed to annotate enum variant",
             };
             error!(span, err).to_tokens(&mut res);
         }
@@ -111,8 +127,16 @@ pub fn enum_protocol(
             let mut fields: Vec<(Option<Span>, Ident, Type)> = vec![];
             for (i, field) in punct_fields.into_iter().enumerate() {
                 let mut varint_span = None;
-                for Attribute { span, data } in field.attrs.into_iter().flat_map(TryFrom::try_from)
-                {
+                let mut fixed = None;
+                for attr_res in field.attrs.into_iter().flat_map(parse_attr) {
+                    let Attribute { span, data } = match attr_res {
+                        Ok(attr) => attr,
+                        Err(e) => {
+                            e.into_compile_error().to_tokens(&mut res);
+                            continue;
+                        }
+                    };
+
                     let err = match data {
                         AttributeData::VarInt => {
                             if varint_span.is_none() {
@@ -127,6 +151,14 @@ pub fn enum_protocol(
                         }
                         AttributeData::From(_) => {
                             "`from` attribute not allowed to annotate enum struct fields"
+                        }
+                        AttributeData::Fixed(amount) => {
+                            if fixed.is_none() {
+                                fixed = Some((span, amount));
+                                continue;
+                            } else {
+                                "duplicate `fixed` attribute on enum struct field"
+                            }
                         }
                     };
                     error!(span, err).to_tokens(&mut res);

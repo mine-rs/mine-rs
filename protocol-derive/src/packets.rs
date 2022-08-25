@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as TS};
 use proc_macro2_diagnostics::{Diagnostic, Level};
-use quote::ToTokens;
 use quote::{quote, quote_spanned, spanned::Spanned, TokenStreamExt};
 use syn::{braced, Token, TypePath};
 use syn::{punctuated::Punctuated, token::Brace, Expr, ExprLit, Lit, LitInt, Pat, PatLit, PatOr};

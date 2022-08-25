@@ -1,9 +1,9 @@
-use proc_macro2::{Ident, Span};
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::spanned::Spanned;
 use syn::{
     parenthesized,
     parse::{Parse, ParseStream},
-    parse_quote, Expr, Type,
+    parse2, parse_quote, Expr, LitInt, Token, Type,
 };
 
 // #[derive(Clone)]
@@ -17,41 +17,66 @@ pub enum AttributeData {
     VarInt,
     Case(Expr),
     From(Type),
+    Fixed(Fixed),
+}
+#[derive(Clone)]
+pub struct Fixed {
+    pub precision: u8,
+    pub typ: Ident,
+}
+impl Parse for Fixed {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let litint: LitInt = input.parse()?;
+        Ok(Fixed {
+            precision: litint.base10_parse()?,
+            typ: {
+                let _: Token![,] = input.parse()?;
+                input.parse()?
+            },
+        })
+    }
 }
 
-impl TryFrom<syn::Attribute> for Attribute {
-    type Error = ();
-    fn try_from(attr: syn::Attribute) -> Result<Self, Self::Error> {
-        let tokens = &attr.tokens;
-        struct UnParen<T>(T);
-        impl<T: Parse> Parse for UnParen<T> {
-            fn parse(input: ParseStream) -> syn::Result<Self> {
-                let inner;
-                parenthesized!(inner in input);
-                Ok(UnParen(inner.parse()?))
-            }
+pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>> {
+    let span = attr.__span();
+    let tokens = attr.tokens;
+    struct UnParen<T>(T);
+    impl<T: Parse> Parse for UnParen<T> {
+        fn parse(input: ParseStream) -> syn::Result<Self> {
+            let rest;
+            parenthesized!(rest in input);
+            // eprintln!("attr: `{}`", (rest.fork().parse::<TokenStream>()?));
+            let inner: T = rest.parse()?;
+            // eprintln!("{:?}", inner.to_token_stream());
+            // eprintln!("attr rest: `{}`", rest.parse::<TokenStream>()?);
+            Ok(UnParen(inner))
         }
-
-        match attr.path.get_ident() {
-            Some(ident) if ident == "varint" => Ok(Attribute {
-                span: ident.span(),
-                data: AttributeData::VarInt,
-            }),
-            Some(ident) if ident == "case" => Ok({
-                let expr: UnParen<_> = parse_quote!(#tokens);
-                Attribute {
-                    span: attr.__span(),
-                    data: AttributeData::Case(expr.0),
-                }
-            }),
-            Some(ident) if ident == "from" => Ok({
-                let typ: UnParen<_> = parse_quote!(#tokens);
-                Attribute {
-                    span: attr.__span(),
-                    data: AttributeData::From(typ.0),
-                }
-            }),
-            _ => Err(()),
-        }
+    }
+    match attr.path.get_ident() {
+        Some(ident) if ident == "varint" => Some(Ok(Attribute {
+            span: ident.span(),
+            data: AttributeData::VarInt,
+        })),
+        Some(ident) if ident == "case" => Some({
+            let expr: UnParen<TokenStream> = parse_quote!(#tokens);
+            parse2(expr.0).map(|expr| Attribute {
+                span,
+                data: AttributeData::Case(expr),
+            })
+        }),
+        Some(ident) if ident == "from" => Some({
+            let typ: UnParen<TokenStream> = parse_quote!(#tokens);
+            parse2(typ.0).map(|from| Attribute {
+                span,
+                data: AttributeData::From(from),
+            })
+        }),
+        Some(ident) if ident == "fixed" => Some({
+            parse2::<UnParen<Fixed>>(tokens).map(|a| Attribute {
+                span,
+                data: AttributeData::Fixed(a.0),
+            })
+        }),
+        _ => None,
     }
 }
