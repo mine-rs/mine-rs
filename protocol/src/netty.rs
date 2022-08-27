@@ -103,6 +103,7 @@ pub enum ReadError {
     Utf8Error(Utf8Error),
     FromUtf8Error(FromUtf8Error),
     UuidError(uuid::Error),
+    ReadPastEnd,
     InvalidProtocolVersionIdCombination,
 }
 impl From<std::io::Error> for ReadError {
@@ -256,7 +257,11 @@ impl<'a> ProtocolRead<'a> for Cow<'a, str> {
         let len = <Var<i32> as ProtocolRead>::read(cursor)?.0;
         let pos = cursor.position() as usize;
         let end = pos + len as usize;
-        let s = std::str::from_utf8(&cursor.get_ref()[pos..end])?;
+        let slice = cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
+        let s = std::str::from_utf8(slice)?;
         cursor.set_position(end as u64);
         Ok(Cow::Borrowed(s))
     }
@@ -283,7 +288,11 @@ impl<'a> ProtocolRead<'a> for &'a str {
         let len = <Var<i32> as ProtocolRead>::read(cursor)?.0;
         let pos = cursor.position() as usize;
         let end = pos + len as usize;
-        let s = std::str::from_utf8(&cursor.get_ref()[pos..end])?;
+        let slice = cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
+        let s = std::str::from_utf8(slice)?;
         cursor.set_position(end as u64);
         Ok(s)
     }
@@ -443,7 +452,10 @@ impl<'a> ProtocolRead<'a> for &'a [u8] {
         let len = <Var<u32> as ProtocolRead>::read(cursor)?.0;
         let pos = cursor.position() as usize;
         let end = pos + len as usize;
-        let bytes = &cursor.get_ref()[pos..pos + len as usize];
+        let bytes = &cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
         cursor.set_position(end as u64);
         Ok(bytes)
     }
@@ -465,7 +477,10 @@ impl<'a> ProtocolRead<'a> for Cow<'a, [u8]> {
         let len = <Var<u32> as ProtocolRead>::read(cursor)?.0;
         let pos = cursor.position() as usize;
         let end = pos + len as usize;
-        let bytes = &cursor.get_ref()[pos..pos + len as usize];
+        let bytes = &cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
         cursor.set_position(end as u64);
         Ok(Cow::Borrowed(bytes))
     }
