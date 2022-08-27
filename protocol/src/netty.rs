@@ -8,6 +8,7 @@ use std::borrow::Cow;
 use std::io::Read;
 use std::marker::PhantomData;
 use std::mem::{size_of, MaybeUninit};
+use std::num::TryFromIntError;
 use std::str::{FromStr, Utf8Error};
 use std::string::FromUtf8Error;
 
@@ -87,7 +88,14 @@ pub trait ProtocolWrite {
 pub enum WriteError {
     IoError(std::io::Error),
     StringTooLong,
+    InvalidCount,
 }
+impl From<TryFromIntError> for WriteError {
+    fn from(_: TryFromIntError) -> Self {
+        Self::InvalidCount
+    }
+}
+
 impl From<std::io::Error> for WriteError {
     fn from(err: std::io::Error) -> Self {
         Self::IoError(err)
@@ -378,16 +386,17 @@ where
     }
 }
 
-pub struct Count<T, const C: usize> {
+pub struct Exact<T, const C: usize> {
     pub inner: T,
 }
 
-pub struct CountType<T, C> {
+pub struct Count<T, C> {
     pub inner: T,
     _marker: PhantomData<C>,
 }
 
-impl<'a, T, C> ProtocolRead<'a> for CountType<Vec<T>, C>
+
+impl<'a, T, C> ProtocolRead<'a> for Count<Vec<T>, C>
 where
     C: Into<usize>,
     C: ProtocolRead<'a>,
@@ -396,7 +405,7 @@ where
     fn read(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
         let len: usize = <C as ProtocolRead>::read(cursor)?.into();
 
-        Ok(CountType {
+        Ok(Count {
             inner: (0..len)
                 .map(|_| <T as ProtocolRead>::read(cursor))
                 .collect::<Result<_, _>>()?,
@@ -405,7 +414,7 @@ where
     }
 }
 
-impl<T, C> ProtocolWrite for CountType<Vec<T>, C>
+impl<T, C> ProtocolWrite for Count<Vec<T>, C>
 where
     C: TryFrom<usize>,
     WriteError: From<<C as TryFrom<usize>>::Error>,
@@ -424,6 +433,160 @@ where
         <C as ProtocolWrite>::size_hint()
     }
 }
+
+impl<'a, C> ProtocolRead<'a> for Count<Cow<'a, [u8]>, C>
+where
+    C: Into<usize>,
+    C: ProtocolRead<'a>,
+{
+    fn read(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len: usize = <C as ProtocolRead>::read(cursor)?.into();
+        let pos = cursor.position() as usize;
+        let end = pos + len as usize;
+        let bytes = &cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
+        cursor.set_position(end as u64);
+        Ok(Count {
+            inner: Cow::Borrowed(bytes),
+            _marker: PhantomData
+        })
+    }
+}
+impl<'a, C> ProtocolRead<'a> for Count<Cow<'a, str>, C>
+where
+    C: Into<usize>,
+    C: ProtocolRead<'a>,
+{
+    fn read(cursor: &mut ::std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len: usize = <C as ProtocolRead>::read(cursor)?.into();
+        let pos = cursor.position() as usize;
+        let end = pos + len as usize;
+        let slice = cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
+        let s = std::str::from_utf8(slice)?;
+        cursor.set_position(end as u64);
+        Ok(Count {
+            inner: Cow::Borrowed(s),
+            _marker: PhantomData
+        })
+    }
+}
+impl<'a, C> ProtocolWrite for Count<Cow<'a, [u8]>, C>
+where
+    C: TryFrom<usize>,
+    WriteError: From<<C as TryFrom<usize>>::Error>,
+    C: ProtocolWrite
+{
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        let len: C = self.inner.len().try_into()?;
+        <C as ProtocolWrite>::write(len, writer)?;
+        writer.write_all(&self.inner)?;
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        <C as ProtocolWrite>::size_hint()
+    }
+}
+impl<'a, C> ProtocolWrite for Count<Cow<'a, str>, C>
+where
+    C: TryFrom<usize>,
+    WriteError: From<<C as TryFrom<usize>>::Error>,
+    C: ProtocolWrite
+{
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        let bytes = self.inner.as_bytes();
+        let len: C = bytes.len().try_into()?;
+        <C as ProtocolWrite>::write(len, writer)?;
+        writer.write_all(bytes)?;
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        <C as ProtocolWrite>::size_hint()
+    }
+}
+impl<'a, C> ProtocolRead<'a> for Count<&'a [u8], C>
+where
+    C: Into<usize>,
+    C: ProtocolRead<'a>,
+{
+    fn read(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len: usize = <C as ProtocolRead>::read(cursor)?.into();
+        let pos = cursor.position() as usize;
+        let end = pos + len as usize;
+        let bytes = &cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
+        cursor.set_position(end as u64);
+        Ok(Count {
+            inner: bytes,
+            _marker: PhantomData
+        })
+    }
+}
+impl<'a, C> ProtocolRead<'a> for Count<&'a str, C>
+where
+    C: Into<usize>,
+    C: ProtocolRead<'a>
+{
+    fn read(cursor: &mut ::std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
+        let len: usize = <C as ProtocolRead>::read(cursor)?.into();
+        let pos = cursor.position() as usize;
+        let end = pos + len as usize;
+        let slice = cursor
+            .get_ref()
+            .get(pos..end)
+            .ok_or(ReadError::ReadPastEnd)?;
+        let s = std::str::from_utf8(slice)?;
+        cursor.set_position(end as u64);
+        Ok(Count {
+            inner: s,
+            _marker: PhantomData
+        })
+    }
+}
+impl<'a, C> ProtocolWrite for Count<&'a [u8], C>
+where
+    C: TryFrom<usize>,
+    WriteError: From<<C as TryFrom<usize>>::Error>,
+    C: ProtocolWrite
+{
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        let len: C = self.inner.len().try_into()?;
+        <C as ProtocolWrite>::write(len, writer)?;
+        writer.write_all(self.inner)?;
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        <C as ProtocolWrite>::size_hint()
+    }
+}
+impl<'a, C> ProtocolWrite for Count<&'a str, C>
+where
+    C: TryFrom<usize>,
+    WriteError: From<<C as TryFrom<usize>>::Error>,
+    C: ProtocolWrite
+{
+    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+        let bytes = self.inner.as_bytes();
+        let len: C = bytes.len().try_into()?;
+        <C as ProtocolWrite>::write(len, writer)?;
+        writer.write_all(bytes)?;
+        Ok(())
+    }
+
+    fn size_hint() -> usize {
+        <C as ProtocolWrite>::size_hint()
+    }
+}
+
 pub use uuid::Uuid;
 
 impl ProtocolRead<'_> for uuid::Uuid {
