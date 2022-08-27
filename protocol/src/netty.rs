@@ -395,7 +395,6 @@ pub struct Count<T, C> {
     _marker: PhantomData<C>,
 }
 
-
 impl<'a, T, C> ProtocolRead<'a> for Count<Vec<T>, C>
 where
     C: Into<usize>,
@@ -450,7 +449,7 @@ where
         cursor.set_position(end as u64);
         Ok(Count {
             inner: Cow::Borrowed(bytes),
-            _marker: PhantomData
+            _marker: PhantomData,
         })
     }
 }
@@ -471,7 +470,7 @@ where
         cursor.set_position(end as u64);
         Ok(Count {
             inner: Cow::Borrowed(s),
-            _marker: PhantomData
+            _marker: PhantomData,
         })
     }
 }
@@ -479,7 +478,7 @@ impl<'a, C> ProtocolWrite for Count<Cow<'a, [u8]>, C>
 where
     C: TryFrom<usize>,
     WriteError: From<<C as TryFrom<usize>>::Error>,
-    C: ProtocolWrite
+    C: ProtocolWrite,
 {
     fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
         let len: C = self.inner.len().try_into()?;
@@ -496,7 +495,7 @@ impl<'a, C> ProtocolWrite for Count<Cow<'a, str>, C>
 where
     C: TryFrom<usize>,
     WriteError: From<<C as TryFrom<usize>>::Error>,
-    C: ProtocolWrite
+    C: ProtocolWrite,
 {
     fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
         let bytes = self.inner.as_bytes();
@@ -526,14 +525,14 @@ where
         cursor.set_position(end as u64);
         Ok(Count {
             inner: bytes,
-            _marker: PhantomData
+            _marker: PhantomData,
         })
     }
 }
 impl<'a, C> ProtocolRead<'a> for Count<&'a str, C>
 where
     C: Into<usize>,
-    C: ProtocolRead<'a>
+    C: ProtocolRead<'a>,
 {
     fn read(cursor: &mut ::std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
         let len: usize = <C as ProtocolRead>::read(cursor)?.into();
@@ -547,7 +546,7 @@ where
         cursor.set_position(end as u64);
         Ok(Count {
             inner: s,
-            _marker: PhantomData
+            _marker: PhantomData,
         })
     }
 }
@@ -555,7 +554,7 @@ impl<'a, C> ProtocolWrite for Count<&'a [u8], C>
 where
     C: TryFrom<usize>,
     WriteError: From<<C as TryFrom<usize>>::Error>,
-    C: ProtocolWrite
+    C: ProtocolWrite,
 {
     fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
         let len: C = self.inner.len().try_into()?;
@@ -572,7 +571,7 @@ impl<'a, C> ProtocolWrite for Count<&'a str, C>
 where
     C: TryFrom<usize>,
     WriteError: From<<C as TryFrom<usize>>::Error>,
-    C: ProtocolWrite
+    C: ProtocolWrite,
 {
     fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
         let bytes = self.inner.as_bytes();
@@ -589,17 +588,19 @@ where
 
 pub use uuid::Uuid;
 
-impl ProtocolRead<'_> for uuid::Uuid {
+pub struct StringUuid(pub uuid::Uuid);
+
+impl ProtocolRead<'_> for StringUuid {
     fn read(cursor: &mut std::io::Cursor<&'_ [u8]>) -> Result<Self, ReadError> {
         let s = <String as ProtocolRead>::read(cursor)?;
-        Ok(uuid::Uuid::from_str(&s)?)
+        Ok(StringUuid(uuid::Uuid::from_str(&s)?))
     }
 }
 
-impl ProtocolWrite for uuid::Uuid {
+impl ProtocolWrite for StringUuid {
     fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
         let mut buffer = [0u8; uuid::fmt::Hyphenated::LENGTH];
-        self.hyphenated().encode_lower(&mut buffer);
+        self.0.hyphenated().encode_lower(&mut buffer);
         writer.write_all(&[uuid::fmt::Hyphenated::LENGTH as u8])?;
         writer.write_all(&buffer)?;
         Ok(())

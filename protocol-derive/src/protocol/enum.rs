@@ -1,11 +1,11 @@
 #![forbid(clippy::unwrap_used, clippy::expect_used)]
-use super::{field_ident, implgenerics, Naming};
-use crate::attribute::*;
+use super::attribute::{parse_attr, struct_field, Attribute, AttributeData, Attrs};
+use super::{field_ident, implgenerics, struct_codegen, Naming, StructCode};
 
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Literal, Span, TokenStream as TokenStream2};
+use proc_macro2::{Ident, Literal};
 use quote::spanned::Spanned;
-use quote::{quote, quote_spanned, ToTokens};
+use quote::{quote, ToTokens};
 use syn::Generics;
 use syn::{parse_quote, DataEnum, ExprLit, Lit, Type};
 
@@ -52,6 +52,7 @@ pub fn enum_protocol(
                 }
             }
             AttributeData::Fixed(_) => "`fixed` attribute not allowed to annotate enum",
+            AttributeData::StringUuid => "`stringuuid` attribute not allowed to annotate enum",
         };
         error!(span, err).to_tokens(&mut res);
     }
@@ -83,6 +84,9 @@ pub fn enum_protocol(
                 }
                 AttributeData::From(_) => "`from` attribute not allowed to annotate enum variant",
                 AttributeData::Fixed(_) => "`fixed` attribute not allowed to annotate enum variant",
+                AttributeData::StringUuid => {
+                    "`stringuuid` attribute not allowed to annotate enum variant"
+                }
             };
             error!(span, err).to_tokens(&mut res);
         }
@@ -118,60 +122,31 @@ pub fn enum_protocol(
             }
         };
 
-        let (construct, destruct, write) = if let Some((kind, punct_fields)) = match variant.fields
-        {
-            syn::Fields::Named(fields) => Some((Naming::Named, fields.named)),
-            syn::Fields::Unnamed(fields) => Some((Naming::Unnamed, fields.unnamed)),
-            syn::Fields::Unit => None,
-        } {
-            let mut fields: Vec<(Option<Span>, Ident, Type)> = vec![];
+        let (parsing, destructuring, serialization) = if let Some((kind, punct_fields)) =
+            match variant.fields {
+                syn::Fields::Named(fields) => Some((Naming::Named, fields.named)),
+                syn::Fields::Unnamed(fields) => Some((Naming::Unnamed, fields.unnamed)),
+                syn::Fields::Unit => None,
+            } {
+            let mut fields: Vec<(Attrs, Ident, Type)> = vec![];
             for (i, field) in punct_fields.into_iter().enumerate() {
-                let mut varint_span = None;
-                let mut fixed = None;
-                for attr_res in field.attrs.into_iter().flat_map(parse_attr) {
-                    let Attribute { span, data } = match attr_res {
-                        Ok(attr) => attr,
-                        Err(e) => {
-                            e.into_compile_error().to_tokens(&mut res);
-                            continue;
-                        }
-                    };
+                let attrs = struct_field(field.attrs.into_iter(), &mut res);
 
-                    let err = match data {
-                        AttributeData::VarInt => {
-                            if varint_span.is_none() {
-                                varint_span = Some(span);
-                                continue;
-                            } else {
-                                "duplicate `varint` attribute on enum struct field"
-                            }
-                        }
-                        AttributeData::Case(_) => {
-                            "`case` attribute not allowed to annotate enum struct fields"
-                        }
-                        AttributeData::From(_) => {
-                            "`from` attribute not allowed to annotate enum struct fields"
-                        }
-                        AttributeData::Fixed(amount) => {
-                            if fixed.is_none() {
-                                fixed = Some((span, amount));
-                                continue;
-                            } else {
-                                "duplicate `fixed` attribute on enum struct field"
-                            }
-                        }
-                    };
-                    error!(span, err).to_tokens(&mut res);
-                }
                 let ident = field_ident(i, field.ident, &field.ty);
-                fields.push((varint_span, ident, field.ty))
+
+                fields.push((attrs, ident, field.ty))
             }
-            let construct = enum_protocol_read(kind, fields.clone());
-            let (descruct, write, variant_size_hint) = enum_protocol_write(kind, fields);
+            let StructCode {
+                parsing,
+                destructuring,
+                size_hint: sh,
+                serialization,
+            } = struct_codegen(kind, fields.clone());
+            // let (descruct, write, variant_size_hint) = struct_write(kind, fields);
 
-            size_hint = quote!(usize::max(#size_hint, #variant_size_hint));
+            size_hint = quote!(usize::max(#size_hint, #sh));
 
-            (construct, descruct, write)
+            (parsing, destructuring, serialization)
         } else {
             (quote!(), quote!(), quote!())
         };
@@ -179,7 +154,8 @@ pub fn enum_protocol(
         let variant_ident = variant.ident;
         quote! {
             #case => {
-                Self::#variant_ident #construct
+                #parsing
+                Self::#variant_ident #destructuring
             },
         }
         .to_tokens(&mut read_match_contents);
@@ -189,9 +165,9 @@ pub fn enum_protocol(
             quote!(<#typ as ProtocolWrite>::write(#case, writer)?;)
         };
         quote! {
-            Self::#variant_ident #destruct => {
+            Self::#variant_ident #destructuring => {
                 #write_id
-                #write
+                #serialization
             },
         }
         .to_tokens(&mut write_match_contents);
@@ -246,126 +222,4 @@ pub fn enum_protocol(
     .to_tokens(&mut res);
 
     res.into()
-}
-
-/*
-
-let int: i32 = ProtocolRead::read(buf)?;
-// let int: i32 = <Var<_> as ProtocolRead>::read(buf)?.0;
-
-Ok(match int {
-    #expr => #Name::#Field,
-    #expr => #Name::#Field(
-        _0: ProtocolRead::read(buf)?,
-        _1: ProtocolRead::read(buf)?,
-        _x: ProtocolRead::read(buf)?
-    ),
-    #expr => #Name::#Field{
-        a: ProtocolRead::read(buf)?,
-        b: ProtocolRead::read(buf)?,
-    }
-})
-
-*/
-
-fn enum_protocol_read(kind: Naming, fields: Vec<(Option<Span>, Ident, Type)>) -> TokenStream2 {
-    let mut construct = quote!();
-
-    for (varint_attr_span, field, _ty) in fields {
-        match kind {
-            Naming::Named => quote!(#field: ).to_tokens(&mut construct),
-            Naming::Unnamed => {}
-        };
-
-        if let Some(span) = varint_attr_span {
-            quote_spanned! {span=>
-                <Var<_> as ProtocolRead>::read(cursor)?.0,
-            }
-        } else {
-            let span = field.span();
-            quote_spanned! {span=>
-                ProtocolRead::read(cursor)?,
-            }
-        }
-        .to_tokens(&mut construct);
-    }
-
-    match kind {
-        Naming::Named => quote! { { #construct } },
-        Naming::Unnamed => quote!( (#construct) ),
-    }
-}
-
-/*
-
-match self {
-// match self.0 {
-    #Name::#Field => {
-        <i32 as ProtocolWrite>::write(#expr)?;
-        // <Var<i32> as ProtocolWrite>::write(Var(#expr))?;
-    },
-    #Name::#Field(_0, _1, _x) => {
-        <i32 as ProtocolWrite>::write(#expr)?;
-        // <Var<i32> as ProtocolWrite>::write(Var(#expr))?;
-        ProtocolWrite::write(_0)?;
-        ProtocolWrite::write(_1)?;
-        ProtocolWrite::write(_x)?;
-    },
-    #Name::#Field { a, b } => {
-        <i32 as ProtocolWrite>::write(#expr)?;
-        // <Var<i32> as ProtocolWrite>::write(Var(#expr))?;
-        ProtocolWrite::write(a)?;
-        ProtocolWrite::write(b)?;
-    }
-}
-
-
-let int: i32 = ProtocolRead::read(buf)?;
-// let int: i32 = <Var<_> as ProtocolRead>::read(buf)?.0;
-
-Ok(match int {
-    #expr => #Name::#Field,
-    #expr => #Name::#Field(
-        _0: ProtocolRead::read(buf)?,
-        _1: ProtocolRead::read(buf)?,
-        _x: ProtocolRead::read(buf)?
-    ),
-    #expr => #Name::#Field{
-        a: ProtocolRead::read(buf)?,
-        b: ProtocolRead::read(buf)?,
-    }
-})
-
-*/
-fn enum_protocol_write(
-    kind: Naming,
-    fields: Vec<(Option<Span>, Ident, Type)>,
-) -> (TokenStream2, TokenStream2, TokenStream2) {
-    let mut deser = quote!();
-    let mut destruct = quote!();
-    let mut size_hint = quote!(0);
-
-    for (varint_attr_span, field, ty) in fields {
-        let code = if let Some(span) = varint_attr_span {
-            quote!( + <Var<#ty> as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
-            quote_spanned! {span=>
-                ProtocolWrite::write(Var(#field), writer)?;
-            }
-        } else {
-            quote!( + <#ty as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
-            let span = field.span();
-            quote_spanned! {span=>
-                ProtocolWrite::write(#field, writer)?;
-            }
-        };
-        code.to_tokens(&mut deser);
-        quote!(#field,).to_tokens(&mut destruct);
-    }
-
-    let destruct = match kind {
-        Naming::Named => quote! { { #destruct } },
-        Naming::Unnamed => quote!( (#destruct) ),
-    };
-
-    (destruct, deser, size_hint)
 }

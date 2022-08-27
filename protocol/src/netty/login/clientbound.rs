@@ -1,6 +1,6 @@
 use std::{borrow::Cow, str::FromStr};
 
-use crate::netty::{ProtocolRead, ProtocolWrite, ReadError, WriteError};
+use crate::netty::{ProtocolRead, ProtocolWrite, ReadError, StringUuid, WriteError};
 use protocol_derive::Protocol;
 use uuid::Uuid;
 
@@ -23,6 +23,7 @@ pub struct EncryptionResponse0<'a> {
 #[derive(Protocol)]
 // 0x02
 pub struct Success0<'a> {
+    #[stringuuid]
     pub uuid: Uuid,
     pub username: Cow<'a, str>,
 }
@@ -54,7 +55,7 @@ impl<'a> ProtocolWrite for Success5<'a> {
     fn write(self, buf: &mut impl ::std::io::Write) -> Result<(), WriteError> {
         let Self { uuid, username } = self;
         if let Some(uuid) = uuid {
-            ProtocolWrite::write(uuid, buf)?;
+            ProtocolWrite::write(StringUuid(uuid), buf)?;
         } else {
             "".write(buf)?;
         }

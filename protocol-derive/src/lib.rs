@@ -1,12 +1,10 @@
-mod attribute;
 mod packets;
-mod protocol;
 mod replace;
 
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
-#[proc_macro_derive(Protocol, attributes(varint, case, from, fixed))]
+#[proc_macro_derive(Protocol, attributes(varint, case, from, fixed, stringuuid))]
 pub fn protocol(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -60,3 +58,5 @@ pub fn replace(input: TokenStream) -> TokenStream {
         .collect::<proc_macro2::TokenStream>()
         .into()
 }
+
+mod protocol;

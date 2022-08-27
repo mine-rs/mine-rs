@@ -1,4 +1,5 @@
 use crate::netty::Fixed;
+use crate::netty::StringUuid;
 use std::borrow::Cow;
 use std::str::FromStr;
 
@@ -247,6 +248,7 @@ pub struct Animation0 {
 pub struct SpawnPlayer0<'a> {
     #[varint]
     pub entity_id: i32,
+    #[stringuuid]
     pub player_uuid: Uuid,
     pub name: Cow<'a, str>,
     #[fixed(5, i32)]
@@ -331,7 +333,7 @@ impl<'a> ProtocolWrite for SpawnPlayer5<'a> {
         } = self;
         ProtocolWrite::write(Var(entity_id), buf)?;
         if let Some(player_uuid) = player_uuid {
-            ProtocolWrite::write(player_uuid, buf)?;
+            ProtocolWrite::write(StringUuid(player_uuid), buf)?;
         } else {
             "".write(buf)?;
         }
@@ -733,6 +735,7 @@ pub struct EntityProperty<'a> {
 
 #[derive(Protocol)]
 pub struct Modifier {
+    #[stringuuid]
     pub uuid: Uuid,
     pub amount: f64,
     pub operation: i8,
