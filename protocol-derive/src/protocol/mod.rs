@@ -111,7 +111,7 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
                 .to_tokens(&mut serialization);
             }
             Attrs::Fixed(span, fixed) => {
-                let Fixed { precision, typ, .. } = fixed;
+                let Fixed { precision, typ } = fixed;
                 quote_spanned! {span=>
                     let #field = <Fixed<#precision, #typ, #ty> as ProtocolRead>::read(cursor)?.data;
                 }
@@ -135,7 +135,7 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
                 .to_tokens(&mut serialization);
             }
             Attrs::FixedVar(fixed_span, fixed, varint_span) => {
-                let Fixed { precision, typ, .. } = fixed;
+                let Fixed { precision, typ } = fixed;
                 let var_part = quote_spanned!(varint_span=> Var<#typ>);
                 quote_spanned! {fixed_span=>
                     let #field = <Fixed<#precision, #var_part, #ty> as ProtocolRead>::read(cursor)?.data;

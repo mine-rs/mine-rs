@@ -6,12 +6,11 @@ use syn::{
     parse2, parse_quote, Expr, LitInt, Token, Type,
 };
 
-// #[derive(Clone)]
 pub struct Attribute {
     pub span: Span,
     pub data: AttributeData,
 }
-// #[derive(Clone)]
+
 #[allow(clippy::large_enum_variant)]
 pub enum AttributeData {
     VarInt,
