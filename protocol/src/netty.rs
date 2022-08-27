@@ -282,7 +282,9 @@ impl<'a> ProtocolRead<'a> for &'a str {
     fn read(cursor: &mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
         let len = <Var<i32> as ProtocolRead>::read(cursor)?.0;
         let pos = cursor.position() as usize;
-        let s = std::str::from_utf8(&cursor.get_ref()[pos..pos + len as usize])?;
+        let end = pos + len as usize;
+        let s = std::str::from_utf8(&cursor.get_ref()[pos..end])?;
+        cursor.set_position(end as u64);
         Ok(s)
     }
 }
@@ -439,8 +441,10 @@ impl ProtocolWrite for uuid::Uuid {
 impl<'a> ProtocolRead<'a> for &'a [u8] {
     fn read(cursor: &mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
         let len = <Var<u32> as ProtocolRead>::read(cursor)?.0;
-        let bytes = &cursor.get_ref()[0..len as usize];
-        cursor.set_position(cursor.position() + len as u64);
+        let pos = cursor.position() as usize;
+        let end = pos + len as usize;
+        let bytes = &cursor.get_ref()[pos..pos + len as usize];
+        cursor.set_position(end as u64);
         Ok(bytes)
     }
 }
@@ -459,8 +463,10 @@ impl ProtocolWrite for &[u8] {
 impl<'a> ProtocolRead<'a> for Cow<'a, [u8]> {
     fn read(cursor: &mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
         let len = <Var<u32> as ProtocolRead>::read(cursor)?.0;
-        let bytes = &cursor.get_ref()[0..len as usize];
-        cursor.set_position(cursor.position() + len as u64);
+        let pos = cursor.position() as usize;
+        let end = pos + len as usize;
+        let bytes = &cursor.get_ref()[pos..pos + len as usize];
+        cursor.set_position(end as u64);
         Ok(Cow::Borrowed(bytes))
     }
 }
