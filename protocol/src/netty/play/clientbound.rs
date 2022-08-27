@@ -1,10 +1,10 @@
-use crate::netty::Fixed;
-use crate::netty::StringUuid;
+use crate::attrs::*;
+use crate::errors::InvalidEnumId;
+use crate::*;
+
+use protocol_derive::Protocol;
 use std::borrow::Cow;
 use std::str::FromStr;
-
-use crate::netty::{Angle, InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, Var, WriteError};
-use protocol_derive::Protocol;
 use uuid::Uuid;
 
 #[derive(Protocol)]

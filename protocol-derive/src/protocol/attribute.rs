@@ -154,6 +154,6 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
         (Some(v), Some((fs, f)), Some(s)) => {
             error!(s, "`stringuuid` incompatible with `fixed` and `varint`").to_tokens(res);
             Attrs::FixedVar(fs, f, v)
-        },
+        }
     }
 }

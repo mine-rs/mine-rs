@@ -1,7 +1,7 @@
-use std::borrow::Cow;
+use crate::*;
 
-use crate::netty::{ProtocolRead, ProtocolWrite, ReadError, WriteError};
 use protocol_derive::Protocol;
+use std::borrow::Cow;
 
 #[derive(Protocol)]
 pub struct Response<'a> {
@@ -30,7 +30,7 @@ impl<'a> CbStatus<'a> {
         tree! {
             id, pv,
             {<#PacketType as ProtocolRead>::read(&mut cursor).map(CbStatus::#PacketName)},
-            {Err(crate::netty::ReadError::InvalidProtocolVersionIdCombination)}
+            {Err(ReadError::InvalidProtocolVersionIdCombination)}
         }
     }
 }

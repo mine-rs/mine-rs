@@ -1,7 +1,8 @@
-use std::borrow::Cow;
+use crate::errors::InvalidEnumId;
+use crate::*;
 
-use crate::netty::{InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, WriteError};
 use protocol_derive::Protocol;
+use std::borrow::Cow;
 
 #[derive(Protocol)]
 pub struct KeepAlive0 {

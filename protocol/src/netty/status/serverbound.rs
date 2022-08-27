@@ -1,4 +1,5 @@
-use crate::netty::{ProtocolRead, ProtocolWrite, ReadError, WriteError};
+use crate::*;
+
 use protocol_derive::Protocol;
 
 #[derive(Protocol)]

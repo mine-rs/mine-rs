@@ -1,7 +1,8 @@
-use std::{borrow::Cow, str::FromStr};
+use crate::attrs::*;
+use crate::*;
 
-use crate::netty::{ProtocolRead, ProtocolWrite, ReadError, StringUuid, WriteError};
 use protocol_derive::Protocol;
+use std::{borrow::Cow, str::FromStr};
 use uuid::Uuid;
 
 #[derive(Protocol)]

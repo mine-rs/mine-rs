@@ -1,7 +1,9 @@
-use std::borrow::Cow;
+use crate::attrs::*;
+use crate::errors::InvalidEnumId;
+use crate::*;
 
-use crate::netty::{InvalidEnumId, ProtocolRead, ProtocolWrite, ReadError, Var, WriteError};
 use protocol_derive::Protocol;
+use std::borrow::Cow;
 
 #[derive(Protocol)]
 /// this packet as the first one is actually pretty controversial,
