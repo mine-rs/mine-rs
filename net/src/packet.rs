@@ -20,11 +20,11 @@ impl<'a> RawPacket<'a> {
 
     async fn pack_with_compression<W: AsyncWrite + Unpin>(self, writer: &mut W, bufs: &mut (Vec<u8>, Vec<u8>), threshold: i32) -> Result<()> {
         bufs.0.truncate(0);
+        bufs.1.truncate(0);
         write_varint(self.id, &mut bufs.0).await?;
         bufs.0.write_all(self.data).await?;
         let data_len = bufs.0.len();
         if data_len < threshold as usize {
-            bufs.1.truncate(0);
             write_varint(0, &mut bufs.1).await?;
             bufs.1.write_all(&mut bufs.0).await?;
             write_varint(bufs.1.len() as i32, writer).await?;
