@@ -22,6 +22,11 @@ impl<R: AsyncRead, W: AsyncWrite> Connection<R, W> {
             self.write_half
         )
     }
+
+    pub fn enable_compression(&mut self, threshold: i32) {
+        self.read_half.threshold = threshold;
+        self.write_half.threshold = threshold;
+    }
 }
 
 /// Don't use this if there are alternative split methods available for the stream you're using
@@ -38,7 +43,7 @@ pub struct ReadHalf<R> {
     /// The buffer incoming packets are written to.
     pub buf: Vec<u8>,
     reader: BufReader<R>,
-    threshold: i32,
+    pub(super) threshold: i32,
 }
 
 impl<R: AsyncRead> ReadHalf<R> {
@@ -55,7 +60,7 @@ impl<R: AsyncRead> ReadHalf<R> {
 pub struct WriteHalf<W> {
     bufs: (Vec<u8>, Vec<u8>),
     writer: BufWriter<W>,
-    threshold: i32,
+    pub(super) threshold: i32,
 }
 
 impl<W: AsyncWrite> WriteHalf<W> {
