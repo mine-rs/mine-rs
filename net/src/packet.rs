@@ -1,4 +1,3 @@
-use blocking::unblock;
 use futures::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use std::io::{Result, Read};
 use flate2::read::ZlibEncoder;
