@@ -4,24 +4,22 @@ use futures::{AsyncRead, AsyncWrite, AsyncReadExt};
 /// A united connection.
 /// After compression and encryption are enabled/kept disabled, `Connection` should be split into `ReadHalf` and `WriteHalf`.
 pub struct Connection<R, W> {
-    reader: BufReader<R>,
-    writer: BufWriter<W>,
-    threshold: i32,
+    pub read_half: ReadHalf<R>,
+    pub write_half: WriteHalf<W>,
 }
 
 impl<R: AsyncRead, W: AsyncWrite> Connection<R, W> {
     pub fn new(reader: R, writer: W) -> Self {
         Connection {
-            reader: BufReader::new(reader),
-            writer: BufWriter::new(writer),
-            threshold: -1,
+            read_half: ReadHalf::new(reader, -1),
+            write_half: WriteHalf::new(writer, -1)
         }
     }
 
     pub fn split(self) -> (ReadHalf<R>, WriteHalf<W>) {
         (
-            ReadHalf::<R>::new(self.reader, self.threshold.clone()),
-            WriteHalf::<W>::new(self.writer, self.threshold),
+            self.read_half,
+            self.write_half
         )
     }
 }
@@ -43,11 +41,11 @@ pub struct ReadHalf<R> {
     threshold: i32,
 }
 
-impl<R> ReadHalf<R> {
-    pub(super) fn new(reader: BufReader<R>, threshold: i32) -> Self {
+impl<R: AsyncRead> ReadHalf<R> {
+    pub(super) fn new(reader: R, threshold: i32) -> Self {
         Self {
             buf: Vec::new(),
-            reader,
+            reader: BufReader::new(reader),
             threshold,
         }
     }
@@ -60,14 +58,14 @@ pub struct WriteHalf<W> {
     threshold: i32,
 }
 
-impl<W> WriteHalf<W> {
-    pub(super) fn new(writer: BufWriter<W>, threshold: i32) -> Self {
+impl<W: AsyncWrite> WriteHalf<W> {
+    pub(super) fn new(writer: W, threshold: i32) -> Self {
         Self {
             bufs: (
                 Vec::new(),
                 Vec::new(),
             ),
-            writer,
+            writer: BufWriter::new(writer),
             threshold
         }
     }
