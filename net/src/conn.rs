@@ -40,7 +40,7 @@ pub struct ReadHalf<R> {
     /// The buffer incoming packets are written to.
     pub buf: Vec<u8>,
     reader: BufReader<R>,
-    threshold: i32, 
+    threshold: i32,
 }
 
 impl<R> ReadHalf<R> {
@@ -55,12 +55,20 @@ impl<R> ReadHalf<R> {
 
 /// The writable half of a connection returned from `Connection::split()`.
 pub struct WriteHalf<W> {
+    bufs: (Vec<u8>, Vec<u8>),
     writer: BufWriter<W>,
     threshold: i32,
 }
 
 impl<W> WriteHalf<W> {
     pub(super) fn new(writer: BufWriter<W>, threshold: i32) -> Self {
-        Self { writer, threshold }
+        Self {
+            bufs: (
+                Vec::new(),
+                Vec::new(),
+            ),
+            writer,
+            threshold
+        }
     }
 }
