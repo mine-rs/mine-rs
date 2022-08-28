@@ -37,9 +37,7 @@ impl<'a> RawPacket<'a> {
             write_varint(bufs.1.len() as i32, writer).await?;
             writer.write_all(&bufs.1).await?;
         }
-
-        
-        todo!()
+        Ok(())
     }
 
     async fn pack_without_compression<W: AsyncWrite + Unpin>(self, writer: &mut W, buf: &mut Vec<u8>) -> Result<()> {
