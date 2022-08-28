@@ -1,5 +1,5 @@
 use futures::io::{BufReader, BufWriter};
-use futures::{AsyncRead, AsyncWrite, AsyncReadExt, pin_mut};
+use futures::{AsyncRead, AsyncWrite, AsyncReadExt};
 use std::io::Result;
 use crate::packet::RawPacket;
 
