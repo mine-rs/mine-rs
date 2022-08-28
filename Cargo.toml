@@ -10,5 +10,6 @@ protocol = { path = "protocol", package = "miners-protocol", version = "0.0.0-be
 [workspace]
 members = [
   "protocol",
-  "protocol-derive"
+  "protocol/derive",
+  "net"
 ]

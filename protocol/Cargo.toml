@@ -5,5 +5,5 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-protocol-derive = { path = "../protocol-derive", package = "miners-protocol-derive", version = "0.0.0-beta.0" }
+protocol-derive = { path = "derive", package = "miners-protocol-derive", version = "0.0.0-beta.0" }
 uuid = "1.1.2"
