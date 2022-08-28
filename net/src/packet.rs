@@ -9,6 +9,22 @@ pub struct RawPacket<'a> {
 }
 
 impl<'a> RawPacket<'a> {
+    pub async fn unpack<R: AsyncRead + Unpin>(reader: &mut R, bufs: &mut (Vec<u8>, Vec<u8>), threshold: i32) -> Result<RawPacket<'a>>{
+        if threshold >= 0 {
+            RawPacket::unpack_with_compression(reader, bufs, threshold).await
+        } else {
+            RawPacket::unpack_without_compression(reader, &mut bufs.0, threshold).await
+        }
+    }
+
+    pub async fn unpack_with_compression<R: AsyncRead + Unpin>(reader: &mut R, bufs: &mut (Vec<u8>, Vec<u8>), threshold: i32) -> Result<RawPacket<'a>>{
+        todo!()
+    }
+
+    pub async fn unpack_without_compression<R: AsyncRead + Unpin>(reader: &mut R, buf: &mut Vec<u8>, threshold: i32) -> Result<RawPacket<'a>>{
+        todo!()
+    }
+
     pub async fn pack<W: AsyncWrite + Unpin>(self, writer: &mut W, bufs: &mut (Vec<u8>, Vec<u8>), threshold: i32) -> Result<()> {
         
         if threshold >= 0 {
