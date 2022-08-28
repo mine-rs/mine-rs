@@ -1,14 +1,17 @@
 use std::collections::BTreeMap;
 
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span, TokenStream as TS};
+use proc_macro2::{Ident, Span, TokenStream as TS, TokenTree};
 use proc_macro2_diagnostics::{Diagnostic, Level};
+use quote::ToTokens;
 use quote::{quote, quote_spanned, spanned::Spanned, TokenStreamExt};
 use syn::{braced, Token, TypePath};
 use syn::{punctuated::Punctuated, token::Brace, Expr, ExprLit, Lit, LitInt, Pat, PatLit, PatOr};
 
 pub fn packets(x: PacketsInput) -> TokenStream {
     let mut ret = TS::new();
+
+    let prefix = x.prefix;
 
     let mut ver_id_mappings = IdPvMappings::default();
 
@@ -73,7 +76,7 @@ pub fn packets(x: PacketsInput) -> TokenStream {
             pv_match_body.extend(quote!(
                 #ver_pat => {
                     protocol_derive::replace! {
-                        #packet ;
+                        #prefix #packet ;
                         #($($t)*)
                     }
                 }
@@ -91,17 +94,15 @@ pub fn packets(x: PacketsInput) -> TokenStream {
     let mut custom_body: TS = TS::new();
 
     for (ident, packet) in &all_packets {
-        packets_body.extend(quote!(#ident(#packet),));
-        custom_body.extend(quote!(#packet));
+        packets_body.extend(quote!(#ident(#prefix #packet),));
+        custom_body.extend(quote!(#prefix #packet));
     }
 
-    // ret.extend(quote!( enum Packet { #packets_body } ));
-
-    // all_packets.into_iter().map(|a|a.to_tokens(&mut custom_body));
+    let custom = x.custom;
 
     ret.extend(quote!(
         #[allow(unused)]
-        macro_rules! custom {
+        macro_rules! #custom {
         ($($t:tt)*) => {
             protocol_derive::replace!{
                 #custom_body ;
@@ -111,17 +112,10 @@ pub fn packets(x: PacketsInput) -> TokenStream {
     }
     ));
 
-    // ret.extend(
-    //     quote!(fn packet<'a>(pv: i32, id: i32, data: &'a [u8]) -> Result<Packet, ReadError> {
-    //         let mut cursor = ::std::io::Cursor::new(data);
-    //         match id {
-    //             #id_match_body
-    //         }
-    //     }),
-    // );
+    let tree = x.tree;
 
     ret.extend(quote! {
-        macro_rules! tree {
+        macro_rules! #tree {
             ($id:ident, $pv:ident, {$($t:tt)*}, {$($e:tt)*}) => {
                 match $id {
                     #id_match_body
@@ -134,12 +128,25 @@ pub fn packets(x: PacketsInput) -> TokenStream {
 }
 
 pub struct PacketsInput {
+    pub custom: Ident,
+    pub tree: Ident,
+    pub prefix: TS,
     id_mappings: Punctuated<IdMapping, Token![,]>,
 }
 
 impl syn::parse::Parse for PacketsInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let custom = input.parse()?;
+        let tree = input.parse()?;
+        let mut prefix = TS::new();
+        while !input.peek(Token![;]) {
+            input.parse::<TokenTree>()?.to_tokens(&mut prefix);
+        }
+        let _: Token![;] = input.parse()?;
         Ok(PacketsInput {
+            custom,
+            tree,
+            prefix,
             id_mappings: input.parse_terminated(IdMapping::parse)?,
         })
     }
@@ -189,7 +196,7 @@ impl syn::parse::Parse for VersionMapping {
 
 fn litint2i32(litint: LitInt) -> Result<(i32, Span), TS> {
     <i32 as std::str::FromStr>::from_str(litint.base10_digits())
-        .map_err(|_| quote_spanned!(litint.span()=> compile_error!("tf are you doing1")))
+        .map_err(|_| quote_spanned!(litint.span()=> compile_error!("invalid integer")))
         .map(|i| (i, litint.span()))
 }
 
@@ -199,7 +206,7 @@ fn expr2i32(e: Expr) -> Result<(i32, Span), TS> {
             lit: Lit::Int(litint),
             ..
         }) => litint2i32(litint),
-        _ => Err(quote!(compile_error!("tf are you doing2"))),
+        _ => Err(quote!(compile_error!("invalid expression"))),
     }
 }
 
@@ -253,7 +260,7 @@ fn pat2veci32(pat: Pat) -> Result<Vec<(i32, i32, Span)>, TS> {
                 let (i, span) = litint2i32(int)?;
                 vec![(i, i, span)]
             }
-            _ => return Err(quote!(compile_error!("tf are you doing3"))),
+            _ => return Err(quote!(compile_error!("invalid expression"))),
         },
         syn::Pat::Or(PatOr { cases, .. }) => cases
             .into_iter()
@@ -271,7 +278,7 @@ fn pat2veci32(pat: Pat) -> Result<Vec<(i32, i32, Span)>, TS> {
                 syn::RangeLimits::Closed(_) => vec![(lo, hi, span)],
             }
         }
-        syn::Pat::Wild(_) => return Err(quote!(compile_error!("be explicit please"))),
-        _ => return Err(quote!(compile_error!("tf are you doing4"))),
+        syn::Pat::Wild(_) => return Err(quote!(compile_error!("please be explicit"))),
+        _ => return Err(quote!(compile_error!("invalid pattern"))),
     })
 }

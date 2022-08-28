@@ -39,6 +39,7 @@ pub fn struct_protocol(
             AttributeData::From(_) => continue,
             AttributeData::Fixed(_) => "fixed",
             AttributeData::StringUuid => "stringuuid",
+            AttributeData::Count(_) => "count",
         };
         error!(span, "`{}` attribute not allowed to annotate struct", kind).to_tokens(&mut res);
     }

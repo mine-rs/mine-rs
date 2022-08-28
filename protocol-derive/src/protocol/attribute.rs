@@ -3,7 +3,7 @@ use quote::{spanned::Spanned, ToTokens};
 use syn::{
     parenthesized,
     parse::{Parse, ParseStream},
-    parse2, parse_quote, Expr, LitInt, Token, Type,
+    parse2, parse_quote, Expr, LitInt, Token, Type, TypePath,
 };
 
 pub struct Attribute {
@@ -17,6 +17,7 @@ pub enum AttributeData {
     Case(Expr),
     From(Type),
     Fixed(Fixed),
+    Count(TypePath),
     StringUuid,
 }
 #[derive(Clone)]
@@ -81,6 +82,12 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
                 data: AttributeData::Fixed(a.0),
             })
         }),
+        Some(ident) if ident == "count" => Some({
+            parse2::<UnParen<TypePath>>(tokens).map(|a| Attribute {
+                span,
+                data: AttributeData::Count(a.0),
+            })
+        }),
         _ => None,
     }
 }
@@ -92,12 +99,14 @@ pub enum Attrs {
     Fixed(Span, Fixed),
     FixedVar(Span, Fixed, Span),
     StringUuid(Span),
+    Count(Span, TypePath),
 }
 
 pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenStream) -> Attrs {
-    let mut varint_attr_span = None;
+    let mut varint = None;
     let mut fixed = None;
     let mut stringuuid = None;
+    let mut count = None;
     for attr_res in attrs.map(parse_attr) {
         let Attribute { span, data } = match attr_res {
             Some(Ok(attr)) => attr,
@@ -109,8 +118,8 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
         };
         let err_message = match data {
             AttributeData::VarInt => {
-                if varint_attr_span.is_none() {
-                    varint_attr_span = Some(span);
+                if varint.is_none() {
+                    varint = Some(span);
                     continue;
                 } else {
                     "duplicate `varint` attribute on struct field"
@@ -134,26 +143,37 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
                     "duplicate `stringuuid` attribute on struct field"
                 }
             }
+            AttributeData::Count(ty) => {
+                if count.is_none() {
+                    count = Some((span, ty));
+                    continue;
+                } else {
+                    "duplicate `count` attribute on struct field"
+                }
+            }
         };
         error!(span, err_message).to_tokens(res)
     }
-    match (varint_attr_span, fixed, stringuuid) {
-        (None, None, None) => Attrs::None,
-        (None, None, Some(s)) => Attrs::StringUuid(s),
-        (None, Some((fs, f)), None) => Attrs::Fixed(fs, f),
-        (None, Some((fs, f)), Some(s)) => {
-            error!(s, "`stringuuid` incompatible with `fixed`").to_tokens(res);
+    match (varint, fixed, stringuuid, count) {
+        (None, None, None, None) => Attrs::None,
+        (None, None, None, Some((cs, c))) => Attrs::Count(cs, c),
+        (None, None, Some(s), a) => {
+            if a.is_some() {
+                error!(s, "`stringuuid` incompatible with other attribute(s)").to_tokens(res);
+            }
+            Attrs::StringUuid(s)
+        }
+        (None, Some((fs, f)), a, b) => {
+            if a.is_some() || b.is_some() {
+                error!(fs, "`fixed` incompatible with other attribute(s)").to_tokens(res);
+            }
             Attrs::Fixed(fs, f)
         }
-        (Some(v), None, None) => Attrs::Var(v),
-        (Some(v), None, Some(s)) => {
-            error!(s, "`stringuuid` incompatible with `varint`").to_tokens(res);
+        (Some(v), a, b, c) => {
+            if a.is_some() || b.is_some() || c.is_some() {
+                error!(v, "`varint` incompatible with other attribute(s)").to_tokens(res);
+            }
             Attrs::Var(v)
-        }
-        (Some(v), Some((fs, f)), None) => Attrs::FixedVar(fs, f, v),
-        (Some(v), Some((fs, f)), Some(s)) => {
-            error!(s, "`stringuuid` incompatible with `fixed` and `varint`").to_tokens(res);
-            Attrs::FixedVar(fs, f, v)
         }
     }
 }

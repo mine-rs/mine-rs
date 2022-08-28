@@ -4,7 +4,7 @@ mod replace;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
-#[proc_macro_derive(Protocol, attributes(varint, case, from, fixed, stringuuid))]
+#[proc_macro_derive(Protocol, attributes(varint, case, count, from, fixed, stringuuid))]
 pub fn protocol(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -29,25 +29,6 @@ pub fn packets(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn replace(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as replace::ReplaceInput);
-
-    // let mut packets = vec![];
-
-    // let input: proc_macro2::TokenStream = input.into();
-    // let mut ii = input.into_iter();
-
-    // for t in ii.by_ref() {
-    //     use proc_macro2::TokenTree::*;
-    //     match t {
-    //         Ident(id) => packets.push(id.to_string()),
-    //         Punct(p) if p.as_char() == ';' => break,
-    //         _ => {
-    //             return quote::quote!(compile_error!(
-    //                 "invalid input! only accepts idents, terminated using `;`"
-    //             ))
-    //             .into()
-    //         }
-    //     }
-    // }
 
     let mut output = proc_macro2::TokenStream::new();
 

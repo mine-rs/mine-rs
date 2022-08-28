@@ -113,7 +113,7 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
             Attrs::Fixed(span, fixed) => {
                 let Fixed { precision, typ } = fixed;
                 quote_spanned! {span=>
-                    let #field = <Fixed<#precision, #typ, #ty> as ProtocolRead>::read(cursor)?.data;
+                    let #field = <Fixed<#precision, #typ, _> as ProtocolRead>::read(cursor)?.data;
                 }
                 .to_tokens(&mut parsing);
                 quote!(+ <Fixed<#precision, #typ, #ty> as ProtocolWrite>::size_hint())
@@ -125,7 +125,7 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
             }
             Attrs::Var(span) => {
                 quote_spanned! {span=>
-                    let #field = <Var<#ty> as ProtocolRead>::read(cursor)?.0;
+                    let #field = <Var<_> as ProtocolRead>::read(cursor)?.0;
                 }
                 .to_tokens(&mut parsing);
                 quote!(+ <Var<#ty> as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
@@ -138,13 +138,12 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
                 let Fixed { precision, typ } = fixed;
                 let var_part = quote_spanned!(varint_span=> Var<#typ>);
                 quote_spanned! {fixed_span=>
-                    let #field = <Fixed<#precision, #var_part, #ty> as ProtocolRead>::read(cursor)?.data;
+                    let #field = <Fixed<#precision, #var_part, _> as ProtocolRead>::read(cursor)?.data;
                 }.to_tokens(&mut parsing);
-                let var_part = quote_spanned!(varint_span=>  Var<#typ>);
-                quote!(+ <Fixed<#precision, #var_part, #ty> as ProtocolWrite>::size_hint())
+                quote!(+ <Fixed<#precision, #var_part, _> as ProtocolWrite>::size_hint())
                     .to_tokens(&mut size_hint);
                 quote_spanned! {fixed_span=>
-                    ProtocolWrite::write(Fixed::<#precision, #var_part, #ty>::fixed(#field), writer)?;
+                    ProtocolWrite::write(Fixed::<#precision, #var_part, #ty>::new(#field), writer)?;
                 }
                 .to_tokens(&mut serialization);
             }
@@ -156,6 +155,17 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
                 quote!(+ <StringUuid as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
                 quote_spanned! {span=>
                     ProtocolWrite::write(StringUuid(#field), writer)?;
+                }
+                .to_tokens(&mut serialization);
+            }
+            Attrs::Count(cs, c) => {
+                quote_spanned! {cs=>
+                    let #field = <Count<_, #c> as ProtocolRead>::read(cursor)?.inner;
+                }
+                .to_tokens(&mut parsing);
+                quote!(+ <Count<#ty, #c> as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
+                quote_spanned! {cs=>
+                    ProtocolWrite::write(Count::<#ty, #c>::new(#field), writer)?;
                 }
                 .to_tokens(&mut serialization);
             }

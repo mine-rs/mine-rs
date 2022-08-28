@@ -1,3 +1,4 @@
+use crate::attrs::*;
 use crate::*;
 
 use protocol_derive::Protocol;
@@ -10,8 +11,8 @@ pub struct LoginStart0<'a> {
 
 #[derive(Protocol)]
 pub struct EncryptionRequest0<'a> {
-    // #[count(u16)]
+    #[count(u16)]
     pub public_key: Cow<'a, [u8]>,
-    // #[count(u16)]
+    #[count(u16)]
     pub verify_token: Cow<'a, [u8]>,
 }

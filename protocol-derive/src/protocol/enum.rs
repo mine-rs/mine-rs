@@ -53,6 +53,7 @@ pub fn enum_protocol(
             }
             AttributeData::Fixed(_) => "`fixed` attribute not allowed to annotate enum",
             AttributeData::StringUuid => "`stringuuid` attribute not allowed to annotate enum",
+            AttributeData::Count(_) => "`count` attribute not allowed to annotate enum",
         };
         error!(span, err).to_tokens(&mut res);
     }
@@ -87,6 +88,7 @@ pub fn enum_protocol(
                 AttributeData::StringUuid => {
                     "`stringuuid` attribute not allowed to annotate enum variant"
                 }
+                AttributeData::Count(_) => "`count` attribute not allowed to annotate enum variant",
             };
             error!(span, err).to_tokens(&mut res);
         }

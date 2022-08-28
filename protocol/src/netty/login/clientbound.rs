@@ -6,30 +6,26 @@ use std::{borrow::Cow, str::FromStr};
 use uuid::Uuid;
 
 #[derive(Protocol)]
-// 0x00
 pub struct Disconnect0<'a> {
     pub reason: Cow<'a, str>,
 }
 
 #[derive(Protocol)]
-// 0x01
 pub struct EncryptionResponse0<'a> {
     pub server_id: Cow<'a, str>,
-    // #[count(u16)]
+    #[count(u16)]
     pub public_key: Cow<'a, [u8]>,
-    // #[count(u16)]
+    #[count(u16)]
     pub verify_token: Cow<'a, [u8]>,
 }
 
 #[derive(Protocol)]
-// 0x02
 pub struct Success0<'a> {
     #[stringuuid]
     pub uuid: Uuid,
     pub username: Cow<'a, str>,
 }
 
-// 0x02
 pub struct Success5<'a> {
     pub uuid: Option<Uuid>,
     pub username: Cow<'a, str>,

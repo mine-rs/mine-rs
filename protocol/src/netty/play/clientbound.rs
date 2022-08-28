@@ -8,18 +8,16 @@ use std::str::FromStr;
 use uuid::Uuid;
 
 #[derive(Protocol)]
-// 0x00
 pub struct KeepAlive0 {
     pub id: i32,
 }
 
-// 0x01
 pub struct JoinGame0 {
     pub entity_id: i32,
     pub hardcore: bool,
     pub gamemode: GameMode0,
     pub dimension: Dimension0,
-    difficulty: super::Difficulty0,
+    pub difficulty: super::Difficulty0,
     pub max_players: u8,
 }
 
@@ -68,13 +66,12 @@ impl ProtocolWrite for JoinGame0 {
     }
 }
 
-// 0x01
 pub struct JoinGame1<'a> {
     pub entity_id: i32,
     pub hardcore: bool,
     pub gamemode: GameMode0,
     pub dimension: Dimension0,
-    difficulty: super::Difficulty0,
+    pub difficulty: super::Difficulty0,
     pub max_players: u8,
     /// "default", "flat", "largeBiomes", "amplified", "default_1_1"
     pub level_type: Cow<'a, str>,
@@ -584,7 +581,7 @@ impl ProtocolWrite for EntityVelocity0 {
 
 #[derive(Protocol)]
 pub struct DestroyEntities0 {
-    // todo! #[count(u8)]
+    #[count(u8)]
     pub entities: Vec<i32>,
 }
 
@@ -722,7 +719,7 @@ pub struct SetExperience0 {
 #[derive(Protocol)]
 pub struct EntityProperties0<'a> {
     pub entity_id: i32,
-    // todo! #[count(i32)]
+    #[count(u32)]
     pub properties: Vec<EntityProperty<'a>>,
 }
 
@@ -788,7 +785,7 @@ pub struct ChunkData0<'a> {
     // todo! waht is this for?
     /// Same as above, but this is used exclusively for the 'add' portion of the payload
     pub add_bitmap: u16,
-    // todo! #[count(i32)]
+    #[count(u32)]
     pub compressed_data: Cow<'a, [u8]>,
 }
 
@@ -1008,7 +1005,7 @@ pub struct Explosion0 {
     pub y: f32,
     pub z: f32,
     pub radius: f32,
-    // todo! #[count(i32)]
+    #[count(u32)]
     pub records: Vec<ExplosionRecord>,
     pub motion_x: f32,
     pub motion_y: f32,
@@ -1338,7 +1335,7 @@ pub struct SetSlot0 {
 pub struct WindowItems {
     /// The id of window which items are being sent for. 0 for player inventory.
     pub window_id: u8,
-    // todo! #[count(u16)]
+    // #[count(u16)]
     // todo! slot data
     // slots: Vec<Slot>
 }
