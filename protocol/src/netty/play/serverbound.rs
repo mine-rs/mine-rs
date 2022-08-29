@@ -240,7 +240,7 @@ pub enum EntityAction {
 }
 
 #[derive(Protocol)]
-pub struct SteerVehicle {
+pub struct SteerVehicle0 {
     pub sideways: f32,
     pub forward: f32,
     pub jump: bool,
@@ -248,19 +248,19 @@ pub struct SteerVehicle {
 }
 
 #[derive(Protocol)]
-pub struct CloseWindow {
+pub struct CloseWindow0 {
     /// This is the id of the window that was closed. 0 for inventory.
     pub window_id: u8,
 }
 
-pub struct ClickWindow {
+pub struct ClickWindow0 {
     pub window_id: u8,
     pub action: ClickAction0,
     pub action_id: i16,
     // todo! slot type
     // item: Slot
 }
-impl<'read> ProtocolRead<'read> for ClickWindow {
+impl<'read> ProtocolRead<'read> for ClickWindow0 {
     fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
         let window_id = u8::read(buf)?;
         let slot = i16::read(buf)?;
@@ -349,7 +349,7 @@ impl<'read> ProtocolRead<'read> for ClickWindow {
         })
     }
 }
-impl ProtocolWrite for ClickWindow {
+impl ProtocolWrite for ClickWindow0 {
     fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
         self.window_id.write(writer)?;
         let (mode, button, slot) = match self.action {

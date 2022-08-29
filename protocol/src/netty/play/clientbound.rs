@@ -936,7 +936,7 @@ pub struct BlockAction0 {
 }
 
 #[derive(Protocol)]
-pub struct BlockBreakAnimation {
+pub struct BlockBreakAnimation0 {
     #[varint]
     pub entity_id: i32,
     pub x: i32,
@@ -1104,7 +1104,7 @@ pub struct Particle0<'a> {
 
 // #[derive(Protocol)]
 // #[from(u8)]
-pub enum GameStateChange0 {
+pub enum ChangeGameState0 {
     // #[case(0)]
     InvalidBed,
     BeginRaining,
@@ -1128,12 +1128,12 @@ pub enum DemoMessage0 {
     InventoryControl,
 }
 
-impl ProtocolRead<'_> for GameStateChange0 {
+impl ProtocolRead<'_> for ChangeGameState0 {
     fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
         let reason = u8::read(cursor)?;
         let value = f32::read(cursor)?;
         use self::DemoMessage0::*;
-        use GameStateChange0::*;
+        use ChangeGameState0::*;
         Ok(match reason {
             0 => InvalidBed,
             1 => BeginRaining,
@@ -1160,18 +1160,18 @@ impl ProtocolRead<'_> for GameStateChange0 {
     }
 }
 
-impl ProtocolWrite for GameStateChange0 {
+impl ProtocolWrite for ChangeGameState0 {
     fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
         let (reason, value) = match self {
-            GameStateChange0::InvalidBed => (0u8, 0.0),
-            GameStateChange0::BeginRaining => (1, 0.0),
-            GameStateChange0::EndRaining => (2, 0.0),
-            GameStateChange0::ChangeGameMode(gamemode) => (3, gamemode as u8 as f32),
-            GameStateChange0::EnterCredits => (4, 0.0),
-            GameStateChange0::DemoMessage(demomessage) => (5, demomessage as u8 as f32),
-            GameStateChange0::BowHitSound => (6, 0.0),
-            GameStateChange0::FadeValue(value) => (7, value),
-            GameStateChange0::FadeTime(value) => (8, value),
+            ChangeGameState0::InvalidBed => (0u8, 0.0),
+            ChangeGameState0::BeginRaining => (1, 0.0),
+            ChangeGameState0::EndRaining => (2, 0.0),
+            ChangeGameState0::ChangeGameMode(gamemode) => (3, gamemode as u8 as f32),
+            ChangeGameState0::EnterCredits => (4, 0.0),
+            ChangeGameState0::DemoMessage(demomessage) => (5, demomessage as u8 as f32),
+            ChangeGameState0::BowHitSound => (6, 0.0),
+            ChangeGameState0::FadeValue(value) => (7, value),
+            ChangeGameState0::FadeTime(value) => (8, value),
         };
         reason.write(writer)?;
         value.write(writer)?;
@@ -1332,7 +1332,7 @@ pub struct SetSlot0 {
 }
 
 #[derive(Protocol)]
-pub struct WindowItems {
+pub struct WindowItems0 {
     /// The id of window which items are being sent for. 0 for player inventory.
     pub window_id: u8,
     // #[count(u16)]
