@@ -56,7 +56,7 @@ impl<W> WriteHalf<W>
 where
     W: AsyncWrite + Unpin,
 {
-    pub fn new(encryptor: Option<Encryptor<Aes128>>, compression: Compression, writer: BufWriter<W> ) -> Self {
+    pub(super) fn new(encryptor: Option<Encryptor<Aes128>>, compression: Compression, writer: BufWriter<W> ) -> Self {
         Self { encryptor, compression, workbuf: Vec::new(), workbuf2: Vec::new(), writer }
     }
 

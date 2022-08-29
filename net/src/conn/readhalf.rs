@@ -38,7 +38,7 @@ where
     R: AsyncRead + Unpin,
 {
     // todo! add a method for truncating the internal buffers
-    pub fn new(decryptor: Option<Decryptor<Aes128>>, compression: Option<Vec<u8>>, reader: BufReader<R>) -> Self {
+    pub(super) fn new(decryptor: Option<Decryptor<Aes128>>, compression: Option<Vec<u8>>, reader: BufReader<R>) -> Self {
         Self {
             decryptor,
             compression,
