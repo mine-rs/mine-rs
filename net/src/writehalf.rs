@@ -356,9 +356,10 @@ fn write_varint(mut num: u32, buf: &mut [u8; 5]) -> &mut [u8] {
     &mut buf[..]
 }
 
-#[test]
-fn varint_onebuf() {
-    let tests: &[(i32, &[u8])] = &[
+#[cfg(test)]
+mod varint {
+    use super::*;
+    const TESTS: &[(i32, &[u8])] = &[
         (0, &[0x00]),
         (1, &[0x01]),
         (127, &[0x7f]),
@@ -370,9 +371,12 @@ fn varint_onebuf() {
         (-1, &[0xff, 0xff, 0xff, 0xff, 0x0f]),
         (-2147483648, &[0x80, 0x80, 0x80, 0x80, 0x08]),
     ];
-    for (num, res) in tests {
-        let mut buf = [0u8; 5];
-        let varbuf = write_varint(*num as u32, &mut buf);
-        assert_eq!(*res, varbuf)
+    #[test]
+    fn write() {
+        for (num, res) in TESTS {
+            let mut buf = [0u8; 5];
+            let varbuf = write_varint(*num as u32, &mut buf);
+            assert_eq!(*res, varbuf)
+        }
     }
 }
