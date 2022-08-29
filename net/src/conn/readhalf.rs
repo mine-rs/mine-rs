@@ -1,14 +1,14 @@
 use core::slice;
 use std::{fmt::Display, io};
 
+use crate::packet::RawPacket;
 use aes::{
-    cipher::{inout::InOutBuf, BlockDecryptMut},
+    cipher::{inout::InOutBuf, BlockDecryptMut, InvalidLength, KeyIvInit},
     Aes128,
 };
 use cfb8::Decryptor;
 use flate2::Decompress;
 use futures::{io::BufReader, AsyncRead, AsyncReadExt};
-use crate::packet::RawPacket;
 
 // const AVG_PACKET_THRESHOLD: usize = 65536;
 
@@ -38,13 +38,23 @@ where
     R: AsyncRead + Unpin,
 {
     // todo! add a method for truncating the internal buffers
-    pub(super) fn new(decryptor: Option<Decryptor<Aes128>>, compression: Option<Vec<u8>>, reader: BufReader<R>) -> Self {
+    pub(super) fn new(
+        decryptor: Option<Decryptor<Aes128>>,
+        compression: Option<Vec<u8>>,
+        reader: BufReader<R>,
+    ) -> Self {
         Self {
             decryptor,
             compression,
             readbuf: Vec::with_capacity(1024),
-            reader
+            reader,
         }
+    }
+
+    pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
+        self.decryptor = Some(Decryptor::new_from_slices(key, key)?);
+
+        Ok(())
     }
 
     pub async fn read_raw_packet(&mut self) -> io::Result<RawPacket<'_>> {
