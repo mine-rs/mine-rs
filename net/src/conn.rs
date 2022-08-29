@@ -42,6 +42,12 @@ impl<T: AsyncRead + AsyncWrite + Sized> From<T> for Connection<futures::io::Read
     }
 }
 
+impl<R: AsyncRead + Sized + Unpin, W: AsyncWrite + Sized + Unpin> From<(R, W)> for Connection<R, W> {
+    fn from(v: (R, W)) -> Self {
+        Connection::new(v.0, v.1)
+    }
+}
+
 
 /*
 /// The readable half of a connection returned from `Connection::split()`.
