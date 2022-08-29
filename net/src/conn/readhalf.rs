@@ -51,6 +51,13 @@ where
         }
     }
 
+    fn reset_bufs(&mut self) {
+        if let Some(compression) = &mut self.compression {
+            compression.truncate(0)
+        }
+        self.readbuf.truncate(0)
+    }
+
     pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
         self.decryptor = Some(Decryptor::new_from_slices(key, key)?);
 
