@@ -53,7 +53,7 @@ where
         }
     }
 
-    pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
+    pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
         self.decryptor = Some(Decryptor::new_from_slices(key, key)?);
 
         Ok(())
