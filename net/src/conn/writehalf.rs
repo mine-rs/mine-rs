@@ -62,6 +62,7 @@ where
 
     // todo! add a method for truncating the internal buffers
     
+    //TODO: refactor write_raw_packet and write_packet so there is less code duplication
     pub async fn write_raw_packet(&mut self, id: i32, data: &[u8]) -> io::Result<()> {
         self.workbuf.clear();
 
