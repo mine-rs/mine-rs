@@ -1,11 +1,11 @@
-use futures::{AsyncRead, AsyncWrite, AsyncWriteExt};
-use std::io::{Result, Read};
-use flate2::read::ZlibEncoder;
-use flate2::Compression;
+// use flate2::read::ZlibEncoder;
+// use flate2::Compression;
+// use futures::{AsyncRead, AsyncWrite, AsyncWriteExt};
+// use std::io::{Read, Result};
 
 pub struct RawPacket<'a> {
     pub id: i32,
-    pub data: &'a [u8]
+    pub data: &'a [u8],
 }
 
 /*
@@ -27,7 +27,7 @@ impl<'a> RawPacket<'a> {
     }
 
     pub async fn pack<W: AsyncWrite + Unpin>(self, writer: &mut W, bufs: &mut (Vec<u8>, Vec<u8>), threshold: i32) -> Result<()> {
-        
+
         if threshold >= 0 {
             self.pack_with_compression(writer, bufs, threshold).await
         } else {

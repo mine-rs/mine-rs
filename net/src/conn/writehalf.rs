@@ -1,7 +1,7 @@
 use std::{io, num::NonZeroU32};
 
 use aes::{
-    cipher::{inout::InOutBuf, BlockEncryptMut},
+    cipher::{inout::InOutBuf, BlockEncryptMut, InvalidLength, KeyIvInit},
     Aes128,
 };
 use cfb8::Encryptor;
@@ -19,13 +19,11 @@ impl Compression {
         if threshold < 0 {
             self.0 = None;
         } else {
-            self.0 = Some(
-                (
-                    // SAFETY: Since we know theshold is zero or more and we add one to it, we can be certain NonZeroU32::new() isn't supplied a zero so we can use `.unwrap_unchecked()`
-                    unsafe { NonZeroU32::new((threshold + 1) as u32).unwrap_unchecked() }, 
-                    compression
-                )
-            );
+            self.0 = Some((
+                // SAFETY: Since we know theshold is zero or more and we add one to it, we can be certain NonZeroU32::new() isn't supplied a zero so we can use `.unwrap_unchecked()`
+                unsafe { NonZeroU32::new((threshold + 1) as u32).unwrap_unchecked() },
+                compression,
+            ));
         }
     }
 
@@ -42,7 +40,7 @@ fn encrypt_in_place(encryptor: &mut Encryptor<Aes128>, data: &mut [u8]) {
 }
 fn encrypt_into_vec(encryptor: &mut Encryptor<Aes128>, data: &[u8], vec: &mut Vec<u8>) {
     // ensure enough space is available
-    
+
     vec.reserve(data.len());
 
     let (chunks, rest) =
@@ -66,12 +64,28 @@ impl<W> WriteHalf<W>
 where
     W: AsyncWrite + Unpin,
 {
-    pub(super) fn new(encryptor: Option<Encryptor<Aes128>>, compression: Compression, writer: BufWriter<W>) -> Self {
-        Self { encryptor, compression, workbuf: Vec::with_capacity(1024), workbuf2: Vec::with_capacity(1024), writer }
+    pub(super) fn new(
+        encryptor: Option<Encryptor<Aes128>>,
+        compression: Compression,
+        writer: BufWriter<W>,
+    ) -> Self {
+        Self {
+            encryptor,
+            compression,
+            workbuf: Vec::with_capacity(1024),
+            workbuf2: Vec::with_capacity(1024),
+            writer,
+        }
+    }
+
+    pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
+        self.encryptor = Some(Encryptor::new_from_slices(key, key)?);
+
+        Ok(())
     }
 
     // todo! add a method for truncating the internal buffers
-    
+
     //TODO: refactor write_raw_packet and write_packet so there is less code duplication
     pub async fn write_raw_packet(&mut self, id: i32, data: &[u8]) -> io::Result<()> {
         self.workbuf.clear();
