@@ -1,3 +1,4 @@
+use aes::cipher::InvalidLength;
 use futures::io::{BufReader, BufWriter};
 use futures::{AsyncRead, AsyncWrite, AsyncReadExt};
 mod readhalf;
@@ -31,6 +32,12 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
     pub fn set_compression(&mut self, threshold: i32, compression: flate2::Compression) {
         self.write_half.compression.set_compression(threshold, compression);
         self.read_half.compression = Some(Vec::with_capacity(1024));
+    }
+
+    pub fn enable_encryption(&mut self, read_key: &[u8], write_key: &[u8]) -> Result<(), InvalidLength> {
+        self.read_half.enable_encryption(read_key)?;
+        self.write_half.enable_encryption(write_key)?;
+        Ok(())
     }
 }
 
