@@ -1,4 +1,4 @@
-use crate::{ReadError, ProtocolRead};
+use crate::{ProtocolRead, ReadError};
 
 pub mod serverbound;
 

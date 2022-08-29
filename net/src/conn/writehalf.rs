@@ -1,7 +1,7 @@
 use std::{io, num::NonZeroU32};
 
 use aes::{
-    cipher::{inout::InOutBuf, BlockEncryptMut, KeyIvInit, InvalidLength},
+    cipher::{inout::InOutBuf, BlockEncryptMut, InvalidLength, KeyIvInit},
     Aes128,
 };
 use cfb8::Encryptor;
