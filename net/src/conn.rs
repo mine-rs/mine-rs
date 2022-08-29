@@ -21,7 +21,8 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
             write_half: WriteHalf::new(None, Compression::new(), BufWriter::new(writer)),
         }
     }
-
+}
+impl<R, W> Connection<R, W> {
     pub fn split(self) -> (ReadHalf<R>, WriteHalf<W>) {
         (self.read_half, self.write_half)
     }
@@ -41,6 +42,11 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
         self.read_half.enable_encryption(read_key)?;
         self.write_half.enable_encryption(write_key)?;
         Ok(())
+    }
+
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.read_half.shrink_to(min_capacity);
+        self.write_half.shrink_to(min_capacity);
     }
 }
 

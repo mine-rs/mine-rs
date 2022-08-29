@@ -60,10 +60,18 @@ pub struct WriteHalf<W> {
     workbuf2: Vec<u8>,
     writer: BufWriter<W>,
 }
-impl<W> WriteHalf<W>
-where
-    W: AsyncWrite + Unpin,
-{
+
+impl<W> WriteHalf<W> {
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.workbuf.clear();
+        self.workbuf.shrink_to(min_capacity);
+        #[cfg(feature = "protocol")]
+        {
+            self.workbuf2.clear();
+            self.workbuf2.shrink_to(min_capacity);
+        }
+    }
+
     pub(super) fn new(
         encryptor: Option<Encryptor<Aes128>>,
         compression: Compression,
@@ -83,10 +91,13 @@ where
 
         Ok(())
     }
+}
 
-    // todo! add a method for truncating the internal buffers
-
-    //TODO: refactor write_raw_packet and write_packet so there is less code duplication
+impl<W> WriteHalf<W>
+where
+    W: AsyncWrite + Unpin,
+{
+    // todo! refactor write_raw_packet and write_packet so there is less code duplication
     pub async fn write_raw_packet(&mut self, id: i32, data: &[u8]) -> io::Result<()> {
         self.workbuf.clear();
 

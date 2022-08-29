@@ -33,11 +33,7 @@ impl Display for PacketLengthTooLarge {
     }
 }
 
-impl<R> ReadHalf<R>
-where
-    R: AsyncRead + Unpin,
-{
-    // todo! add a method for truncating the internal buffers
+impl<R> ReadHalf<R> {
     pub(super) fn new(
         decryptor: Option<Decryptor<Aes128>>,
         compression: Option<Vec<u8>>,
@@ -57,6 +53,20 @@ where
         Ok(())
     }
 
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.readbuf.clear();
+        self.readbuf.shrink_to(min_capacity);
+        if let Some(comp_buf) = &mut self.compression {
+            comp_buf.clear();
+            comp_buf.shrink_to(min_capacity);
+        }
+    }
+}
+
+impl<R> ReadHalf<R>
+where
+    R: AsyncRead + Unpin,
+{
     pub async fn read_raw_packet(&mut self) -> io::Result<RawPacket<'_>> {
         let mut data = if let Some(decryptor) = &mut self.decryptor {
             // entire packet is encrypted
