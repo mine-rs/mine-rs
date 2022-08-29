@@ -7,6 +7,8 @@ pub use readhalf::ReadHalf;
 use writehalf::Compression;
 pub use writehalf::WriteHalf;
 
+const INITIAL_BUF_SIZE: usize = 1024;
+
 /// A united connection.
 /// After compression and encryption are set, `Connection` should be split into `ReadHalf` and `WriteHalf`.
 pub struct Connection<R, W> {
@@ -31,7 +33,7 @@ impl<R, W> Connection<R, W> {
         self.write_half
             .compression
             .set_compression(threshold, compression);
-        self.read_half.compression = Some(Vec::with_capacity(1024));
+        self.read_half.compression = Some(Vec::with_capacity(INITIAL_BUF_SIZE));
     }
 
     pub fn enable_encryption(

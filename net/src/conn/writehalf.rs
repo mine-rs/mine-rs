@@ -1,5 +1,7 @@
 use std::{io, num::NonZeroU32};
 
+use super::INITIAL_BUF_SIZE;
+
 use aes::{
     cipher::{inout::InOutBuf, BlockEncryptMut, InvalidLength, KeyIvInit},
     Aes128,
@@ -80,13 +82,13 @@ impl<W> WriteHalf<W> {
         Self {
             encryptor,
             compression,
-            workbuf: Vec::with_capacity(1024),
-            workbuf2: Vec::with_capacity(1024),
+            workbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
+            workbuf2: Vec::with_capacity(INITIAL_BUF_SIZE),
             writer,
         }
     }
 
-    pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
+    pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
         self.encryptor = Some(Encryptor::new_from_slices(key, key)?);
 
         Ok(())

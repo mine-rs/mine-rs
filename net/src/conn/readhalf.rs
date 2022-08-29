@@ -1,6 +1,8 @@
 use core::slice;
 use std::{fmt::Display, io};
 
+use super::INITIAL_BUF_SIZE;
+
 use crate::packet::RawPacket;
 use aes::{
     cipher::{inout::InOutBuf, BlockDecryptMut, InvalidLength, KeyIvInit},
@@ -42,12 +44,12 @@ impl<R> ReadHalf<R> {
         Self {
             decryptor,
             compression,
-            readbuf: Vec::with_capacity(1024),
+            readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader,
         }
     }
 
-    pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
+    pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
         self.decryptor = Some(Decryptor::new_from_slices(key, key)?);
 
         Ok(())
