@@ -78,12 +78,6 @@ where
         }
     }
 
-    fn reset_bufs(&mut self) {
-        self.workbuf.truncate(0);
-        #[cfg(feature = "protocol")]
-        self.workbuf2.truncate(0)
-    }
-
     pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
         self.encryptor = Some(Encryptor::new_from_slices(key, key)?);
 
