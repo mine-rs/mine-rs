@@ -8,6 +8,7 @@ pub struct RawPacket<'a> {
     pub data: &'a [u8]
 }
 
+/*
 impl<'a> RawPacket<'a> {
     pub async fn unpack<R: AsyncRead + Unpin>(reader: &mut R, bufs: &mut (Vec<u8>, Vec<u8>), threshold: i32) -> Result<RawPacket<'a>>{
         if threshold >= 0 {
@@ -85,3 +86,4 @@ where
 async fn read_varint<R: Unpin + AsyncRead>(reader: &mut R) -> Result<i32> {
     todo!()
 }
+*/

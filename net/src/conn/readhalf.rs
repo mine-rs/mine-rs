@@ -8,6 +8,7 @@ use aes::{
 use cfb8::Decryptor;
 use flate2::Decompress;
 use futures::{io::BufReader, AsyncRead, AsyncReadExt};
+use crate::packet::RawPacket;
 
 // const AVG_PACKET_THRESHOLD: usize = 65536;
 
@@ -18,10 +19,10 @@ pub struct ReadHalf<R> {
     reader: BufReader<R>,
 }
 
-pub struct RawPacket<'a> {
-    pub id: i32,
-    pub data: &'a [u8],
-}
+//pub struct RawPacket<'a> {
+//    pub id: i32,
+//    pub data: &'a [u8],
+//}
 
 #[derive(Debug)]
 struct PacketLengthTooLarge;
@@ -37,6 +38,14 @@ where
     R: AsyncRead + Unpin,
 {
     // todo! add a method for truncating the internal buffers
+    pub fn new(decryptor: Option<Decryptor<Aes128>>, compression: Option<Vec<u8>>, reader: BufReader<R>) -> Self {
+        Self {
+            decryptor,
+            compression,
+            readbuf: Vec::new(),
+            reader
+        }
+    }
 
     pub async fn read_raw_packet(&mut self) -> io::Result<RawPacket<'_>> {
         let mut data = if let Some(decryptor) = &mut self.decryptor {

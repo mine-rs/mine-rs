@@ -1,7 +1,10 @@
 use futures::io::{BufReader, BufWriter};
 use futures::{AsyncRead, AsyncWrite, AsyncReadExt};
-use std::io::Result;
-use crate::packet::RawPacket;
+mod readhalf;
+mod writehalf;
+pub use readhalf::ReadHalf;
+pub use writehalf::WriteHalf;
+use writehalf::Compression;
 
 /// A united connection.
 /// After compression and encryption are enabled/kept disabled, `Connection` should be split into `ReadHalf` and `WriteHalf`.
@@ -10,11 +13,11 @@ pub struct Connection<R, W> {
     pub write_half: WriteHalf<W>,
 }
 
-impl<R: AsyncRead, W: AsyncWrite + Unpin> Connection<R, W> {
+impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
     pub fn new(reader: R, writer: W) -> Self {
         Connection {
-            read_half: ReadHalf::new(reader, -1),
-            write_half: WriteHalf::new(writer, -1)
+            read_half: ReadHalf::new(None, None, BufReader::new(reader)),
+            write_half: WriteHalf::new(None, Compression::new(), BufWriter::new(writer))
         }
     }
 
@@ -26,8 +29,7 @@ impl<R: AsyncRead, W: AsyncWrite + Unpin> Connection<R, W> {
     }
 
     pub fn enable_compression(&mut self, threshold: i32) {
-        self.read_half.threshold = threshold;
-        self.write_half.threshold = threshold;
+        todo!()
     }
 }
 
@@ -40,6 +42,7 @@ impl<T: AsyncRead + AsyncWrite + Sized> From<T> for Connection<futures::io::Read
 }
 
 
+/*
 /// The readable half of a connection returned from `Connection::split()`.
 pub struct ReadHalf<R> {
     /// The buffer incoming packets are written to.
@@ -81,3 +84,4 @@ impl<W: AsyncWrite + Unpin> WriteHalf<W> {
         packet.pack(&mut self.writer, &mut self.bufs, self.threshold).await
     }
 }
+*/

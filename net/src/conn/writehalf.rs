@@ -11,6 +11,14 @@ use futures::{io::BufWriter, AsyncWrite, AsyncWriteExt};
 /// compression threshold + 1 for memory layout optimization
 pub struct Compression(Option<(NonZeroU32, flate2::Compression)>);
 impl Compression {
+    pub fn new() -> Self {
+        Self(None)
+    }
+
+    pub fn enable(&mut self) {
+        todo!()
+    }
+
     pub fn get_options(&self) -> Option<(u32, flate2::Compression)> {
         self.0
             .map(|(threshold, lvl)| (u32::from(threshold) - 1, lvl))
@@ -48,6 +56,10 @@ impl<W> WriteHalf<W>
 where
     W: AsyncWrite + Unpin,
 {
+    pub fn new(encryptor: Option<Encryptor<Aes128>>, compression: Compression, writer: BufWriter<W> ) -> Self {
+        Self { encryptor, compression, workbuf: Vec::new(), workbuf2: Vec::new(), writer }
+    }
+
     // todo! add a method for truncating the internal buffers
     
     pub async fn write_raw_packet(&mut self, id: i32, data: &[u8]) -> io::Result<()> {
