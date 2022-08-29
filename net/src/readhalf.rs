@@ -1,3 +1,4 @@
+use core::slice;
 use std::{fmt::Display, io};
 
 use aes::{
@@ -8,12 +9,12 @@ use cfb8::Decryptor;
 use flate2::Decompress;
 use futures::{io::BufReader, AsyncRead, AsyncReadExt};
 
-const MAX_PACKET_SIZE: usize = 65536;
+// const AVG_PACKET_THRESHOLD: usize = 65536;
 
 pub struct ReadHalf<R> {
     decryptor: Option<Decryptor<Aes128>>,
     compression: Option<Vec<u8>>,
-    readbuf: Box<[u8; MAX_PACKET_SIZE]>,
+    readbuf: Vec<u8>,
     reader: BufReader<R>,
 }
 
@@ -35,6 +36,8 @@ impl<R> ReadHalf<R>
 where
     R: AsyncRead + Unpin,
 {
+    // todo! add a method for truncating the internal buffers
+
     pub async fn read_raw_packet(&mut self) -> io::Result<RawPacket<'_>> {
         let mut data = if let Some(decryptor) = &mut self.decryptor {
             // entire packet is encrypted
@@ -43,13 +46,18 @@ where
 
             let len = read_encrypted_varint_async(&mut self.reader, decryptor).await?;
 
-            // ensure read len is valid
+            // todo! ensure read len is valid
 
-            let readslice = self.readbuf.get_mut(0..len as usize).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidData, Box::new(PacketLengthTooLarge))
-            })?;
+            // reserve enough space
 
-            // read into Box<[u8]>
+            self.readbuf.reserve(len as usize);
+
+            // get the ref
+
+            let readslice =
+                unsafe { slice::from_raw_parts_mut(self.readbuf.as_mut_ptr(), len as usize) };
+
+            // read into the slice
 
             self.reader.read_exact(readslice).await?;
 
@@ -67,13 +75,18 @@ where
 
             let len = read_varint_async(&mut self.reader).await?;
 
-            // ensure read len is valid
+            // todo! ensure read len is valid
 
-            let readslice = self.readbuf.get_mut(0..len as usize).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidData, Box::new(PacketLengthTooLarge))
-            })?;
+            // reserve enough space
 
-            // read into Box<[u8]>
+            self.readbuf.reserve(len as usize);
+
+            // get the ref
+
+            let readslice =
+                unsafe { slice::from_raw_parts_mut(self.readbuf.as_mut_ptr(), len as usize) };
+
+            // read into the slice
 
             self.reader.read_exact(readslice).await?;
 

@@ -48,6 +48,8 @@ impl<W> WriteHalf<W>
 where
     W: AsyncWrite + Unpin,
 {
+    // todo! add a method for truncating the internal buffers
+    
     pub async fn write_raw_packet(&mut self, id: i32, data: &[u8]) -> io::Result<()> {
         self.workbuf.clear();
 
