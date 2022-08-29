@@ -1,6 +1,8 @@
 use core::slice;
 use std::{fmt::Display, io};
 
+use super::INITIAL_BUF_SIZE;
+
 use crate::packet::RawPacket;
 use aes::{
     cipher::{inout::InOutBuf, BlockDecryptMut, InvalidLength, KeyIvInit},
@@ -46,7 +48,7 @@ where
         Self {
             decryptor,
             compression,
-            readbuf: Vec::with_capacity(1024),
+            readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader,
         }
     }

@@ -1,5 +1,7 @@
 use std::{io, num::NonZeroU32};
 
+use super::INITIAL_BUF_SIZE;
+
 use aes::{
     cipher::{inout::InOutBuf, BlockEncryptMut, InvalidLength, KeyIvInit},
     Aes128,
@@ -72,8 +74,8 @@ where
         Self {
             encryptor,
             compression,
-            workbuf: Vec::with_capacity(1024),
-            workbuf2: Vec::with_capacity(1024),
+            workbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
+            workbuf2: Vec::with_capacity(INITIAL_BUF_SIZE),
             writer,
         }
     }
