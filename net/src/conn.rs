@@ -7,7 +7,7 @@ pub use writehalf::WriteHalf;
 use writehalf::Compression;
 
 /// A united connection.
-/// After compression and encryption are enabled/kept disabled, `Connection` should be split into `ReadHalf` and `WriteHalf`.
+/// After compression and encryption are set, `Connection` should be split into `ReadHalf` and `WriteHalf`.
 pub struct Connection<R, W> {
     pub read_half: ReadHalf<R>,
     pub write_half: WriteHalf<W>,
