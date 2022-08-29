@@ -9,14 +9,24 @@ use flate2::Compress;
 use futures::{io::BufWriter, AsyncWrite, AsyncWriteExt};
 
 /// compression threshold + 1 for memory layout optimization
-pub struct Compression(Option<(NonZeroU32, flate2::Compression)>);
+pub(super) struct Compression(Option<(NonZeroU32, flate2::Compression)>);
 impl Compression {
     pub fn new() -> Self {
         Self(None)
     }
 
-    pub fn enable(&mut self) {
-        todo!()
+    pub fn set_compression(&mut self, threshold: i32, compression: flate2::Compression) {
+        if threshold < 0 {
+            self.0 = None;
+        } else {
+            self.0 = Some(
+                (
+                    // SAFETY: Since we know theshold is zero or more and we add one to it, we can be certain NonZeroU32::new() isn't supplied a zero so we can use `.unwrap_unchecked()`
+                    unsafe { NonZeroU32::new((threshold + 1) as u32).unwrap_unchecked() }, 
+                    compression
+                )
+            );
+        }
     }
 
     pub fn get_options(&self) -> Option<(u32, flate2::Compression)> {
@@ -45,7 +55,7 @@ fn encrypt_into_vec(encryptor: &mut Encryptor<Aes128>, data: &[u8], vec: &mut Ve
 
 pub struct WriteHalf<W> {
     encryptor: Option<Encryptor<Aes128>>,
-    compression: Compression,
+    pub(super) compression: Compression,
     workbuf: Vec<u8>,
     #[cfg(feature = "protocol")]
     /// used for serializing packets, only exists when `protocol` is enabled
@@ -56,8 +66,8 @@ impl<W> WriteHalf<W>
 where
     W: AsyncWrite + Unpin,
 {
-    pub(super) fn new(encryptor: Option<Encryptor<Aes128>>, compression: Compression, writer: BufWriter<W> ) -> Self {
-        Self { encryptor, compression, workbuf: Vec::new(), workbuf2: Vec::new(), writer }
+    pub(super) fn new(encryptor: Option<Encryptor<Aes128>>, compression: Compression, writer: BufWriter<W>) -> Self {
+        Self { encryptor, compression, workbuf: Vec::with_capacity(1024), workbuf2: Vec::with_capacity(1024), writer }
     }
 
     // todo! add a method for truncating the internal buffers

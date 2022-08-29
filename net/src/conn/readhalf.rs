@@ -14,7 +14,7 @@ use crate::packet::RawPacket;
 
 pub struct ReadHalf<R> {
     decryptor: Option<Decryptor<Aes128>>,
-    compression: Option<Vec<u8>>,
+    pub(super) compression: Option<Vec<u8>>,
     readbuf: Vec<u8>,
     reader: BufReader<R>,
 }
@@ -42,7 +42,7 @@ where
         Self {
             decryptor,
             compression,
-            readbuf: Vec::new(),
+            readbuf: Vec::with_capacity(1024),
             reader
         }
     }

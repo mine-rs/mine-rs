@@ -28,8 +28,9 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
         )
     }
 
-    pub fn enable_compression(&mut self, threshold: i32) {
-        todo!()
+    pub fn set_compression(&mut self, threshold: i32, compression: flate2::Compression) {
+        self.write_half.compression.set_compression(threshold, compression);
+        self.read_half.compression = Some(Vec::with_capacity(1024));
     }
 }
 
