@@ -22,9 +22,9 @@ pub enum HttpOrSerdeError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ReadError {
-    #[error("Something went wrong while reading from the file.")]
+    #[error("Something went wrong while reading from the file.\nError: {0}")]
     Io(#[from] std::io::Error),
-    #[error("String data was invalid utf-8.")]
+    #[error("String data was invalid utf-8.\nError: {0}")]
     FromUtf8Error(#[from] FromUtf8Error),
 }
 
@@ -297,9 +297,9 @@ pub struct DeviceCodeInner {
 pub enum HttpOrSerdeOrMsAuthError {
     #[error("{0}")]
     MsAuthError(#[from] MsAuthError),
-    #[error("Something went wrong while sending a http request.\n{0}")]
+    #[error("Something went wrong while sending a http request.\nError: {0}")]
     HttpError(#[from] reqwest::Error),
-    #[error("Something went wrong while decoding the json response:\n{0}")]
+    #[error("Something went wrong while decoding the json response:\nError: {0}")]
     SerdeError(#[from] serde_json::Error)
 }
 
