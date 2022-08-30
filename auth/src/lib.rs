@@ -39,7 +39,7 @@ async fn read_string_from<R: AsyncRead + Unpin>(r: &mut R) -> Result<String, Rea
 
 async fn write_string_to<W: AsyncWrite + Unpin>(w: &mut W, s: &String) -> std::io::Result<()> {
     let len = (s.len() as u16).to_le_bytes();
-    w.write(&len).await?;
+    w.write_all(&len).await?;
     w.write_all(s.as_bytes()).await?;
     Ok(())
 }
@@ -399,7 +399,7 @@ impl DeviceCode {
         let path: &Path = Path::new(&self.cache);
         let msa = match self.inner {
             Some(_) => {
-                //SAFETY: Because we know self.inner is Some, we can be certain self.auth_ms() won't return None.
+                // SAFETY: Because we know self.inner is Some, we can be certain self.auth_ms() won't return None.
                 let msa = unsafe { self.auth_ms(client).await?.unwrap_unchecked() };
                 msa.write_to(&mut fs::File::create(path).await?).await?;
                 msa

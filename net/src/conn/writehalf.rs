@@ -45,11 +45,16 @@ fn encrypt_into_vec(encryptor: &mut Encryptor<Aes128>, data: &[u8], vec: &mut Ve
 
     vec.reserve(data.len());
 
-    let (chunks, rest) =
-        unsafe { InOutBuf::from_raw(data.as_ptr(), vec.as_mut_ptr(), data.len()) }.into_chunks();
+    // @rob9315 please add a safety comment here
+    #[allow(clippy::undocumented_unsafe_blocks)]
+    let (chunks, rest) = unsafe { 
+        InOutBuf::from_raw(data.as_ptr(), vec.as_mut_ptr(), data.len()) 
+    }.into_chunks();
     debug_assert!(rest.is_empty());
     encryptor.encrypt_blocks_inout_mut(chunks);
 
+    // @rob9315 please add a safety comment here
+    #[allow(clippy::undocumented_unsafe_blocks)]
     unsafe { vec.set_len(vec.len() + data.len()) };
 }
 
