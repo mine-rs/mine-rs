@@ -60,7 +60,9 @@ impl_var_num! {
 }
 
 impl<T> ToStatic for Var<T>
-where T: ToStatic {
+where
+    T: ToStatic,
+{
     type Static = Var<<T as ToStatic>::Static>;
     fn to_static(&self) -> Self::Static {
         Var(self.0.to_static())

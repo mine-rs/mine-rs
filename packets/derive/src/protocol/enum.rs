@@ -1,6 +1,6 @@
 #![forbid(clippy::unwrap_used, clippy::expect_used)]
 use super::attribute::{parse_attr, struct_field, Attribute, AttributeData, Attrs};
-use super::{field_ident, implgenerics, tostaticgenerics, struct_codegen, Naming, StructCode};
+use super::{field_ident, implgenerics, struct_codegen, tostaticgenerics, Naming, StructCode};
 
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Literal};
@@ -202,7 +202,10 @@ pub fn enum_protocol(
     }
 
     let (allow_unreachable, wildcard_match) = if variant_count == 0 {
-        (quote!(#[allow(unreachable_code)]), quote!(_ => unimplemented!()))
+        (
+            quote!(#[allow(unreachable_code)]),
+            quote!(_ => unimplemented!()),
+        )
     } else {
         (quote!(), quote!())
     };

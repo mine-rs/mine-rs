@@ -1,5 +1,5 @@
 use super::attribute::{parse_attr, struct_field, Attribute, AttributeData, Attrs};
-use super::{field_ident, implgenerics, struct_codegen, Naming, StructCode, tostaticgenerics};
+use super::{field_ident, implgenerics, struct_codegen, tostaticgenerics, Naming, StructCode};
 
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
@@ -62,7 +62,7 @@ pub fn struct_protocol(
     } = struct_codegen(kind, fields);
 
     let staticgenerics = tostaticgenerics(generics.clone());
-    let to_static: ItemImpl = parse_quote!{
+    let to_static: ItemImpl = parse_quote! {
         impl #generics ToStatic for #ident #generics {
             type Static = #ident #staticgenerics;
             fn to_static(&self) -> Self::Static {
