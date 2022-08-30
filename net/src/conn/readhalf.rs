@@ -14,6 +14,8 @@ use futures::{io::BufReader, AsyncRead, AsyncReadExt};
 
 // const AVG_PACKET_THRESHOLD: usize = 65536;
 
+/// The reading half of a connection.
+/// Returned from `Connection::split()`
 pub struct ReadHalf<R> {
     decryptor: Option<Decryptor<Aes128>>,
     pub(super) compression: Option<Vec<u8>>,

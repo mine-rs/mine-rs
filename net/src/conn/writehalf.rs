@@ -53,6 +53,8 @@ fn encrypt_into_vec(encryptor: &mut Encryptor<Aes128>, data: &[u8], vec: &mut Ve
     unsafe { vec.set_len(vec.len() + data.len()) };
 }
 
+/// The writing half of a connection.
+/// Returned from `Connection::split()`
 pub struct WriteHalf<W> {
     encryptor: Option<Encryptor<Aes128>>,
     pub(super) compression: Compression,
