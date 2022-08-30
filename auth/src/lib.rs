@@ -1,3 +1,4 @@
+#![deny(clippy::undocumented_unsafe_blocks)]
 //TODO: Add documentation and fix naming
 
 use {

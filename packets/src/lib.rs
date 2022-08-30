@@ -1,4 +1,4 @@
-#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::undocumented_unsafe_blocks)]
 
 pub mod attrs;
 mod errors;
