@@ -30,3 +30,12 @@ impl ProtocolWrite for Angle {
         1
     }
 }
+impl ToStatic for Angle {
+    type Static = Angle;
+    fn to_static(&self) -> Self::Static {
+        Angle(self.0)
+    }
+    fn into_static(self) -> Self::Static {
+        self
+    }
+}

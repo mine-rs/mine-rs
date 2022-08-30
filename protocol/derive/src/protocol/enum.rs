@@ -1,6 +1,6 @@
 #![forbid(clippy::unwrap_used, clippy::expect_used)]
 use super::attribute::{parse_attr, struct_field, Attribute, AttributeData, Attrs};
-use super::{field_ident, implgenerics, struct_codegen, Naming, StructCode};
+use super::{field_ident, implgenerics, tostaticgenerics, struct_codegen, Naming, StructCode};
 
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Literal};
@@ -19,6 +19,8 @@ pub fn enum_protocol(
 
     let mut read_match_contents = quote!();
     let mut write_match_contents = quote!();
+    let mut to_static_match_contents = quote!();
+    let mut into_static_match_contents = quote!();
 
     let mut prev = None;
 
@@ -61,6 +63,8 @@ pub fn enum_protocol(
     let typ = repr.unwrap_or_else(|| parse_quote!(i32));
 
     let mut size_hint = quote!(0);
+
+    let variant_count = enom.variants.len();
 
     for variant in enom.variants {
         let mut case = variant.discriminant.map(|(_, expr)| expr);
@@ -124,34 +128,41 @@ pub fn enum_protocol(
             }
         };
 
-        let (parsing, destructuring, serialization) = if let Some((kind, punct_fields)) =
-            match variant.fields {
+        let (parsing, destructuring, serialization, to_static, into_static) =
+            if let Some((kind, punct_fields)) = match variant.fields {
                 syn::Fields::Named(fields) => Some((Naming::Named, fields.named)),
                 syn::Fields::Unnamed(fields) => Some((Naming::Unnamed, fields.unnamed)),
                 syn::Fields::Unit => None,
             } {
-            let mut fields: Vec<(Attrs, Ident, Type)> = vec![];
-            for (i, field) in punct_fields.into_iter().enumerate() {
-                let attrs = struct_field(field.attrs.into_iter(), &mut res);
+                let mut fields: Vec<(Attrs, Ident, Type)> = vec![];
+                for (i, field) in punct_fields.into_iter().enumerate() {
+                    let attrs = struct_field(field.attrs.into_iter(), &mut res);
 
-                let ident = field_ident(i, field.ident, &field.ty);
+                    let ident = field_ident(i, field.ident, &field.ty);
 
-                fields.push((attrs, ident, field.ty))
-            }
-            let StructCode {
-                parsing,
-                destructuring,
-                size_hint: sh,
-                serialization,
-            } = struct_codegen(kind, fields.clone());
-            // let (descruct, write, variant_size_hint) = struct_write(kind, fields);
+                    fields.push((attrs, ident, field.ty))
+                }
+                let StructCode {
+                    parsing,
+                    destructuring,
+                    size_hint: sh,
+                    serialization,
+                    to_static,
+                    into_static,
+                } = struct_codegen(kind, fields.clone());
 
-            size_hint = quote!(usize::max(#size_hint, #sh));
+                size_hint = quote!(usize::max(#size_hint, #sh));
 
-            (parsing, destructuring, serialization)
-        } else {
-            (quote!(), quote!(), quote!())
-        };
+                (
+                    parsing,
+                    destructuring,
+                    serialization,
+                    to_static,
+                    into_static,
+                )
+            } else {
+                (quote!(), quote!(), quote!(), quote!(), quote!())
+            };
 
         let variant_ident = variant.ident;
         quote! {
@@ -173,7 +184,28 @@ pub fn enum_protocol(
             },
         }
         .to_tokens(&mut write_match_contents);
+
+        quote! {
+            Self::#variant_ident #destructuring => {
+                #to_static
+                Self::Static::#variant_ident #destructuring
+            },
+        }
+        .to_tokens(&mut to_static_match_contents);
+        quote! {
+            Self::#variant_ident #destructuring => {
+                #into_static
+                Self::Static::#variant_ident #destructuring
+            },
+        }
+        .to_tokens(&mut into_static_match_contents);
     }
+
+    let (allow_unreachable, wildcard_match) = if variant_count == 0 {
+        (quote!(#[allow(unreachable_code)]), quote!(_ => unimplemented!()))
+    } else {
+        (quote!(), quote!())
+    };
 
     let readgenerics = implgenerics(
         generics.clone(),
@@ -210,14 +242,42 @@ pub fn enum_protocol(
     quote! {
         impl #writegenerics ProtocolWrite for #ident #generics {
             fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+                #allow_unreachable
                 Ok(match self {
                     #write_match_contents
+                    #wildcard_match
                 })
             }
             #[inline(always)]
             fn size_hint() -> usize {
                 #size_hint_id +
                 #size_hint
+            }
+        }
+    }
+    .to_tokens(&mut res);
+
+    let mut tostaticgenerics = tostaticgenerics(generics.clone());
+    let tostaticwhere = tostaticgenerics.where_clause.take();
+    quote! {
+        impl #generics ToStatic for #ident #generics
+        where
+            #tostaticwhere
+        {
+            type Static = #ident #tostaticgenerics;
+            fn to_static(&self) -> Self::Static {
+                #allow_unreachable
+                match self {
+                    #to_static_match_contents
+                    #wildcard_match
+                }
+            }
+            fn into_static(self) -> Self::Static {
+                #allow_unreachable
+                match self {
+                    #into_static_match_contents
+                    #wildcard_match
+                }
             }
         }
     }

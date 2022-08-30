@@ -33,6 +33,28 @@ pub enum Naming {
     Unnamed,
 }
 
+pub(super) fn tostaticgenerics(mut generics: Generics) -> Generics {
+    let mut where_clause = generics.where_clause.unwrap_or_else(|| WhereClause {
+        where_token: Default::default(),
+        predicates: Default::default(),
+    });
+    for item in generics.params.iter_mut() {
+        match item {
+            syn::GenericParam::Lifetime(lt) => {
+                lt.lifetime.ident = Ident::new("static", lt.lifetime.ident.span())
+            }
+            syn::GenericParam::Type(ty) => where_clause.predicates.push(parse_quote! {
+                #ty: ToStatic
+            }),
+            _ => {}
+        }
+    }
+    Generics {
+        where_clause: Some(where_clause),
+        ..generics
+    }
+}
+
 fn implgenerics(generics: Generics, traid: &Ident, lifetime: Option<Lifetime>) -> Generics {
     let mut where_clause = generics.where_clause.unwrap_or_else(|| WhereClause {
         where_token: Default::default(),
@@ -85,6 +107,10 @@ pub struct StructCode {
     /// X::write(x, writer)?;
     /// Y::write(_0, writer)?;
     pub serialization: TokenStream,
+    /// let field = field.to_static();
+    pub to_static: TokenStream,
+    /// let field = field.into_static();
+    pub into_static: TokenStream,
 }
 
 pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> StructCode {
@@ -92,9 +118,13 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
     let mut destructuring = quote!();
     let mut size_hint = quote!(0);
     let mut serialization = quote!();
+    let mut to_static = quote!();
+    let mut into_static = quote!();
 
     for (attrs, field, ty) in fields {
         quote!(#field,).to_tokens(&mut destructuring);
+        quote!(let #field = #field.to_static();).to_tokens(&mut to_static);
+        quote!(let #field = #field.into_static();).to_tokens(&mut into_static);
 
         match attrs {
             Attrs::None => {
@@ -182,5 +212,7 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
         destructuring,
         size_hint,
         serialization,
+        to_static,
+        into_static,
     }
 }

@@ -163,6 +163,12 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
             }
             Attrs::StringUuid(s)
         }
+        (Some(v), Some((fs, f)), a, b) => {
+            if a.is_some() || b.is_some() {
+                error!(fs, "`fixed` and `var` incompatible with other attribute(s)").to_tokens(res);
+            }
+            Attrs::FixedVar(fs, f, v)
+        }
         (None, Some((fs, f)), a, b) => {
             if a.is_some() || b.is_some() {
                 error!(fs, "`fixed` incompatible with other attribute(s)").to_tokens(res);

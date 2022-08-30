@@ -14,3 +14,8 @@ pub trait ProtocolWrite {
     fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError>;
     fn size_hint() -> usize;
 }
+pub trait ToStatic {
+    type Static: 'static;
+    fn to_static(&self) -> Self::Static;
+    fn into_static(self) -> Self::Static;
+}

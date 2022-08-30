@@ -20,6 +20,15 @@ macro_rules! impl_num {
                 size_of::<$num>()
             }
         }
+        impl ToStatic for $num {
+            type Static = $num;
+            fn to_static(&self) -> Self::Static {
+                *self
+            }
+            fn into_static(self) -> Self::Static {
+                self
+            }
+        }
     )*};
 }
 impl_num! {

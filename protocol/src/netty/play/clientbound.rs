@@ -3,6 +3,7 @@ use crate::errors::InvalidEnumId;
 use crate::*;
 
 use protocol_derive::Protocol;
+use protocol_derive::ToStatic;
 use std::borrow::Cow;
 use std::str::FromStr;
 use uuid::Uuid;
@@ -12,6 +13,7 @@ pub struct KeepAlive0 {
     pub id: i32,
 }
 
+#[derive(ToStatic)]
 pub struct JoinGame0 {
     pub entity_id: i32,
     pub hardcore: bool,
@@ -66,6 +68,7 @@ impl ProtocolWrite for JoinGame0 {
     }
 }
 
+#[derive(ToStatic)]
 pub struct JoinGame1<'a> {
     pub entity_id: i32,
     pub hardcore: bool,
@@ -266,6 +269,7 @@ pub struct SpawnPlayer0<'a> {
     pub metadata: EntityMetadata,
 }
 
+#[derive(ToStatic)]
 pub struct SpawnPlayer5<'a> {
     // varint
     pub entity_id: i32,
@@ -544,7 +548,7 @@ pub struct SpawnExpOrb0 {
     pub count: i16,
 }
 
-// #[derive(Protocol)]
+#[derive(ToStatic)]
 pub struct EntityVelocity0 {
     pub entity_id: i32,
     /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
@@ -789,6 +793,7 @@ pub struct ChunkData0<'a> {
     pub compressed_data: Cow<'a, [u8]>,
 }
 
+#[derive(ToStatic)]
 pub struct MultiBlockChange0 {
     // varint
     pub chunk_x: i32,
@@ -836,6 +841,7 @@ impl ProtocolWrite for MultiBlockChange0 {
     }
 }
 
+#[derive(ToStatic)]
 pub struct MultiBlockChange4 {
     pub chunk_x: i32,
     pub chunk_y: i32,
@@ -881,6 +887,7 @@ impl ProtocolWrite for MultiBlockChange4 {
     }
 }
 
+#[derive(ToStatic)]
 pub struct Record {
     pub block_state: u16,
     y: u8,
@@ -946,7 +953,7 @@ pub struct BlockBreakAnimation0 {
     pub destroy_stage: u8,
 }
 
-// #[derive(Protocol)]
+#[derive(ToStatic)]
 pub struct MapChunkBulk0<'a> {
     /// Whether or not the chunk data contains a light nibble array. This is
     /// true in the main world, false in the end + nether
@@ -1104,6 +1111,7 @@ pub struct Particle0<'a> {
 
 // #[derive(Protocol)]
 // #[from(u8)]
+#[derive(ToStatic)]
 pub enum ChangeGameState0 {
     // #[case(0)]
     InvalidBed,
@@ -1197,6 +1205,7 @@ pub struct SpawnGlobalEntity0 {
     pub z: f64,
 }
 
+#[derive(ToStatic)]
 pub struct OpenWindow0<'a> {
     pub window_id: u8,
     pub kind: InventoryKind0,
@@ -1288,6 +1297,7 @@ impl<'a> ProtocolWrite for OpenWindow0<'a> {
 }
 
 // #[derive(Protocol)]
+#[derive(ToStatic)]
 // todo! very good place for #[separate]
 pub enum InventoryKind0 {
     /// Chest, large chest, or minecart with chest

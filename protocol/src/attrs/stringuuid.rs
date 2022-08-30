@@ -1,3 +1,5 @@
+use crate::ToStatic;
+
 use super::*;
 use std::str::FromStr;
 
@@ -22,5 +24,17 @@ impl ProtocolWrite for StringUuid {
 
     fn size_hint() -> usize {
         uuid::fmt::Hyphenated::LENGTH
+    }
+}
+
+// todo! move this when we get to implementing protocolwrite and protocolread
+// for uuid::Uuid in crate::impls
+impl ToStatic for uuid::Uuid {
+    type Static = uuid::Uuid;
+    fn to_static(&self) -> Self::Static {
+        *self
+    }
+    fn into_static(self) -> Self::Static {
+        self
     }
 }

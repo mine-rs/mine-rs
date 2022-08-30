@@ -1,3 +1,5 @@
+use crate::ToStatic;
+
 use super::*;
 use std::io::Read;
 
@@ -55,6 +57,17 @@ impl_var_num! {
     i32, u32,
     i64, u64,
     i128, u128
+}
+
+impl<T> ToStatic for Var<T>
+where T: ToStatic {
+    type Static = Var<<T as ToStatic>::Static>;
+    fn to_static(&self) -> Self::Static {
+        Var(self.0.to_static())
+    }
+    fn into_static(self) -> Self::Static {
+        Var(self.0.into_static())
+    }
 }
 
 #[cfg(test)]

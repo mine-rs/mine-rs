@@ -51,3 +51,14 @@ impl ProtocolWrite for Cow<'_, [u8]> {
         1
     }
 }
+
+impl<T: ?Sized> ToStatic for Cow<'_, T>
+where T: ToOwned + 'static {
+    type Static = Cow<'static, T>;
+    fn to_static(&self) -> Self::Static {
+        Self::Static::Owned(self.to_owned().into_owned())
+    }
+    fn into_static(self) -> Self::Static {
+        Self::Static::Owned(self.into_owned())
+    }
+}

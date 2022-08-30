@@ -1,7 +1,7 @@
 use crate::errors::InvalidEnumId;
 use crate::*;
 
-use protocol_derive::Protocol;
+use protocol_derive::{Protocol, ToStatic};
 use std::borrow::Cow;
 
 pub mod clientbound;
@@ -22,6 +22,7 @@ pub enum AnimationId0 {
     Uncrouch,
 }
 
+#[derive(ToStatic)]
 pub struct PlayerAbilities0 {
     pub invulnerable: bool,
     pub flying: bool,
@@ -3007,6 +3008,19 @@ protocol_derive::packets! {
 play_cb_custom! {
     pub enum CbPlay<'a> {
         #(#PacketName(#PacketType),)
+    }
+    impl ToStatic for CbPlay<'_> {
+        type Static = CbPlay<'static>;
+        fn to_static(&self) -> Self::Static {
+            match self {
+                #(CbPlay::#PacketName(#packet_name) => Self::Static::#PacketName(ToStatic::to_static(#packet_name)),)
+            }
+        }
+        fn into_static(self) -> Self::Static {
+            match self {
+                #(CbPlay::#PacketName(#packet_name) => Self::Static::#PacketName(ToStatic::into_static(#packet_name)),)
+            }
+        }
     }
 }
 impl<'a> CbPlay<'a> {
