@@ -19,12 +19,9 @@ pub struct ReadHalf<R> {
     pub(super) compression: Option<Vec<u8>>,
     readbuf: Vec<u8>,
     reader: BufReader<R>,
+    #[cfg(feature = "blocking")]
+    blocking: Option<u32>,
 }
-
-//pub struct RawPacket<'a> {
-//    pub id: i32,
-//    pub data: &'a [u8],
-//}
 
 #[derive(Debug)]
 struct PacketLengthTooLarge;
@@ -46,6 +43,8 @@ impl<R> ReadHalf<R> {
             compression,
             readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader,
+            #[cfg(feature = "blocking")]
+            blocking: None,
         }
     }
 
@@ -53,6 +52,13 @@ impl<R> ReadHalf<R> {
         self.decryptor = Some(Decryptor::new_from_slices(key, key)?);
 
         Ok(())
+    }
+
+    #[cfg(feature = "blocking")]
+    /// sets the threshold which determines if to offload
+    /// packet decryption using cfb8/aes128 to the threadpool
+    pub fn set_blocking_threshold(&mut self, threshold: Option<u32>) {
+        self.blocking = threshold;
     }
 
     pub fn shrink_to(&mut self, min_capacity: usize) {
@@ -94,6 +100,47 @@ where
 
             // decrypt read data
 
+            #[cfg(feature = "blocking")]
+            match self.blocking {
+                Some(threshold) if len > threshold => {
+                    let mut xchanged_buf = vec![];
+
+                    // exchange workbuf with replacement buf
+
+                    std::mem::swap::<Vec<_>>(&mut self.readbuf, &mut xchanged_buf);
+
+                    // run encryption on threadpool
+
+                    let mut cloned_decryptor = decryptor.clone();
+
+                    let slice_start = readslice.as_mut_ptr() as usize;
+                    let (cloned_decryptor, mut xchanged_buf) = blocking::unblock(move || {
+                        // UNSAFE: this is safe because i said so
+                        // (the buffer it is pointing to is owned by this closure)
+                        let xchangedbuf_slice = unsafe {
+                            slice::from_raw_parts_mut(slice_start as *mut u8, len as usize)
+                        };
+
+                        decrypt_in_place(&mut cloned_decryptor, xchangedbuf_slice);
+                        (cloned_decryptor, xchanged_buf)
+                    })
+                    .await;
+
+                    // swap the workbuf back into place, delete the temporary replacement
+
+                    std::mem::swap::<Vec<_>>(&mut self.readbuf, &mut xchanged_buf);
+                    drop(xchanged_buf);
+
+                    // update the encryptor
+
+                    *decryptor = cloned_decryptor
+                }
+                _ => {
+                    decrypt_in_place(decryptor, readslice);
+                }
+            }
+
+            #[cfg(not(feature = "blocking"))]
             decrypt_in_place(decryptor, readslice);
 
             // data at readslice is now not encrypted anymore

@@ -61,6 +61,8 @@ pub struct WriteHalf<W> {
     /// used for serializing packets, only exists when `protocol` is enabled
     workbuf2: Vec<u8>,
     writer: BufWriter<W>,
+    #[cfg(feature = "blocking")]
+    blocking: Option<u32>,
 }
 
 impl<W> WriteHalf<W> {
@@ -83,9 +85,19 @@ impl<W> WriteHalf<W> {
             encryptor,
             compression,
             workbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
+            #[cfg(feature = "protocol")]
             workbuf2: Vec::with_capacity(INITIAL_BUF_SIZE),
             writer,
+            #[cfg(feature = "blocking")]
+            blocking: None,
         }
+    }
+
+    #[cfg(feature = "blocking")]
+    /// sets the threshold which determines if to offload
+    /// packet encryption using cfb8/aes128 to the threadpool
+    pub fn set_blocking_threshold(&mut self, threshold: Option<u32>) {
+        self.blocking = threshold;
     }
 
     pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
@@ -93,6 +105,58 @@ impl<W> WriteHalf<W> {
 
         Ok(())
     }
+}
+
+macro_rules! offload_encrypt {
+    ($encryptor:ident, &mut $self:ident.$data:ident, $len:ident, self.$threshold:ident;
+        { $($blocking:tt)* }
+        $(; $($prewrite:tt)*)?) => {
+        #[cfg(feature = "blocking")]
+        // blocking feature enabled, if threshold set and compressed_len
+        // above threshold, offload the encryption to a threadpool
+        match $self.$threshold {
+            Some(threshold) if $len > threshold => {
+                // get a replacement buffer if this async task fails
+                // this should be allocationless as the vec is empty
+
+                let mut xchanged_buf = vec![];
+
+                // exchange workbuf with replacement buf
+
+                std::mem::swap::<Vec<_>>(&mut $self.$data, &mut xchanged_buf);
+
+                // run encryption on threadpool
+
+                let mut cloned_encryptor = $encryptor.clone();
+
+                $(xchanged_buf $($prewrite)*;)?
+
+                let (cloned_encryptor, mut xchanged_buf) = blocking::unblock(move || {
+                    encrypt_in_place(&mut cloned_encryptor, &mut xchanged_buf);
+                    (cloned_encryptor, xchanged_buf)
+                })
+                .await;
+
+                // swap the workbuf back into place, delete the temporary replacement
+
+                std::mem::swap::<Vec<_>>(&mut $self.$data, &mut xchanged_buf);
+                drop(xchanged_buf);
+
+                // update the encryptor
+
+                *$encryptor = cloned_encryptor
+            },
+            _ => {
+                // encrypt the data in place on this thread
+                $($blocking)*
+            }
+        };
+
+        #[cfg(not(feature = "blocking"))]
+        // blocking feature disabled
+        // encrypt the data in place on this thread as normal
+        $($blocking)*
+    };
 }
 
 impl<W> WriteHalf<W>
@@ -127,21 +191,38 @@ where
                 zlib.compress_vec(id_varint, &mut self.workbuf, flate2::FlushCompress::None)?;
                 zlib.compress_vec(data, &mut self.workbuf, flate2::FlushCompress::Finish)?;
 
-                // if encryption is enabled, encrypt in place
+                // write uncompressed len to buffer
+
+                let mut uncompressed_len_varbuf = [0u8; 5];
+                let uncompressed_len_varint =
+                    write_varint(uncompressed_len, &mut uncompressed_len_varbuf);
+
+                // write compressed len to buffer
+
+                let compressed_len =
+                    uncompressed_len_varint.len() as u32 + self.workbuf.len() as u32;
+
+                let mut compressed_len_varbuf = [0u8; 5];
+                let compressed_len_varint =
+                    write_varint(compressed_len, &mut compressed_len_varbuf);
+
+                // encrypt data
 
                 if let Some(encryptor) = &mut self.encryptor {
-                    encrypt_in_place(encryptor, &mut self.workbuf);
+                    // encrypt in order
+                    encrypt_in_place(encryptor, compressed_len_varint);
+                    encrypt_in_place(encryptor, uncompressed_len_varint);
+
+                    offload_encrypt! {
+                        encryptor, &mut self.workbuf, compressed_len, self.blocking;
+                        {encrypt_in_place(encryptor, &mut self.workbuf)}
+                    }
                 }
 
-                // get compressed len
+                // write data to stream
 
-                let uncompressed_varint_len = varint_len(uncompressed_len);
-                let compressed_len = uncompressed_varint_len + self.workbuf.len() as u32;
-
-                // write compressed len, uncompressed len and zlib compressed data asynchronously
-
-                write_varint_async(compressed_len, &mut self.writer).await?;
-                write_varint_async(uncompressed_len, &mut self.writer).await?;
+                self.writer.write_all(compressed_len_varint).await?;
+                self.writer.write_all(uncompressed_len_varint).await?;
                 self.writer.write_all(&self.workbuf).await?;
             } else {
                 // less than threshold
@@ -169,7 +250,12 @@ where
                     // write data with the Encryptor to workbuf
 
                     encrypt_into_vec(encryptor, _0_plus_varint, &mut self.workbuf);
-                    encrypt_into_vec(encryptor, data, &mut self.workbuf);
+
+                    offload_encrypt! {
+                        encryptor, &mut self.workbuf, uncompressed_len, self.blocking;
+                        {encrypt_into_vec(encryptor, data, &mut self.workbuf)};
+                        .write_all(data).await?
+                    }
 
                     // then write the data to the writer
 
@@ -210,7 +296,14 @@ where
                 let mut id_buf = [0u8; 5];
                 let id = write_varint(id as u32, &mut id_buf);
                 encrypt_into_vec(encryptor, id, &mut self.workbuf);
-                encrypt_into_vec(encryptor, data, &mut self.workbuf);
+
+                let uncompressed_len = data.len() as u32;
+
+                offload_encrypt! {
+                    encryptor, &mut self.workbuf, uncompressed_len, self.blocking;
+                    {encrypt_into_vec(encryptor, data, &mut self.workbuf)};
+                    .write_all(data).await?
+                }
 
                 // then write it to the writer
 
@@ -239,6 +332,7 @@ where
         P: miners_protocol::ProtocolWrite,
     {
         self.workbuf.clear();
+        self.workbuf2.clear();
 
         // serialize packet
         // we can optimize a little because we now own the vec
@@ -278,21 +372,35 @@ where
                 )
                 .map_err(io::Error::from)?;
 
-                // if encryption is enabled, encrypt in place
+                // write uncompressed len to buffer
+
+                let mut uncompressed_len_varbuf = [0u8; 5];
+                let uncompressed_len_varint =
+                    write_varint(uncompressed_len, &mut uncompressed_len_varbuf);
+
+                // write compressed len to buffer
+
+                let compressed_len =
+                    uncompressed_len_varint.len() as u32 + self.workbuf2.len() as u32;
+
+                let mut compressed_len_varbuf = [0u8; 5];
+                let compressed_len_varint =
+                    write_varint(compressed_len, &mut compressed_len_varbuf);
+
+                // encrypt data
 
                 if let Some(encryptor) = &mut self.encryptor {
-                    encrypt_in_place(encryptor, &mut self.workbuf2);
+                    // encrypt in order
+                    encrypt_in_place(encryptor, compressed_len_varint);
+                    encrypt_in_place(encryptor, uncompressed_len_varint);
+                    offload_encrypt! {
+                        encryptor, &mut self.workbuf2, uncompressed_len, self.blocking;
+                        {encrypt_in_place(encryptor, &mut self.workbuf2)}
+                    }
                 }
 
-                // get compressed len
-
-                let uncompressed_varint_len = varint_len(uncompressed_len);
-                let compressed_len = uncompressed_varint_len + self.workbuf2.len() as u32;
-
-                // write compressed len, uncompressed len and zlib compressed data asynchronously
-
-                write_varint_async(compressed_len, &mut self.writer).await?;
-                write_varint_async(uncompressed_len, &mut self.writer).await?;
+                self.writer.write_all(compressed_len_varint).await?;
+                self.writer.write_all(uncompressed_len_varint).await?;
                 self.writer.write_all(&self.workbuf2).await?;
             } else {
                 // less than threshold
@@ -320,6 +428,58 @@ where
                     // write data with the Encryptor to workbuf
 
                     encrypt_into_vec(encryptor, _0_plus_varint, &mut self.workbuf2);
+
+                    #[cfg(feature = "blocking")]
+                    // blocking feature enabled, if threshold set and compressed_len
+                    // above threshold, offload the encryption to a threadpool
+                    match self.blocking {
+                        Some(threshold) if uncompressed_len > threshold => {
+                            // get a replacement buffer if this async task fails
+                            // this should be allocationless as the vec is empty
+
+                            let mut xchanged_inbuf = vec![];
+                            let mut xchanged_outbuf = vec![];
+
+                            // exchange workbuf with replacement buf
+
+                            std::mem::swap::<Vec<_>>(&mut self.workbuf, &mut xchanged_inbuf);
+                            std::mem::swap::<Vec<_>>(&mut self.workbuf2, &mut xchanged_outbuf);
+
+                            // run encryption on threadpool
+
+                            let mut cloned_encryptor = encryptor.clone();
+
+                            let (cloned_encryptor, mut xchanged_inbuf, mut xchanged_outbuf) =
+                                blocking::unblock(move || {
+                                    encrypt_into_vec(
+                                        &mut cloned_encryptor,
+                                        &xchanged_inbuf,
+                                        &mut xchanged_outbuf,
+                                    );
+                                    (cloned_encryptor, xchanged_inbuf, xchanged_outbuf)
+                                })
+                                .await;
+
+                            // swap the workbuf back into place, delete the temporary replacement
+
+                            std::mem::swap::<Vec<_>>(&mut self.workbuf, &mut xchanged_inbuf);
+                            std::mem::swap::<Vec<_>>(&mut self.workbuf2, &mut xchanged_outbuf);
+                            drop(xchanged_inbuf);
+                            drop(xchanged_outbuf);
+
+                            // update the encryptor
+
+                            *encryptor = cloned_encryptor
+                        }
+                        _ => {
+                            // encrypt the data in place on this thread
+                            encrypt_into_vec(encryptor, &self.workbuf, &mut self.workbuf2);
+                        }
+                    };
+
+                    #[cfg(not(feature = "blocking"))]
+                    // blocking feature disabled
+                    // encrypt the data in place on this thread as normal
                     encrypt_into_vec(encryptor, &self.workbuf, &mut self.workbuf2);
 
                     // then write the data to the writer
@@ -352,9 +512,9 @@ where
 
             // write packet length
 
-            let packet_len = id_varint.len() + self.workbuf.len();
+            let packet_len = id_varint.len() as u32 + self.workbuf.len() as u32;
             let mut packet_length = [0; 5];
-            let packet_length_varint = write_varint(packet_len as u32, &mut packet_length);
+            let packet_length_varint = write_varint(packet_len, &mut packet_length);
 
             if let Some(encryptor) = &mut self.encryptor {
                 encrypt_in_place(encryptor, packet_length_varint);
@@ -363,7 +523,10 @@ where
                 // here we can cut **one** corner for the ProtocolWrite type
                 // because we own the vec so we can encrypt it in place
 
-                encrypt_in_place(encryptor, &mut self.workbuf)
+                offload_encrypt! {
+                    encryptor, &mut self.workbuf, packet_len, self.blocking;
+                    {encrypt_in_place(encryptor, &mut self.workbuf)}
+                }
             }
 
             self.writer.write_all(packet_length_varint).await?;

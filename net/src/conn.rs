@@ -46,6 +46,14 @@ impl<R, W> Connection<R, W> {
         Ok(())
     }
 
+    #[cfg(feature = "blocking")]
+    /// sets the threshold which determines if to offload packet
+    /// encryption and decryption using cfb8/aes128 to the threadpool
+    pub fn set_blocking_threshold(&mut self, threshold: Option<u32>) {
+        self.read_half.set_blocking_threshold(threshold);
+        self.write_half.set_blocking_threshold(threshold);
+    }
+
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.read_half.shrink_to(min_capacity);
         self.write_half.shrink_to(min_capacity);
