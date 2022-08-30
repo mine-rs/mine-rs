@@ -2,7 +2,7 @@ use crate::{ProtocolRead, ReadError};
 
 pub mod serverbound;
 
-protocol_derive::packets! {
+packets_derive::packets! {
     handshaking_sb_custom handshaking_sb_tree serverbound::;
     0x00 => {
         0..=760 => Handshake0::<'a>,

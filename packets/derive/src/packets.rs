@@ -75,7 +75,7 @@ pub fn packets(x: PacketsInput) -> TokenStream {
 
             pv_match_body.extend(quote!(
                 #ver_pat => {
-                    protocol_derive::replace! {
+                    packets_derive::replace! {
                         #prefix #packet ;
                         #($($t)*)
                     }
@@ -104,7 +104,7 @@ pub fn packets(x: PacketsInput) -> TokenStream {
         #[allow(unused)]
         macro_rules! #custom {
         ($($t:tt)*) => {
-            protocol_derive::replace!{
+            packets_derive::replace!{
                 #custom_body ;
                 $($t)*
             }

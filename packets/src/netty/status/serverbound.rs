@@ -1,6 +1,6 @@
 use crate::*;
 
-use protocol_derive::Protocol;
+use packets_derive::Protocol;
 
 #[derive(Protocol)]
 pub struct Request0 {}

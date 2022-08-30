@@ -1,5 +1,5 @@
 [package]
-name = "net"
+name = "miners-net"
 version = "0.0.0-beta.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -12,9 +12,9 @@ futures = "0.3"
 cfb8 = "0.8.1"
 aes = "0.8.1"
 flate2 = "1.0.24"
-miners-packets = { version = "0.0.0-beta.0", optional = true, path = "../packet" }
+miners-packets = { version = "0.0.0-beta.0", optional = true, path = "../packets" }
 blocking = { version = "1.2.0", optional = true }
 
 [features]
-default = ["protocol", "blocking"]
-protocol = ["miners-protocol"]
+default = ["packets", "blocking"]
+packets = ["dep:miners-packets"]

@@ -1,7 +1,7 @@
 use crate::errors::InvalidEnumId;
 use crate::*;
 
-use protocol_derive::Protocol;
+use packets_derive::Protocol;
 use std::borrow::Cow;
 
 #[derive(Protocol)]

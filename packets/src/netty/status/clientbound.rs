@@ -1,6 +1,6 @@
 use crate::*;
 
-use protocol_derive::Protocol;
+use packets_derive::Protocol;
 use std::borrow::Cow;
 
 #[derive(Protocol)]
@@ -11,7 +11,7 @@ pub struct Response0<'a> {
 
 pub use super::Ping0;
 
-protocol_derive::packets! {
+packets_derive::packets! {
     status_cb_custom status_cb_tree;
     0x00 => {
         0..=760 => Response0::<'a>,

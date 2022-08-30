@@ -1,6 +1,6 @@
 use crate::*;
 
-use protocol_derive::Protocol;
+use packets_derive::Protocol;
 
 pub mod clientbound;
 pub mod serverbound;
@@ -10,7 +10,7 @@ pub struct Ping0 {
     pub time: i64,
 }
 
-protocol_derive::packets! {
+packets_derive::packets! {
     status_cb_custom status_cb_tree clientbound::;
     0x00 => {
         0..=760 => Response0::<'a>,
@@ -35,7 +35,7 @@ impl<'a> CbStatus<'a> {
     }
 }
 
-protocol_derive::packets! {
+packets_derive::packets! {
     status_sb_custom status_sb_tree serverbound::;
     0x00 => {
         0..=760 => Request0,

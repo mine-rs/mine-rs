@@ -59,7 +59,7 @@ pub struct WriteHalf<W> {
     encryptor: Option<Encryptor<Aes128>>,
     pub(super) compression: Compression,
     workbuf: Vec<u8>,
-    #[cfg(feature = "protocol")]
+    #[cfg(feature = "packets")]
     /// used for serializing packets, only exists when `protocol` is enabled
     workbuf2: Vec<u8>,
     writer: BufWriter<W>,
@@ -71,7 +71,7 @@ impl<W> WriteHalf<W> {
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.workbuf.clear();
         self.workbuf.shrink_to(min_capacity);
-        #[cfg(feature = "protocol")]
+        #[cfg(feature = "packets")]
         {
             self.workbuf2.clear();
             self.workbuf2.shrink_to(min_capacity);
@@ -87,7 +87,7 @@ impl<W> WriteHalf<W> {
             encryptor,
             compression,
             workbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
-            #[cfg(feature = "protocol")]
+            #[cfg(feature = "packets")]
             workbuf2: Vec::with_capacity(INITIAL_BUF_SIZE),
             writer,
             #[cfg(feature = "blocking")]
@@ -324,14 +324,14 @@ where
         Ok(())
     }
 
-    #[cfg(feature = "protocol")]
+    #[cfg(feature = "packets")]
     pub async fn write_packet<P>(
         &mut self,
         id: i32,
         packet: P,
-    ) -> Result<(), miners_protocol::WriteError>
+    ) -> Result<(), miners_packets::WriteError>
     where
-        P: miners_protocol::ProtocolWrite,
+        P: miners_packets::ProtocolWrite,
     {
         self.workbuf.clear();
         self.workbuf2.clear();

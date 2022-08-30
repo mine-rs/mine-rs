@@ -2,8 +2,8 @@ use crate::attrs::*;
 use crate::errors::InvalidEnumId;
 use crate::*;
 
-use protocol_derive::Protocol;
-use protocol_derive::ToStatic;
+use packets_derive::Protocol;
+use packets_derive::ToStatic;
 use std::borrow::Cow;
 use std::str::FromStr;
 use uuid::Uuid;
