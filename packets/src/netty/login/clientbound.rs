@@ -1,7 +1,7 @@
-use crate::attrs::*;
 use crate::*;
+use attrs::*;
 
-use packets_derive::Protocol;
+use miners_packets_derive::Protocol;
 use std::{borrow::Cow, str::FromStr};
 use uuid::Uuid;
 
@@ -31,12 +31,9 @@ pub struct Success5<'a> {
     pub username: Cow<'a, str>,
 }
 
-impl<'read, 'a> ProtocolRead<'read> for Success5<'a>
-where
-    'read: 'a,
-{
-    fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
-        let uuid = <&str as ProtocolRead>::read(buf)?;
+impl<'dec> Decode<'dec> for Success5<'dec> {
+    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let uuid = <&str as Decode>::decode(buf)?;
 
         Ok(Self {
             uuid: if !uuid.is_empty() {
@@ -44,23 +41,19 @@ where
             } else {
                 None
             },
-            username: ProtocolRead::read(buf)?,
+            username: Decode::decode(buf)?,
         })
     }
 }
-impl<'a> ProtocolWrite for Success5<'a> {
-    fn write(self, buf: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+impl<'a> Encode for Success5<'a> {
+    fn encode(&self, buf: &mut impl ::std::io::Write) -> encode::Result<()> {
         let Self { uuid, username } = self;
         if let Some(uuid) = uuid {
-            ProtocolWrite::write(StringUuid(uuid), buf)?;
+            StringUuid::from(*uuid).encode(buf)?;
         } else {
-            "".write(buf)?;
+            "".encode(buf)?;
         }
-        ProtocolWrite::write(username, buf)?;
+        username.encode(buf)?;
         Ok(())
-    }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        1 + <Cow<'a, str> as ProtocolWrite>::size_hint()
     }
 }

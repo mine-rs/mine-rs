@@ -1,9 +1,8 @@
-use crate::attrs::*;
-use crate::errors::InvalidEnumId;
 use crate::*;
+use attrs::*;
 
-use packets_derive::Protocol;
-use packets_derive::ToStatic;
+use miners_packets_derive::Protocol;
+use miners_packets_derive::ToStatic;
 use std::borrow::Cow;
 use std::str::FromStr;
 use uuid::Uuid;
@@ -23,48 +22,41 @@ pub struct JoinGame0 {
     pub max_players: u8,
 }
 
-impl<'read> ProtocolRead<'read> for JoinGame0 {
-    fn read(cursor: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
-        let entity_id = i32::read(cursor)?;
-        let bitfield = u8::read(cursor)?;
+impl<'read> Decode<'read> for JoinGame0 {
+    fn decode(cursor: &mut std::io::Cursor<&'read [u8]>) -> decode::Result<Self> {
+        let entity_id = i32::decode(cursor)?;
+        let bitfield = u8::decode(cursor)?;
         let hardcore = bitfield & 0x08 != 0;
         let gamemode = match bitfield & 0b11 {
             0 => GameMode0::Survival,
             1 => GameMode0::Creative,
             2 => GameMode0::Adventure,
-            _ => return Err(InvalidEnumId.into()),
+            _ => return Err(decode::Error::InvalidId),
         };
         Ok(Self {
             entity_id,
             hardcore,
             gamemode,
-            dimension: Dimension0::read(cursor)?,
-            difficulty: Difficulty0::read(cursor)?,
-            max_players: u8::read(cursor)?,
+            dimension: Dimension0::decode(cursor)?,
+            difficulty: Difficulty0::decode(cursor)?,
+            max_players: u8::decode(cursor)?,
         })
     }
 }
 
-impl ProtocolWrite for JoinGame0 {
-    fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
-        self.entity_id.write(writer)?;
+impl Encode for JoinGame0 {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
+        self.entity_id.encode(writer)?;
         (match self.gamemode {
             GameMode0::Survival => 0,
             GameMode0::Creative => 1,
             GameMode0::Adventure => 2,
         } & ((self.hardcore as u8) << 3))
-            .write(writer)?;
-        self.dimension.write(writer)?;
-        self.difficulty.write(writer)?;
-        self.max_players.write(writer)?;
+            .encode(writer)?;
+        self.dimension.encode(writer)?;
+        self.difficulty.encode(writer)?;
+        self.max_players.encode(writer)?;
         Ok(())
-    }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        <i32 as ProtocolWrite>::size_hint()
-            + <GameMode0 as ProtocolWrite>::size_hint()
-            + <Difficulty0 as ProtocolWrite>::size_hint()
-            + <u8 as ProtocolWrite>::size_hint()
     }
 }
 
@@ -80,51 +72,43 @@ pub struct JoinGame1<'a> {
     pub level_type: Cow<'a, str>,
 }
 
-impl<'a> ProtocolRead<'a> for JoinGame1<'a> {
-    fn read(cursor: &mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
-        let entity_id = i32::read(cursor)?;
-        let bitfield = u8::read(cursor)?;
+impl<'dec> Decode<'dec> for JoinGame1<'dec> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let entity_id = i32::decode(cursor)?;
+        let bitfield = u8::decode(cursor)?;
         let hardcore = bitfield & 0x08 != 0;
         let gamemode = match bitfield & 0b11 {
             0 => GameMode0::Survival,
             1 => GameMode0::Adventure,
             2 => GameMode0::Creative,
-            _ => return Err(InvalidEnumId.into()),
+            _ => return Err(decode::Error::InvalidId),
         };
         Ok(Self {
             entity_id,
             hardcore,
             gamemode,
-            dimension: Dimension0::read(cursor)?,
-            difficulty: Difficulty0::read(cursor)?,
-            max_players: u8::read(cursor)?,
-            level_type: Cow::read(cursor)?,
+            dimension: Dimension0::decode(cursor)?,
+            difficulty: Difficulty0::decode(cursor)?,
+            max_players: u8::decode(cursor)?,
+            level_type: Cow::decode(cursor)?,
         })
     }
 }
 
-impl ProtocolWrite for JoinGame1<'_> {
-    fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
-        self.entity_id.write(writer)?;
+impl Encode for JoinGame1<'_> {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
+        self.entity_id.encode(writer)?;
         (match self.gamemode {
             GameMode0::Survival => 0,
             GameMode0::Creative => 1,
             GameMode0::Adventure => 2,
         } & ((self.hardcore as u8) << 3))
-            .write(writer)?;
-        self.dimension.write(writer)?;
-        self.difficulty.write(writer)?;
-        self.max_players.write(writer)?;
-        self.level_type.write(writer)?;
+            .encode(writer)?;
+        self.dimension.encode(writer)?;
+        self.difficulty.encode(writer)?;
+        self.max_players.encode(writer)?;
+        self.level_type.encode(writer)?;
         Ok(())
-    }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        <i32 as ProtocolWrite>::size_hint()
-            + <GameMode0 as ProtocolWrite>::size_hint()
-            + <Difficulty0 as ProtocolWrite>::size_hint()
-            + <u8 as ProtocolWrite>::size_hint()
-            + 1
     }
 }
 
@@ -290,13 +274,10 @@ pub struct SpawnPlayer5<'a> {
     pub current_item: u16,
     pub metadata: EntityMetadata,
 }
-impl<'read, 'a> ProtocolRead<'read> for SpawnPlayer5<'a>
-where
-    'read: 'a,
-{
-    fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
-        let entity_id = Var::read(buf)?.0;
-        let uuid = <&str>::read(buf)?;
+impl<'dec> Decode<'dec> for SpawnPlayer5<'dec> {
+    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let entity_id = Var::decode(buf)?.into_inner();
+        let uuid = <&str>::decode(buf)?;
 
         Ok(Self {
             entity_id,
@@ -305,20 +286,20 @@ where
             } else {
                 None
             },
-            properties: Vec::read(buf)?,
-            name: ProtocolRead::read(buf)?,
-            x: Fixed::<5, i32, _>::read(buf)?.data,
-            y: Fixed::<5, i32, _>::read(buf)?.data,
-            z: Fixed::<5, i32, _>::read(buf)?.data,
-            yaw: ProtocolRead::read(buf)?,
-            pitch: ProtocolRead::read(buf)?,
-            current_item: ProtocolRead::read(buf)?,
-            metadata: ProtocolRead::read(buf)?,
+            properties: Vec::decode(buf)?,
+            name: Decode::decode(buf)?,
+            x: Fixed::<5, i32, _>::decode(buf)?.into_inner(),
+            y: Fixed::<5, i32, _>::decode(buf)?.into_inner(),
+            z: Fixed::<5, i32, _>::decode(buf)?.into_inner(),
+            yaw: Decode::decode(buf)?,
+            pitch: Decode::decode(buf)?,
+            current_item: Decode::decode(buf)?,
+            metadata: Decode::decode(buf)?,
         })
     }
 }
-impl<'a> ProtocolWrite for SpawnPlayer5<'a> {
-    fn write(self, buf: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+impl<'a> Encode for SpawnPlayer5<'a> {
+    fn encode(&self, buf: &mut impl ::std::io::Write) -> encode::Result<()> {
         let Self {
             entity_id,
             player_uuid,
@@ -332,33 +313,22 @@ impl<'a> ProtocolWrite for SpawnPlayer5<'a> {
             current_item,
             metadata,
         } = self;
-        ProtocolWrite::write(Var(entity_id), buf)?;
+        Encode::encode(&Var::from(*entity_id), buf)?;
         if let Some(player_uuid) = player_uuid {
-            ProtocolWrite::write(StringUuid(player_uuid), buf)?;
+            Encode::encode(&StringUuid::from(*player_uuid), buf)?;
         } else {
-            "".write(buf)?;
+            "".encode(buf)?;
         }
-        ProtocolWrite::write(name, buf)?;
-        properties.write(buf)?;
-        ProtocolWrite::write(Fixed::<5, i32, _>::fixed(x), buf)?;
-        ProtocolWrite::write(Fixed::<5, i32, _>::fixed(y), buf)?;
-        ProtocolWrite::write(Fixed::<5, i32, _>::fixed(z), buf)?;
-        ProtocolWrite::write(yaw, buf)?;
-        ProtocolWrite::write(pitch, buf)?;
-        ProtocolWrite::write(current_item, buf)?;
-        ProtocolWrite::write(metadata, buf)?;
+        name.encode(buf)?;
+        properties.encode(buf)?;
+        Fixed::<5, i32, _>::from(x).encode(buf)?;
+        Fixed::<5, i32, _>::from(y).encode(buf)?;
+        Fixed::<5, i32, _>::from(z).encode(buf)?;
+        yaw.encode(buf)?;
+        pitch.encode(buf)?;
+        current_item.encode(buf)?;
+        metadata.encode(buf)?;
         Ok(())
-    }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        <Var<i32> as ProtocolWrite>::size_hint()
-            + <&str as ProtocolWrite>::size_hint()
-            + <Cow<'a, str> as ProtocolWrite>::size_hint()
-            + 12
-            + <Angle as ProtocolWrite>::size_hint()
-            + <Angle as ProtocolWrite>::size_hint()
-            + <u16 as ProtocolWrite>::size_hint()
-            + <EntityMetadata as ProtocolWrite>::size_hint()
     }
 }
 
@@ -558,28 +528,24 @@ pub struct EntityVelocity0 {
     /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
     pub z: f32,
 }
-impl<'read> ProtocolRead<'read> for EntityVelocity0 {
-    fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
+impl<'dec> Decode<'dec> for EntityVelocity0 {
+    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         Ok(Self {
-            entity_id: ProtocolRead::read(buf)?,
-            x: Fixed::<0, i16, f32>::read(buf)?.data / 8000.0,
-            y: Fixed::<0, i16, f32>::read(buf)?.data / 8000.0,
-            z: Fixed::<0, i16, f32>::read(buf)?.data / 8000.0,
+            entity_id: Decode::decode(buf)?,
+            x: Fixed::<0, i16, f32>::decode(buf)?.into_inner() / 8000.0,
+            y: Fixed::<0, i16, f32>::decode(buf)?.into_inner() / 8000.0,
+            z: Fixed::<0, i16, f32>::decode(buf)?.into_inner() / 8000.0,
         })
     }
 }
-impl ProtocolWrite for EntityVelocity0 {
-    fn write(self, buf: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+impl Encode for EntityVelocity0 {
+    fn encode(&self, buf: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
         let Self { entity_id, x, y, z } = self;
-        ProtocolWrite::write(entity_id, buf)?;
-        Fixed::<0, i16, f32>::fixed(x * 8000.0).write(buf)?;
-        Fixed::<0, i16, f32>::fixed(y * 8000.0).write(buf)?;
-        Fixed::<0, i16, f32>::fixed(z * 8000.0).write(buf)?;
+        entity_id.encode(buf)?;
+        Fixed::<0, i16, f32>::from(x * 8000.0).encode(buf)?;
+        Fixed::<0, i16, f32>::from(y * 8000.0).encode(buf)?;
+        Fixed::<0, i16, f32>::from(z * 8000.0).encode(buf)?;
         Ok(())
-    }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        0
     }
 }
 
@@ -803,18 +769,18 @@ pub struct MultiBlockChange0 {
     pub records: Vec<Record>,
 }
 
-impl ProtocolRead<'_> for MultiBlockChange0 {
-    fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
-        let chunk_x: i32 = Var::read(cursor)?.0;
-        let chunk_y: i32 = Var::read(cursor)?.0;
-        let record_count = u16::read(cursor)?;
-        let data_size: i32 = i32::read(cursor)?;
+impl<'dec> Decode<'dec> for MultiBlockChange0 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let chunk_x: i32 = Var::decode(cursor)?.into_inner();
+        let chunk_y: i32 = Var::decode(cursor)?.into_inner();
+        let record_count = u16::decode(cursor)?;
+        let data_size: i32 = i32::decode(cursor)?;
         if data_size != record_count as i32 * 4 {
             // todo! different error
-            return Err(ReadError::InvalidEnumId);
+            return Err(decode::Error::InvalidId);
         }
         let records: Vec<_> = (0..record_count)
-            .map(|_| Record::read(cursor))
+            .map(|_| Record::decode(cursor))
             .collect::<Result<_, _>>()?;
         Ok(Self {
             chunk_x,
@@ -824,20 +790,16 @@ impl ProtocolRead<'_> for MultiBlockChange0 {
     }
 }
 
-impl ProtocolWrite for MultiBlockChange0 {
-    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
-        Var(self.chunk_x).write(writer)?;
-        Var(self.chunk_y).write(writer)?;
-        (self.records.len() as u16).write(writer)?;
-        (self.records.len() as i32 * 4).write(writer)?;
-        for record in self.records {
-            record.write(writer)?;
+impl Encode for MultiBlockChange0 {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
+        Var::from(self.chunk_x).encode(writer)?;
+        Var::from(self.chunk_y).encode(writer)?;
+        (self.records.len() as u16).encode(writer)?;
+        (self.records.len() as i32 * 4).encode(writer)?;
+        for record in &self.records {
+            record.encode(writer)?;
         }
         Ok(())
-    }
-
-    fn size_hint() -> usize {
-        8
     }
 }
 
@@ -849,18 +811,18 @@ pub struct MultiBlockChange4 {
     pub records: Vec<Record>,
 }
 
-impl ProtocolRead<'_> for MultiBlockChange4 {
-    fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
-        let chunk_x = i32::read(cursor)?;
-        let chunk_y = i32::read(cursor)?;
-        let record_count = u16::read(cursor)?;
-        let data_size: i32 = i32::read(cursor)?;
+impl<'dec> Decode<'dec> for MultiBlockChange4 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let chunk_x = i32::decode(cursor)?;
+        let chunk_y = i32::decode(cursor)?;
+        let record_count = u16::decode(cursor)?;
+        let data_size: i32 = i32::decode(cursor)?;
         if data_size != record_count as i32 * 4 {
             // todo! different error
-            return Err(ReadError::InvalidEnumId);
+            return Err(decode::Error::InvalidId);
         }
         let records: Vec<_> = (0..record_count)
-            .map(|_| Record::read(cursor))
+            .map(|_| Record::decode(cursor))
             .collect::<Result<_, _>>()?;
         Ok(Self {
             chunk_x,
@@ -870,20 +832,16 @@ impl ProtocolRead<'_> for MultiBlockChange4 {
     }
 }
 
-impl ProtocolWrite for MultiBlockChange4 {
-    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
-        self.chunk_x.write(writer)?;
-        self.chunk_y.write(writer)?;
-        (self.records.len() as u16).write(writer)?;
-        (self.records.len() as i32 * 4).write(writer)?;
-        for record in self.records {
-            record.write(writer)?;
+impl Encode for MultiBlockChange4 {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
+        self.chunk_x.encode(writer)?;
+        self.chunk_y.encode(writer)?;
+        (self.records.len() as u16).encode(writer)?;
+        (self.records.len() as i32 * 4).encode(writer)?;
+        for record in &self.records {
+            record.encode(writer)?;
         }
         Ok(())
-    }
-
-    fn size_hint() -> usize {
-        14
     }
 }
 
@@ -895,28 +853,24 @@ pub struct Record {
     pub rel_z: u8,
 }
 
-impl ProtocolRead<'_> for Record {
-    fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
-        let xz = u8::read(cursor)?;
+impl Decode<'_> for Record {
+    fn decode(cursor: &'_ mut std::io::Cursor<&[u8]>) -> decode::Result<Self> {
+        let xz = u8::decode(cursor)?;
         Ok(Record {
             rel_z: xz >> 4,
             rel_x: xz & 0b1111,
-            y: u8::read(cursor)?,
-            block_state: u16::read(cursor)?,
+            y: u8::decode(cursor)?,
+            block_state: u16::decode(cursor)?,
         })
     }
 }
 
-impl ProtocolWrite for Record {
-    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
-        ((self.rel_x & 0b1111) + (self.rel_z << 4)).write(writer)?;
-        self.y.write(writer)?;
-        self.block_state.write(writer)?;
+impl Encode for Record {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
+        ((self.rel_x & 0b1111) + (self.rel_z << 4)).encode(writer)?;
+        self.y.encode(writer)?;
+        self.block_state.encode(writer)?;
         Ok(())
-    }
-
-    fn size_hint() -> usize {
-        4
     }
 }
 
@@ -961,18 +915,18 @@ pub struct MapChunkBulk0<'a> {
     pub data: Cow<'a, [u8]>,
     pub column_metas: Vec<ChunkMeta0>,
 }
-impl<'a> ProtocolRead<'a> for MapChunkBulk0<'a> {
-    fn read(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> Result<Self, ReadError> {
-        let column_count = u16::read(cursor)?;
-        let data_len = u32::read(cursor)?;
-        let skylight_sent = bool::read(cursor)?;
+impl<'a> Decode<'a> for MapChunkBulk0<'a> {
+    fn decode(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> decode::Result<Self> {
+        let column_count = u16::decode(cursor)?;
+        let data_len = u32::decode(cursor)?;
+        let skylight_sent = bool::decode(cursor)?;
         let data = cursor
             .get_ref()
             .get(0..data_len as usize + cursor.position() as usize)
             // todo! different error
-            .ok_or(ReadError::InvalidEnumId)?;
+            .ok_or(decode::Error::InvalidId)?;
         let column_metas = (0..column_count)
-            .map(|_| ChunkMeta0::read(cursor))
+            .map(|_| ChunkMeta0::decode(cursor))
             .collect::<Result<_, _>>()?;
         Ok(Self {
             skylight_sent,
@@ -981,20 +935,16 @@ impl<'a> ProtocolRead<'a> for MapChunkBulk0<'a> {
         })
     }
 }
-impl ProtocolWrite for MapChunkBulk0<'_> {
-    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
-        (self.column_metas.len() as u16).write(writer)?;
-        (self.data.len() as u32).write(writer)?;
-        self.skylight_sent.write(writer)?;
+impl<'a> Encode for MapChunkBulk0<'a> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
+        (self.column_metas.len() as u16).encode(writer)?;
+        (self.data.len() as u32).encode(writer)?;
+        self.skylight_sent.encode(writer)?;
         writer.write_all(&self.data)?;
-        for meta in self.column_metas {
-            meta.write(writer)?;
+        for meta in &self.column_metas {
+            meta.encode(writer)?;
         }
         Ok(())
-    }
-
-    fn size_hint() -> usize {
-        2 + 4 + 1
     }
 }
 
@@ -1136,10 +1086,10 @@ pub enum DemoMessage0 {
     InventoryControl,
 }
 
-impl ProtocolRead<'_> for ChangeGameState0 {
-    fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
-        let reason = u8::read(cursor)?;
-        let value = f32::read(cursor)?;
+impl Decode<'_> for ChangeGameState0 {
+    fn decode(cursor: &'_ mut std::io::Cursor<&[u8]>) -> decode::Result<Self> {
+        let reason = u8::decode(cursor)?;
+        let value = f32::decode(cursor)?;
         use self::DemoMessage0::*;
         use ChangeGameState0::*;
         Ok(match reason {
@@ -1150,7 +1100,7 @@ impl ProtocolRead<'_> for ChangeGameState0 {
                 0 => GameMode0::Survival,
                 1 => GameMode0::Creative,
                 2 => GameMode0::Adventure,
-                _ => return Err(ReadError::InvalidEnumId),
+                _ => return Err(decode::Error::InvalidId),
             }),
             4 => EnterCredits,
             5 => DemoMessage(match value as u8 {
@@ -1158,36 +1108,32 @@ impl ProtocolRead<'_> for ChangeGameState0 {
                 101 => MovementControl,
                 102 => JumpControl,
                 103 => InventoryControl,
-                _ => return Err(ReadError::InvalidEnumId),
+                _ => return Err(decode::Error::InvalidId),
             }),
             6 => BowHitSound,
             7 => FadeValue(value),
             8 => FadeTime(value),
-            _ => return Err(ReadError::InvalidEnumId),
+            _ => return Err(decode::Error::InvalidId),
         })
     }
 }
 
-impl ProtocolWrite for ChangeGameState0 {
-    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+impl Encode for ChangeGameState0 {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
         let (reason, value) = match self {
             ChangeGameState0::InvalidBed => (0u8, 0.0),
             ChangeGameState0::BeginRaining => (1, 0.0),
             ChangeGameState0::EndRaining => (2, 0.0),
-            ChangeGameState0::ChangeGameMode(gamemode) => (3, gamemode as u8 as f32),
+            ChangeGameState0::ChangeGameMode(gamemode) => (3, *gamemode as u8 as f32),
             ChangeGameState0::EnterCredits => (4, 0.0),
-            ChangeGameState0::DemoMessage(demomessage) => (5, demomessage as u8 as f32),
+            ChangeGameState0::DemoMessage(demomessage) => (5, *demomessage as u8 as f32),
             ChangeGameState0::BowHitSound => (6, 0.0),
-            ChangeGameState0::FadeValue(value) => (7, value),
-            ChangeGameState0::FadeTime(value) => (8, value),
+            ChangeGameState0::FadeValue(value) => (7, *value),
+            ChangeGameState0::FadeTime(value) => (8, *value),
         };
-        reason.write(writer)?;
-        value.write(writer)?;
+        reason.encode(writer)?;
+        value.encode(writer)?;
         Ok(())
-    }
-
-    fn size_hint() -> usize {
-        5
     }
 }
 
@@ -1214,16 +1160,16 @@ pub struct OpenWindow0<'a> {
     pub use_title: bool,
 }
 
-impl<'read, 'a> ProtocolRead<'read> for OpenWindow0<'a>
+impl<'read, 'a> Decode<'read> for OpenWindow0<'a>
 where
     'read: 'a,
 {
-    fn read(cursor: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
-        let window_id = u8::read(cursor)?;
-        let kind = u8::read(cursor)?;
-        let title = Cow::read(cursor)?;
-        let slot_count = u8::read(cursor)?;
-        let use_title = bool::read(cursor)?;
+    fn decode(cursor: &mut std::io::Cursor<&'read [u8]>) -> decode::Result<Self> {
+        let window_id = u8::decode(cursor)?;
+        let kind = u8::decode(cursor)?;
+        let title = Cow::decode(cursor)?;
+        let slot_count = u8::decode(cursor)?;
+        let use_title = bool::decode(cursor)?;
         use InventoryKind0::*;
         let kind = match kind {
             0 => Chest,
@@ -1238,9 +1184,9 @@ where
             9 => Hopper,
             10 => Dropper,
             11 => Horse {
-                entity_id: i32::read(cursor)?,
+                entity_id: i32::decode(cursor)?,
             },
-            _ => return Err(ReadError::InvalidEnumId),
+            _ => return Err(decode::Error::InvalidId),
         };
         Ok(Self {
             window_id,
@@ -1251,8 +1197,8 @@ where
         })
     }
 }
-impl<'a> ProtocolWrite for OpenWindow0<'a> {
-    fn write(self, buf: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+impl<'a> Encode for OpenWindow0<'a> {
+    fn encode(&self, buf: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
         let Self {
             window_id,
             kind,
@@ -1275,24 +1221,15 @@ impl<'a> ProtocolWrite for OpenWindow0<'a> {
             Dropper => (10, None),
             Horse { entity_id } => (11, Some(entity_id)),
         };
-        ProtocolWrite::write(window_id, buf)?;
-        ProtocolWrite::write(kind, buf)?;
-        ProtocolWrite::write(title, buf)?;
-        ProtocolWrite::write(slot_count, buf)?;
-        ProtocolWrite::write(use_title, buf)?;
+        window_id.encode(buf)?;
+        kind.encode(buf)?;
+        title.encode(buf)?;
+        slot_count.encode(buf)?;
+        use_title.encode(buf)?;
         if let Some(entity_id) = entity_id {
-            ProtocolWrite::write(entity_id, buf)?;
+            Encode::encode(entity_id, buf)?;
         }
         Ok(())
-    }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        <u8 as ProtocolWrite>::size_hint()
-            + 1
-            + <Cow<'a, str> as ProtocolWrite>::size_hint()
-            + <u8 as ProtocolWrite>::size_hint()
-            + <bool as ProtocolWrite>::size_hint()
-            + <i32 as ProtocolWrite>::size_hint()
     }
 }
 

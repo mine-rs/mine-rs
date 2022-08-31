@@ -1,5 +1,5 @@
 use super::attribute::{parse_attr, struct_field, Attribute, AttributeData, Attrs};
-use super::{field_ident, implgenerics, struct_codegen, Naming, StructCode, tostaticgenerics};
+use super::{field_ident, implgenerics, struct_codegen, tostaticgenerics, Naming, StructCode};
 
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
@@ -39,7 +39,7 @@ pub fn struct_protocol(
             AttributeData::From(_) => continue,
             AttributeData::Fixed(_) => "fixed",
             AttributeData::StringUuid => "stringuuid",
-            AttributeData::Count(_) => "count",
+            AttributeData::Counted(_) => "count",
         };
         error!(span, "`{}` attribute not allowed to annotate struct", kind).to_tokens(&mut res);
     }
@@ -55,14 +55,13 @@ pub fn struct_protocol(
     let StructCode {
         parsing,
         destructuring,
-        size_hint,
         serialization,
         to_static,
         into_static,
     } = struct_codegen(kind, fields);
 
     let staticgenerics = tostaticgenerics(generics.clone());
-    let to_static: ItemImpl = parse_quote!{
+    let to_static: ItemImpl = parse_quote! {
         impl #generics ToStatic for #ident #generics {
             type Static = #ident #staticgenerics;
             fn to_static(&self) -> Self::Static {
@@ -81,16 +80,16 @@ pub fn struct_protocol(
 
     let implgenerics = implgenerics(
         generics.clone(),
-        &parse_quote!(ProtocolRead),
+        &parse_quote!(Decode),
         Some(parse_quote!('read)),
     );
     let where_clause = &implgenerics.where_clause;
 
     let read: ItemImpl = parse_quote! {
-        impl #implgenerics ProtocolRead<'read> for #ident #generics
+        impl #implgenerics Decode<'read> for #ident #generics
         #where_clause
         {
-            fn read(cursor: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
+            fn decode(cursor: &mut std::io::Cursor<&'read [u8]>) -> decode::Result<Self> {
                 #parsing
                 Ok(Self #destructuring)
             }
@@ -99,15 +98,11 @@ pub fn struct_protocol(
     read.to_tokens(&mut res);
 
     let write: ItemImpl = parse_quote! {
-        impl #implgenerics ProtocolWrite for #ident #generics {
-            fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+        impl #implgenerics Encode for #ident #generics {
+            fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
                 let Self #destructuring = self;
                 #serialization
                 Ok(())
-            }
-            #[inline(always)]
-            fn size_hint() -> usize {
-                #size_hint
             }
         }
     };

@@ -1,6 +1,5 @@
 use crate::*;
 
-use packets_derive::Protocol;
 use std::borrow::Cow;
 
 #[derive(Protocol)]
@@ -11,7 +10,7 @@ pub struct Response0<'a> {
 
 pub use super::Ping0;
 
-packets_derive::packets! {
+packets! {
     status_cb_custom status_cb_tree;
     0x00 => {
         0..=760 => Response0::<'a>,
@@ -26,12 +25,12 @@ status_cb_custom! {
     }
 }
 impl<'a> CbStatus<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         status_cb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(CbStatus::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(CbStatus::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }

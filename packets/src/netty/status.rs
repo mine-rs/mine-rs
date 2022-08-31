@@ -1,6 +1,6 @@
 use crate::*;
 
-use packets_derive::Protocol;
+use miners_packets_derive::Protocol;
 
 pub mod clientbound;
 pub mod serverbound;
@@ -10,7 +10,7 @@ pub struct Ping0 {
     pub time: i64,
 }
 
-packets_derive::packets! {
+packets! {
     status_cb_custom status_cb_tree clientbound::;
     0x00 => {
         0..=760 => Response0::<'a>,
@@ -25,17 +25,17 @@ status_cb_custom! {
     }
 }
 impl<'a> CbStatus<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         status_cb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(CbStatus::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(CbStatus::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }
 
-packets_derive::packets! {
+packets! {
     status_sb_custom status_sb_tree serverbound::;
     0x00 => {
         0..=760 => Request0,
@@ -50,12 +50,12 @@ status_sb_custom! {
     }
 }
 impl SbStatus {
-    pub fn parse(id: i32, pv: i32, data: &[u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &[u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         status_sb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(SbStatus::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(SbStatus::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }

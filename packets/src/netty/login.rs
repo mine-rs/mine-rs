@@ -1,9 +1,9 @@
-use crate::{ProtocolRead, ReadError};
+use crate::*;
 
 pub mod clientbound;
 pub mod serverbound;
 
-packets_derive::packets! {
+miners_packets_derive::packets! {
     login_cb_custom login_cb_tree clientbound::;
     0x00 => {
         0..=12 => Disconnect0<'a>,
@@ -42,17 +42,17 @@ login_cb_custom! {
     }
 }
 impl<'a> CbLogin<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         login_cb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(CbLogin::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(CbLogin::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }
 
-packets_derive::packets! {
+miners_packets_derive::packets! {
     login_sb_custom login_sb_tree serverbound::;
     0x00 => {
         0..=384 => LoginStart0<'a>,
@@ -85,12 +85,12 @@ login_sb_custom! {
     }
 }
 impl<'a> SbLogin<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         login_sb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(SbLogin::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(SbLogin::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }

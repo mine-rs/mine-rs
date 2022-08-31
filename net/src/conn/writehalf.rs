@@ -329,9 +329,9 @@ where
         &mut self,
         id: i32,
         packet: P,
-    ) -> Result<(), miners_packets::WriteError>
+    ) -> Result<(), miners_encoding::encode::Error>
     where
-        P: miners_packets::ProtocolWrite,
+        P: miners_encoding::Encode,
     {
         self.workbuf.clear();
         self.workbuf2.clear();
@@ -340,7 +340,7 @@ where
         // we can optimize a little because we now own the vec
         // this comes in handy for encryption
 
-        packet.write(&mut self.workbuf)?;
+        packet.encode(&mut self.workbuf)?;
 
         if let Some((threshold, compression_level)) = self.compression.get_options() {
             // there is compression, packet format as follows:
@@ -522,7 +522,7 @@ where
                 encrypt_in_place(encryptor, packet_length_varint);
                 encrypt_in_place(encryptor, id_varint);
 
-                // here we can cut **one** corner for the ProtocolWrite type
+                // here we can cut **one** corner for the Encode type
                 // because we own the vec so we can encrypt it in place
 
                 offload_encrypt! {

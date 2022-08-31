@@ -1,7 +1,6 @@
-use crate::errors::InvalidEnumId;
 use crate::*;
 
-use packets_derive::Protocol;
+use miners_packets_derive::Protocol;
 use std::borrow::Cow;
 
 #[derive(Protocol)]
@@ -90,67 +89,67 @@ pub enum PlayerDigging0 {
     FinishRightClick,
 }
 
-impl<'read> ProtocolRead<'read> for PlayerDigging0 {
-    fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
-        let action = u8::read(buf)?;
+impl<'dec> Decode<'dec> for PlayerDigging0 {
+    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> Result<Self, decode::Error> {
+        let action = u8::decode(buf)?;
         use PlayerDigging0::*;
         Ok(match action {
             0 => Started {
-                x: i32::read(buf)?,
-                y: u8::read(buf)?,
-                z: i32::read(buf)?,
-                face: BlockFace0::read(buf)?,
+                x: i32::decode(buf)?,
+                y: u8::decode(buf)?,
+                z: i32::decode(buf)?,
+                face: BlockFace0::decode(buf)?,
             },
             1 => Cancelled {
-                x: i32::read(buf)?,
-                y: u8::read(buf)?,
-                z: i32::read(buf)?,
-                face: BlockFace0::read(buf)?,
+                x: i32::decode(buf)?,
+                y: u8::decode(buf)?,
+                z: i32::decode(buf)?,
+                face: BlockFace0::decode(buf)?,
             },
             2 => Finished {
-                x: i32::read(buf)?,
-                y: u8::read(buf)?,
-                z: i32::read(buf)?,
-                face: BlockFace0::read(buf)?,
+                x: i32::decode(buf)?,
+                y: u8::decode(buf)?,
+                z: i32::decode(buf)?,
+                face: BlockFace0::decode(buf)?,
             },
             3 => {
-                if !(i32::read(buf)? == 0
-                    && u8::read(buf)? == 0
-                    && i32::read(buf)? == 0
-                    && u8::read(buf)? == 0)
+                if !(i32::decode(buf)? == 0
+                    && u8::decode(buf)? == 0
+                    && i32::decode(buf)? == 0
+                    && u8::decode(buf)? == 0)
                 {
-                    return Err(ReadError::InvalidEnumId);
+                    return Err(decode::Error::InvalidId);
                 }
                 DropItemStack
             }
             4 => {
-                if !(i32::read(buf)? == 0
-                    && u8::read(buf)? == 0
-                    && i32::read(buf)? == 0
-                    && u8::read(buf)? == 0)
+                if !(i32::decode(buf)? == 0
+                    && u8::decode(buf)? == 0
+                    && i32::decode(buf)? == 0
+                    && u8::decode(buf)? == 0)
                 {
-                    return Err(ReadError::InvalidEnumId);
+                    return Err(decode::Error::InvalidId);
                 }
                 DropItem
             }
             5 => {
-                if !(i32::read(buf)? == 0
-                    && u8::read(buf)? == 0
-                    && i32::read(buf)? == 0
-                    && u8::read(buf)? == 255)
+                if !(i32::decode(buf)? == 0
+                    && u8::decode(buf)? == 0
+                    && i32::decode(buf)? == 0
+                    && u8::decode(buf)? == 255)
                 {
-                    return Err(ReadError::InvalidEnumId);
+                    return Err(decode::Error::InvalidId);
                 }
                 FinishRightClick
             }
-            _ => return Err(ReadError::InvalidEnumId),
+            _ => return Err(decode::Error::InvalidId),
         })
     }
 }
-impl ProtocolWrite for PlayerDigging0 {
-    fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+impl Encode for PlayerDigging0 {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
         use PlayerDigging0::*;
-        let (action, x, y, z, face) = match self {
+        let (action, x, y, z, face) = match *self {
             Started { x, y, z, face } => (0, x, y, z, face as u8),
             Cancelled { x, y, z, face } => (1, x, y, z, face as u8),
             Finished { x, y, z, face } => (2, x, y, z, face as u8),
@@ -158,16 +157,12 @@ impl ProtocolWrite for PlayerDigging0 {
             DropItem => (4, 0, 0, 0, 0),
             FinishRightClick => (5, 0, 0, 0, 255),
         };
-        action.write(writer)?;
-        x.write(writer)?;
-        y.write(writer)?;
-        z.write(writer)?;
-        face.write(writer)?;
+        action.encode(writer)?;
+        x.encode(writer)?;
+        y.encode(writer)?;
+        z.encode(writer)?;
+        face.encode(writer)?;
         Ok(())
-    }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        11
     }
 }
 
@@ -183,7 +178,7 @@ pub enum DiggingAction0 {
     FinishRightClick,
 }
 
-#[derive(Protocol)]
+#[derive(Protocol, Clone, Copy)]
 #[from(u8)]
 pub enum BlockFace0 {
     NegY = 0,
@@ -260,19 +255,19 @@ pub struct ClickWindow0 {
     // todo! slot type
     // item: Slot
 }
-impl<'read> ProtocolRead<'read> for ClickWindow0 {
-    fn read(buf: &mut std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
-        let window_id = u8::read(buf)?;
-        let slot = i16::read(buf)?;
-        let button = u8::read(buf)?;
-        let action_id = i16::read(buf)?;
-        let mode = u8::read(buf)?;
+impl<'dec> Decode<'dec> for ClickWindow0 {
+    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let window_id = u8::decode(buf)?;
+        let slot = i16::decode(buf)?;
+        let button = u8::decode(buf)?;
+        let action_id = i16::decode(buf)?;
+        let mode = u8::decode(buf)?;
 
-        fn mouse_button(button: u8) -> Result<MouseButton, ReadError> {
+        fn mouse_button(button: u8) -> Result<MouseButton, decode::Error> {
             Ok(match button {
                 0 => MouseButton::Left,
                 1 => MouseButton::Right,
-                _ => return Err(ReadError::InvalidEnumId),
+                _ => return Err(decode::Error::InvalidId),
             })
         }
 
@@ -297,24 +292,24 @@ impl<'read> ProtocolRead<'read> for ClickWindow0 {
                     6 => NumberKey::Key7,
                     7 => NumberKey::Key8,
                     8 => NumberKey::Key9,
-                    _ => return Err(ReadError::InvalidEnumId),
+                    _ => return Err(decode::Error::InvalidId),
                 },
                 slot,
             },
             3 => match button {
                 2 => MiddleClick { slot },
-                _ => return Err(ReadError::InvalidEnumId),
+                _ => return Err(decode::Error::InvalidId),
             },
             4 => Drop(match slot {
                 -999 => match button {
                     0 => DropKind::LeftNoOp,
                     1 => DropKind::RightNoOp,
-                    _ => return Err(ReadError::InvalidEnumId),
+                    _ => return Err(decode::Error::InvalidId),
                 },
                 _ => match button {
                     0 => DropKind::Q { slot },
                     1 => DropKind::CtrlQ { slot },
-                    _ => return Err(ReadError::InvalidEnumId),
+                    _ => return Err(decode::Error::InvalidId),
                 },
             }),
             5 => {
@@ -324,34 +319,34 @@ impl<'read> ProtocolRead<'read> for ClickWindow0 {
                         4 => (MouseButton::Right, DragChange::Start),
                         2 => (MouseButton::Left, DragChange::End),
                         6 => (MouseButton::Right, DragChange::End),
-                        _ => return Err(ReadError::InvalidEnumId),
+                        _ => return Err(decode::Error::InvalidId),
                     },
                     _ => match button {
                         1 => (MouseButton::Left, DragChange::Add { slot }),
                         5 => (MouseButton::Right, DragChange::Add { slot }),
-                        _ => return Err(ReadError::InvalidEnumId),
+                        _ => return Err(decode::Error::InvalidId),
                     },
                 };
                 Drag { button, change }
             }
             6 => match button {
                 0 => DoubleClick { slot },
-                _ => return Err(ReadError::InvalidEnumId),
+                _ => return Err(decode::Error::InvalidId),
             },
-            _ => return Err(ReadError::InvalidEnumId),
+            _ => return Err(decode::Error::InvalidId),
         };
 
         Ok(Self {
             window_id,
             action,
             action_id,
-            // slot: ProtocolRead::read(buf)?,
+            // slot: Decode::read(buf)?,
         })
     }
 }
-impl ProtocolWrite for ClickWindow0 {
-    fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
-        self.window_id.write(writer)?;
+impl Encode for ClickWindow0 {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
+        self.window_id.encode(writer)?;
         let (mode, button, slot) = match self.action {
             ClickAction0::Click { button, slot } => (0, button as u8, slot),
             ClickAction0::ShiftClick { button, slot } => (1, button as u8, slot),
@@ -391,20 +386,16 @@ impl ProtocolWrite for ClickWindow0 {
             },
             ClickAction0::DoubleClick { slot } => (6, 0, slot),
         };
-        slot.write(writer)?;
-        button.write(writer)?;
-        self.action_id.write(writer)?;
-        mode.write(writer)?;
+        slot.encode(writer)?;
+        button.encode(writer)?;
+        self.action_id.encode(writer)?;
+        mode.encode(writer)?;
         // self.item.write(writer)?;
         Ok(())
     }
-    #[inline(always)]
-    fn size_hint() -> usize {
-        7
-        // + <Slot as ProtocolWrite>::size_hint()
-    }
 }
 
+#[derive(Clone, Copy)]
 pub enum ClickAction0 {
     Click {
         button: MouseButton,
@@ -431,11 +422,13 @@ pub enum ClickAction0 {
     },
 }
 
+#[derive(Clone, Copy)]
 pub enum MouseButton {
     Left,
     Right,
 }
 
+#[derive(Clone, Copy)]
 pub enum NumberKey {
     Key1 = 0,
     Key2,
@@ -447,6 +440,8 @@ pub enum NumberKey {
     Key8,
     Key9,
 }
+
+#[derive(Clone, Copy)]
 pub enum DropKind {
     Q { slot: i16 },
     CtrlQ { slot: i16 },
@@ -454,6 +449,7 @@ pub enum DropKind {
     RightNoOp,
 }
 
+#[derive(Clone, Copy)]
 pub enum DragChange {
     Start,
     Add { slot: i16 },

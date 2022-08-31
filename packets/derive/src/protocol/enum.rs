@@ -1,6 +1,6 @@
 #![forbid(clippy::unwrap_used, clippy::expect_used)]
 use super::attribute::{parse_attr, struct_field, Attribute, AttributeData, Attrs};
-use super::{field_ident, implgenerics, tostaticgenerics, struct_codegen, Naming, StructCode};
+use super::{field_ident, implgenerics, struct_codegen, tostaticgenerics, Naming, StructCode};
 
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Literal};
@@ -55,14 +55,12 @@ pub fn enum_protocol(
             }
             AttributeData::Fixed(_) => "`fixed` attribute not allowed to annotate enum",
             AttributeData::StringUuid => "`stringuuid` attribute not allowed to annotate enum",
-            AttributeData::Count(_) => "`count` attribute not allowed to annotate enum",
+            AttributeData::Counted(_) => "`count` attribute not allowed to annotate enum",
         };
         error!(span, err).to_tokens(&mut res);
     }
 
     let typ = repr.unwrap_or_else(|| parse_quote!(i32));
-
-    let mut size_hint = quote!(0);
 
     let variant_count = enom.variants.len();
 
@@ -92,7 +90,9 @@ pub fn enum_protocol(
                 AttributeData::StringUuid => {
                     "`stringuuid` attribute not allowed to annotate enum variant"
                 }
-                AttributeData::Count(_) => "`count` attribute not allowed to annotate enum variant",
+                AttributeData::Counted(_) => {
+                    "`count` attribute not allowed to annotate enum variant"
+                }
             };
             error!(span, err).to_tokens(&mut res);
         }
@@ -128,12 +128,19 @@ pub fn enum_protocol(
             }
         };
 
-        let (parsing, destructuring, serialization, to_static, into_static) =
-            if let Some((kind, punct_fields)) = match variant.fields {
+        let StructCode {
+            parsing,
+            destructuring,
+            serialization,
+            to_static,
+            into_static,
+        } = {
+            match variant.fields {
                 syn::Fields::Named(fields) => Some((Naming::Named, fields.named)),
                 syn::Fields::Unnamed(fields) => Some((Naming::Unnamed, fields.unnamed)),
                 syn::Fields::Unit => None,
-            } {
+            }
+            .map(|(kind, punct_fields)| {
                 let mut fields: Vec<(Attrs, Ident, Type)> = vec![];
                 for (i, field) in punct_fields.into_iter().enumerate() {
                     let attrs = struct_field(field.attrs.into_iter(), &mut res);
@@ -142,27 +149,10 @@ pub fn enum_protocol(
 
                     fields.push((attrs, ident, field.ty))
                 }
-                let StructCode {
-                    parsing,
-                    destructuring,
-                    size_hint: sh,
-                    serialization,
-                    to_static,
-                    into_static,
-                } = struct_codegen(kind, fields.clone());
-
-                size_hint = quote!(usize::max(#size_hint, #sh));
-
-                (
-                    parsing,
-                    destructuring,
-                    serialization,
-                    to_static,
-                    into_static,
-                )
-            } else {
-                (quote!(), quote!(), quote!(), quote!(), quote!())
-            };
+                struct_codegen(kind, fields.clone())
+            })
+            .unwrap_or_default()
+        };
 
         let variant_ident = variant.ident;
         quote! {
@@ -173,9 +163,9 @@ pub fn enum_protocol(
         }
         .to_tokens(&mut read_match_contents);
         let write_id = if varint_span.is_some() {
-            quote!(<Var<#typ> as ProtocolWrite>::write(Var(#case), writer)?;)
+            quote!(Var::<#typ>::from(#case).encode(writer)?;)
         } else {
-            quote!(<#typ as ProtocolWrite>::write(#case, writer)?;)
+            quote!(#typ::encode(&#case, writer)?;)
         };
         quote! {
             Self::#variant_ident #destructuring => {
@@ -202,56 +192,49 @@ pub fn enum_protocol(
     }
 
     let (allow_unreachable, wildcard_match) = if variant_count == 0 {
-        (quote!(#[allow(unreachable_code)]), quote!(_ => unimplemented!()))
+        (
+            quote!(#[allow(unreachable_code)]),
+            quote!(_ => unimplemented!()),
+        )
     } else {
         (quote!(), quote!())
     };
 
     let readgenerics = implgenerics(
         generics.clone(),
-        &parse_quote!(ProtocolRead),
+        &parse_quote!(Decode),
         Some(parse_quote!('read)),
     );
     let where_clause = &readgenerics.where_clause;
     let read_id = if varint_span.is_some() {
-        quote!(<Var<#typ> as ProtocolRead>::read(cursor)?.0)
+        quote!(<Var<#typ> as Decode>::decode(cursor)?.into_inner())
     } else {
-        quote!(<#typ as ProtocolRead>::read(cursor)?)
+        quote!(<#typ as Decode>::decode(cursor)?)
     };
     quote! {
-        impl #readgenerics ProtocolRead<'read> for #ident #generics
+        impl #readgenerics Decode<'read> for #ident #generics
         #where_clause
         {
-            fn read(cursor: &mut ::std::io::Cursor<&'read [u8]>) -> Result<Self, ReadError> {
+            fn decode(cursor: &mut ::std::io::Cursor<&'read [u8]>) -> decode::Result<Self> {
                 Ok(match #read_id {
                     #read_match_contents
-                    _ => Err(InvalidEnumId)?
+                    _ => Err(decode::Error::InvalidId)?
                 })
             }
         }
     }
     .to_tokens(&mut res);
 
-    let size_hint_id = if varint_span.is_some() {
-        quote!(<Var<#typ> as ProtocolWrite>::size_hint())
-    } else {
-        quote!(<#typ as ProtocolWrite>::size_hint())
-    };
-
-    let writegenerics = implgenerics(generics.clone(), &parse_quote!(ProtocolWrite), None);
+    let writegenerics = implgenerics(generics.clone(), &parse_quote!(Encode), None);
     quote! {
-        impl #writegenerics ProtocolWrite for #ident #generics {
-            fn write(self, writer: &mut impl ::std::io::Write) -> Result<(), WriteError> {
+        impl #writegenerics Encode for #ident #generics {
+            fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
                 #allow_unreachable
+                #[allow(unused_must_use)]
                 Ok(match self {
                     #write_match_contents
                     #wildcard_match
                 })
-            }
-            #[inline(always)]
-            fn size_hint() -> usize {
-                #size_hint_id +
-                #size_hint
             }
         }
     }

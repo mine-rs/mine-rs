@@ -1,12 +1,4 @@
-#![doc(hidden)]
-
 use crate::ToStatic;
-
-mod bool;
-mod buffer;
-mod num;
-mod string;
-mod vec;
 
 impl<T: ToStatic> ToStatic for Option<T> {
     type Static = Option<<T as ToStatic>::Static>;

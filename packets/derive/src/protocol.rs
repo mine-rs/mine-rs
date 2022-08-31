@@ -95,6 +95,7 @@ fn field_ident(i: usize, ident: Option<Ident>, ty: &Type) -> Ident {
 mod attribute;
 use attribute::{Attrs, Fixed};
 
+#[derive(Default)]
 pub struct StructCode {
     /// let x = X::read(cursor)?;
     /// let y = Y::read(cursor)?;
@@ -102,8 +103,6 @@ pub struct StructCode {
     /// (_0, _1)
     /// (a, b)
     pub destructuring: TokenStream,
-    /// 0 + X::size_hint() + Y::size_hint()
-    pub size_hint: TokenStream,
     /// X::write(x, writer)?;
     /// Y::write(_0, writer)?;
     pub serialization: TokenStream,
@@ -116,7 +115,6 @@ pub struct StructCode {
 pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> StructCode {
     let mut parsing = quote!();
     let mut destructuring = quote!();
-    let mut size_hint = quote!(0);
     let mut serialization = quote!();
     let mut to_static = quote!();
     let mut into_static = quote!();
@@ -130,72 +128,64 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
             Attrs::None => {
                 let span = field.span();
                 quote_spanned! {span=>
-                    let #field = ProtocolRead::read(cursor)?;
+                    let #field = Decode::decode(cursor)?;
                 }
                 .to_tokens(&mut parsing);
-                quote!(+ <#ty as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
                 let span = field.span();
                 quote_spanned! {span=>
-                    ProtocolWrite::write(#field, writer)?;
+                    Encode::encode(#field, writer)?;
                 }
                 .to_tokens(&mut serialization);
             }
             Attrs::Fixed(span, fixed) => {
                 let Fixed { precision, typ } = fixed;
                 quote_spanned! {span=>
-                    let #field = <Fixed<#precision, #typ, _> as ProtocolRead>::read(cursor)?.data;
+                    let #field = <Fixed<#precision, #typ, _> as Decode>::decode(cursor)?.into_inner();
                 }
                 .to_tokens(&mut parsing);
-                quote!(+ <Fixed<#precision, #typ, #ty> as ProtocolWrite>::size_hint())
-                    .to_tokens(&mut size_hint);
                 quote_spanned! {span=>
-                    ProtocolWrite::write(Fixed::<#precision, #typ, #ty>::fixed(#field), writer)?;
+                    Encode::encode(&Fixed::<#precision, #typ, #ty>::from(#field), writer)?;
                 }
                 .to_tokens(&mut serialization);
             }
             Attrs::Var(span) => {
                 quote_spanned! {span=>
-                    let #field = <Var<_> as ProtocolRead>::read(cursor)?.0;
+                    let #field = <Var<_> as Decode>::decode(cursor)?.into_inner();
                 }
                 .to_tokens(&mut parsing);
-                quote!(+ <Var<#ty> as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
                 quote_spanned! {span=>
-                    ProtocolWrite::write(Var::<#ty>(#field), writer)?;
+                    Encode::encode(&Var::<#ty>::from(*#field), writer)?;
                 }
                 .to_tokens(&mut serialization);
             }
-            Attrs::FixedVar(fixed_span, fixed, varint_span) => {
-                let Fixed { precision, typ } = fixed;
-                let var_part = quote_spanned!(varint_span=> Var<#typ>);
-                quote_spanned! {fixed_span=>
-                    let #field = <Fixed<#precision, #var_part, _> as ProtocolRead>::read(cursor)?.data;
-                }.to_tokens(&mut parsing);
-                quote!(+ <Fixed<#precision, #var_part, _> as ProtocolWrite>::size_hint())
-                    .to_tokens(&mut size_hint);
-                quote_spanned! {fixed_span=>
-                    ProtocolWrite::write(Fixed::<#precision, #var_part, #ty>::new(#field), writer)?;
-                }
-                .to_tokens(&mut serialization);
-            }
+            // Attrs::FixedVar(fixed_span, fixed, varint_span) => {
+            //     let Fixed { precision, typ } = fixed;
+            //     let var_part = quote_spanned!(varint_span=> Var<#typ>);
+            //     quote_spanned! {fixed_span=>
+            //         let #field = <Fixed<#precision, #var_part, _> as Decode>::decode(cursor)?.into_inner();
+            //     }.to_tokens(&mut parsing);
+            //     quote_spanned! {fixed_span=>
+            //         Encode::encode(Fixed::<#precision, #var_part, #ty>::new(#field), writer)?;
+            //     }
+            //     .to_tokens(&mut serialization);
+            // }
             Attrs::StringUuid(span) => {
                 quote_spanned! {span=>
-                    let #field = <StringUuid as ProtocolRead>::read(cursor)?.0;
+                    let #field = <StringUuid as Decode>::decode(cursor)?.into_inner();
                 }
                 .to_tokens(&mut parsing);
-                quote!(+ <StringUuid as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
                 quote_spanned! {span=>
-                    ProtocolWrite::write(StringUuid(#field), writer)?;
+                    Encode::encode(&StringUuid::from(*#field), writer)?;
                 }
                 .to_tokens(&mut serialization);
             }
-            Attrs::Count(cs, c) => {
+            Attrs::Counted(cs, c) => {
                 quote_spanned! {cs=>
-                    let #field = <Count<_, #c> as ProtocolRead>::read(cursor)?.inner;
+                    let #field = <Counted<_, #c> as Decode>::decode(cursor)?.inner;
                 }
                 .to_tokens(&mut parsing);
-                quote!(+ <Count<#ty, #c> as ProtocolWrite>::size_hint()).to_tokens(&mut size_hint);
                 quote_spanned! {cs=>
-                    ProtocolWrite::write(Count::<#ty, #c>::new(#field), writer)?;
+                    Encode::encode(<&Counted<#ty, #c>>::from(#field), writer)?;
                 }
                 .to_tokens(&mut serialization);
             }
@@ -210,7 +200,6 @@ pub fn struct_codegen(kind: Naming, fields: Vec<(Attrs, Ident, Type)>) -> Struct
     StructCode {
         parsing,
         destructuring,
-        size_hint,
         serialization,
         to_static,
         into_static,

@@ -1,8 +1,8 @@
-use crate::{ProtocolRead, ReadError};
+use crate::*;
 
 pub mod serverbound;
 
-packets_derive::packets! {
+miners_packets_derive::packets! {
     handshaking_sb_custom handshaking_sb_tree serverbound::;
     0x00 => {
         0..=760 => Handshake0::<'a>,
@@ -14,12 +14,12 @@ handshaking_sb_custom! {
     }
 }
 impl<'a> SbHandshaking<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         handshaking_sb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(SbHandshaking::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(SbHandshaking::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }

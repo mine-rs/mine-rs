@@ -1,8 +1,7 @@
-use crate::attrs::*;
-use crate::errors::InvalidEnumId;
 use crate::*;
+use attrs::*;
 
-use packets_derive::Protocol;
+use miners_packets_derive::Protocol;
 use std::borrow::Cow;
 
 #[derive(Protocol)]

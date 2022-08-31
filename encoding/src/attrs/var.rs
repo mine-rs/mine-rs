@@ -1,73 +1,75 @@
-use crate::ToStatic;
+use crate::*;
+use std::io::{Read, Write};
+use Cursor;
 
-use super::*;
-use std::io::Read;
-
+/// Minecraft's VarInt
+///
+/// https://wiki.vg/VarInt_And_VarLong
 #[repr(transparent)]
-pub struct Var<T>(pub T);
+pub struct Var<T>(pub(crate) T);
 
-const fn var_size<const BITS: u32>() -> usize {
-    (BITS as usize * 8 + 6) / 7
+impl<T> From<T> for Var<T> {
+    fn from(t: T) -> Self {
+        Var(t)
+    }
 }
 
-macro_rules! impl_var_num {
-    ($num:ident $unum:ident) => {
-        impl ProtocolRead<'_> for Var<$num> {
-            fn read(cursor: &mut ::std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
-                let mut val = 0;
-                let mut cur_val = [0];
-                for i in 0..var_size::<{ $num::BITS }>() {
-                    cursor.read_exact(&mut cur_val)?;
-                    val += ((cur_val[0] & 0x7f) as $unum) << (i * 7);
-                    if (cur_val[0] & 0x80) == 0x00 {
+impl<T> Var<T> {
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
+/// given the number of bits this function returns
+/// how many bytes a Var will take up
+pub const fn var_size(bits: u32) -> usize {
+    (bits as usize * 8 + 6) / 7
+}
+
+macro_rules! impl_var {
+    (@impl $num:ident $unum:ident) => {
+        impl<'dec> Decode<'dec> for Var<$num> {
+            fn decode(cursor: &mut Cursor<&'dec [u8]>) -> decode::Result<Self> {
+                let mut value = 0;
+                let mut current_byte = [0];
+                for i in 0..var_size($num::BITS) {
+                    cursor.read_exact(&mut current_byte)?;
+                    value += ((current_byte[0] & 0x7f) as $unum) << (i * 7);
+                    if (current_byte[0] & 0x80) == 0x00 {
                         break;
                     }
                 }
-                Ok(Var(val as $num))
+                Ok(Var(value as $num))
             }
         }
-        impl ProtocolWrite for Var<$num> {
-            fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
-                let Var(mut int) = self;
+        impl Encode for Var<$num> {
+            fn encode(&self, writer: &mut impl Write) -> encode::Result<()> {
+                let Var(mut value) = self;
                 loop {
-                    let next_val = (int as $unum >> 7) as $num;
-                    if next_val == 0 {
-                        writer.write_all(&[int as u8])?;
+                    let next_byte = (value as $unum >> 7) as $num;
+                    if next_byte == 0 {
+                        writer.write_all(&[value as u8])?;
                         break;
                     }
-                    writer.write_all(&[int as u8 | 0x80])?;
-                    int = next_val;
+                    writer.write_all(&[value as u8 | 0x80])?;
+                    value = next_byte;
                 }
                 Ok(())
             }
-            #[inline(always)]
-            fn size_hint() -> usize {
-                1
-            }
         }
     };
-    ($($num:ident, $unum:ident),*) => {$(
-        impl_var_num!{$num $unum}
-        impl_var_num!{$unum $unum}
+    ($($inum:ident, $unum:ident),*) => {$(
+        impl_var!(@impl $inum $unum);
+        impl_var!(@impl $unum $unum);
     )*};
 }
-impl_var_num! {
+
+impl_var! {
     i8, u8,
     i16, u16,
     i32, u32,
     i64, u64,
     i128, u128
-}
-
-impl<T> ToStatic for Var<T>
-where T: ToStatic {
-    type Static = Var<<T as ToStatic>::Static>;
-    fn to_static(&self) -> Self::Static {
-        Var(self.0.to_static())
-    }
-    fn into_static(self) -> Self::Static {
-        Var(self.0.into_static())
-    }
 }
 
 #[cfg(test)]
@@ -77,7 +79,7 @@ macro_rules! tests {
         fn $read() {
             for (num, res) in TESTS {
                 let mut cursor = Cursor::new(*res);
-                let read_res = Var::<$typ>::read(&mut cursor);
+                let read_res = Var::<$typ>::decode(&mut cursor);
                 assert_eq!(
                     cursor.position() as usize,
                     res.len(),
@@ -95,7 +97,7 @@ macro_rules! tests {
                 let mut buf = [0u8; $len];
                 let mut writebuf = &mut buf[..];
 
-                let write_res = Var(*num as $typ).write(&mut writebuf);
+                let write_res = Var(*num as $typ).encode(&mut writebuf);
                 let leftover = writebuf.len();
 
                 assert!(write_res.is_ok(), "tried to write more data than it should");
@@ -104,12 +106,11 @@ macro_rules! tests {
         }
     )*};
 }
+
 #[cfg(test)]
 mod varint {
-    use std::io::Cursor;
-
     use super::*;
-    use crate::*;
+
     const TESTS: &[(i32, &[u8])] = &[
         (0, &[0x00]),
         (1, &[0x01]),
@@ -130,10 +131,8 @@ mod varint {
 
 #[cfg(test)]
 mod varlong {
-    use std::io::Cursor;
-
     use super::*;
-    use crate::*;
+
     const TESTS: &[(i64, &[u8])] = &[
         (0, &[0x00]),
         (1, &[0x01]),

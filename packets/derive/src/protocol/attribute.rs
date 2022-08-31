@@ -17,7 +17,7 @@ pub enum AttributeData {
     Case(Expr),
     From(Type),
     Fixed(Fixed),
-    Count(TypePath),
+    Counted(TypePath),
     StringUuid,
 }
 #[derive(Clone)]
@@ -85,7 +85,7 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
         Some(ident) if ident == "count" => Some({
             parse2::<UnParen<TypePath>>(tokens).map(|a| Attribute {
                 span,
-                data: AttributeData::Count(a.0),
+                data: AttributeData::Counted(a.0),
             })
         }),
         _ => None,
@@ -97,9 +97,9 @@ pub enum Attrs {
     None,
     Var(Span),
     Fixed(Span, Fixed),
-    FixedVar(Span, Fixed, Span),
+    // FixedVar(Span, Fixed, Span),
     StringUuid(Span),
-    Count(Span, TypePath),
+    Counted(Span, TypePath),
 }
 
 pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenStream) -> Attrs {
@@ -143,7 +143,7 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
                     "duplicate `stringuuid` attribute on struct field"
                 }
             }
-            AttributeData::Count(ty) => {
+            AttributeData::Counted(ty) => {
                 if count.is_none() {
                     count = Some((span, ty));
                     continue;
@@ -156,19 +156,19 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
     }
     match (varint, fixed, stringuuid, count) {
         (None, None, None, None) => Attrs::None,
-        (None, None, None, Some((cs, c))) => Attrs::Count(cs, c),
+        (None, None, None, Some((cs, c))) => Attrs::Counted(cs, c),
         (None, None, Some(s), a) => {
             if a.is_some() {
                 error!(s, "`stringuuid` incompatible with other attribute(s)").to_tokens(res);
             }
             Attrs::StringUuid(s)
         }
-        (Some(v), Some((fs, f)), a, b) => {
-            if a.is_some() || b.is_some() {
-                error!(fs, "`fixed` and `var` incompatible with other attribute(s)").to_tokens(res);
-            }
-            Attrs::FixedVar(fs, f, v)
-        }
+        // (Some(v), Some((fs, f)), a, b) => {
+        //     if a.is_some() || b.is_some() {
+        //         error!(fs, "`fixed` and `var` incompatible with other attribute(s)").to_tokens(res);
+        //     }
+        //     Attrs::FixedVar(fs, f, v)
+        // }
         (None, Some((fs, f)), a, b) => {
             if a.is_some() || b.is_some() {
                 error!(fs, "`fixed` incompatible with other attribute(s)").to_tokens(res);

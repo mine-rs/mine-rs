@@ -1,7 +1,6 @@
-use crate::errors::InvalidEnumId;
 use crate::*;
 
-use packets_derive::{Protocol, ToStatic};
+use miners_packets_derive::{Protocol, ToStatic};
 use std::borrow::Cow;
 
 pub mod clientbound;
@@ -34,33 +33,29 @@ pub struct PlayerAbilities0 {
     /// packet).
     pub fov: f32,
 }
-impl ProtocolRead<'_> for PlayerAbilities0 {
-    fn read(cursor: &'_ mut std::io::Cursor<&[u8]>) -> Result<Self, ReadError> {
-        let flags = u8::read(cursor)?;
+impl<'dec> Decode<'dec> for PlayerAbilities0 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> Result<Self, decode::Error> {
+        let flags = u8::decode(cursor)?;
         Ok(PlayerAbilities0 {
             invulnerable: flags & 0b0001 != 0,
             flying: flags & 0b0010 != 0,
             allow_flying: flags & 0b0100 != 0,
             creative_mode: flags & 0b1000 != 0,
-            flying_speed: f32::read(cursor)?,
-            fov: f32::read(cursor)?,
+            flying_speed: f32::decode(cursor)?,
+            fov: f32::decode(cursor)?,
         })
     }
 }
-impl ProtocolWrite for PlayerAbilities0 {
-    fn write(self, writer: &mut impl std::io::Write) -> Result<(), WriteError> {
+impl Encode for PlayerAbilities0 {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
         ((self.invulnerable as u8)
             + ((self.flying as u8) << 1)
             + ((self.allow_flying as u8) << 2)
             + ((self.creative_mode as u8) << 3))
-            .write(writer)?;
-        self.flying_speed.write(writer)?;
-        self.fov.write(writer)?;
+            .encode(writer)?;
+        self.flying_speed.encode(writer)?;
+        self.fov.encode(writer)?;
         Ok(())
-    }
-
-    fn size_hint() -> usize {
-        9
     }
 }
 
@@ -80,7 +75,7 @@ pub struct PluginMessage0<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-packets_derive::packets! {
+packets! {
     play_cb_custom play_cb_tree clientbound::;
     0x00 => {
         0..=31 => KeepAlive0,
@@ -3024,17 +3019,17 @@ play_cb_custom! {
     }
 }
 impl<'a> CbPlay<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         play_cb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(CbPlay::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(CbPlay::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }
 
-packets_derive::packets! {
+packets! {
     play_sb_custom play_sb_tree serverbound::;
     0x00 => {
         0..=6 => KeepAlive0,
@@ -3949,12 +3944,12 @@ play_sb_custom! {
     }
 }
 impl<'a> SbPlay<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, ReadError> {
+    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
         let mut cursor = std::io::Cursor::new(data);
         play_sb_tree! {
             id, pv,
-            {<#PacketType as ProtocolRead>::read(&mut cursor).map(SbPlay::#PacketName)},
-            {Err(ReadError::InvalidProtocolVersionIdCombination)}
+            {<#PacketType as Decode>::decode(&mut cursor).map(SbPlay::#PacketName)},
+            {Err(decode::Error::InvalidId)}
         }
     }
 }
