@@ -6,6 +6,8 @@
 
 #[macro_use]
 extern crate miners_packets_derive;
+#[macro_use]
+extern crate miners_encoding_derive;
 use miners_encoding::*;
 
 pub mod netty;

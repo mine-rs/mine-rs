@@ -1,10 +1,9 @@
 use crate::*;
 use attrs::*;
 
-use miners_packets_derive::Protocol;
 use std::borrow::Cow;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 /// this packet as the first one is actually pretty controversial,
 /// for 13w41a protocol_version was actually varint, starting 13w42a
 /// it is now ushort
@@ -15,7 +14,7 @@ pub struct Handshake0<'a> {
     pub server_port: u16,
     pub next_state: NextState0,
 }
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[varint]
 pub enum NextState0 {
     Status = 1,

@@ -1,12 +1,11 @@
 use crate::*;
 
-use miners_packets_derive::{Protocol, ToStatic};
 use std::borrow::Cow;
 
 pub mod clientbound;
 pub mod serverbound;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum AnimationId0 {
     None = 0,
@@ -59,7 +58,7 @@ impl Encode for PlayerAbilities0 {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum Difficulty0 {
     Peaceful = 0,
@@ -68,7 +67,7 @@ pub enum Difficulty0 {
     Hard,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
     pub channel: Cow<'a, str>,

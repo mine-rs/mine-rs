@@ -1,31 +1,30 @@
 use crate::*;
 
-use miners_packets_derive::Protocol;
 use std::borrow::Cow;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct KeepAlive0 {
     pub id: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ChatMessage0<'a> {
     // todo! add ChatMessage json thing
     pub message: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct UseEntity0 {
     pub target_id: i32,
     pub mouse: i8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Player0 {
     pub on_ground: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerPosition0 {
     pub x: f64,
     pub y: f64,
@@ -35,14 +34,14 @@ pub struct PlayerPosition0 {
     pub on_ground: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerLook0 {
     pub yaw: f32,
     pub pitch: f32,
     pub on_ground: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerPositionAndLook0 {
     pub x: f64,
     pub y: f64,
@@ -166,7 +165,7 @@ impl Encode for PlayerDigging0 {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum DiggingAction0 {
     Started = 0,
@@ -178,7 +177,7 @@ pub enum DiggingAction0 {
     FinishRightClick,
 }
 
-#[derive(Protocol, Clone, Copy)]
+#[derive(Encoding, ToStatic, Clone, Copy)]
 #[from(u8)]
 pub enum BlockFace0 {
     NegY = 0,
@@ -189,7 +188,7 @@ pub enum BlockFace0 {
     PosX,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 // In normal operation (ie placing a block), this packet is sent once, with the values set normally.
 //
 // This packet has a special case where X, Y, Z, and Direction are all -1. (Note that Y is unsigned so set to 255.) This special packet indicates that the currently held item for the player should have its state updated such as eating food, shooting bows, using buckets, etc.
@@ -204,19 +203,19 @@ pub struct PlayerBlockPlacement0 {
     // todo! WTF
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct HeldItemChange0 {
     /// The slot which the player has selected (0-8)
     pub slot: u16,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Animation0 {
     pub entity_id: i32,
     animation: super::AnimationId0,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityAction0 {
     pub entity_id: i32,
     pub action: EntityAction,
@@ -224,7 +223,7 @@ pub struct EntityAction0 {
     pub jump_boost: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum EntityAction {
     Crouch = 1,
@@ -234,7 +233,7 @@ pub enum EntityAction {
     StopSprinting,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SteerVehicle0 {
     pub sideways: f32,
     pub forward: f32,
@@ -242,7 +241,7 @@ pub struct SteerVehicle0 {
     pub unmount: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct CloseWindow0 {
     /// This is the id of the window that was closed. 0 for inventory.
     pub window_id: u8,
@@ -456,28 +455,28 @@ pub enum DragChange {
     End,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ConfirmTransaction0 {
     pub window_id: u8,
     pub action_id: i16,
     pub accepted: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct CreativeInventoryAction0 {
     pub slot: u16,
     // todo! slot type
     // item: Slot
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EnchantItem0 {
     pub window_id: u8,
     /// The position of the enchantment on the enchantment table window, starting with 0 as the topmost one.
     pub enchantment: u8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct UpdateSign0<'a> {
     pub x: i32,
     pub y: i16,
@@ -490,12 +489,12 @@ pub struct UpdateSign0<'a> {
 
 pub use super::PlayerAbilities0;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct TabComplete0<'a> {
     pub text: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ClientSettings0<'a> {
     pub locale: Cow<'a, str>,
     pub view_distance: ViewDistance0,
@@ -507,7 +506,7 @@ pub struct ClientSettings0<'a> {
     difficulty: super::Difficulty0,
     pub show_cape: bool,
 }
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum ViewDistance0 {
     Far = 0,
@@ -516,7 +515,7 @@ pub enum ViewDistance0 {
     Tiny,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum ClientStatus0 {
     Respawn = 0,

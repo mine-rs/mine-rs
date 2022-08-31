@@ -1,25 +1,24 @@
 use crate::*;
 use attrs::*;
 
-use miners_packets_derive::Protocol;
 use std::{borrow::Cow, str::FromStr};
 use uuid::Uuid;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {
     pub reason: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EncryptionResponse0<'a> {
     pub server_id: Cow<'a, str>,
-    #[count(u16)]
+    #[counted(u16)]
     pub public_key: Cow<'a, [u8]>,
-    #[count(u16)]
+    #[counted(u16)]
     pub verify_token: Cow<'a, [u8]>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Success0<'a> {
     #[stringuuid]
     pub uuid: Uuid,

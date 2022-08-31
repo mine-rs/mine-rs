@@ -46,10 +46,7 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
         fn parse(input: ParseStream) -> syn::Result<Self> {
             let rest;
             parenthesized!(rest in input);
-            // eprintln!("attr: `{}`", (rest.fork().parse::<TokenStream>()?));
             let inner: T = rest.parse()?;
-            // eprintln!("{:?}", inner.to_token_stream());
-            // eprintln!("attr rest: `{}`", rest.parse::<TokenStream>()?);
             Ok(UnParen(inner))
         }
     }
@@ -82,7 +79,7 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
                 data: AttributeData::Fixed(a.0),
             })
         }),
-        Some(ident) if ident == "count" => Some({
+        Some(ident) if ident == "counted" => Some({
             parse2::<UnParen<TypePath>>(tokens).map(|a| Attribute {
                 span,
                 data: AttributeData::Counted(a.0),
@@ -97,12 +94,11 @@ pub enum Attrs {
     None,
     Var(Span),
     Fixed(Span, Fixed),
-    // FixedVar(Span, Fixed, Span),
     StringUuid(Span),
     Counted(Span, TypePath),
 }
 
-pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenStream) -> Attrs {
+pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenStream) -> Attrs {
     let mut varint = None;
     let mut fixed = None;
     let mut stringuuid = None;
@@ -116,39 +112,40 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
             }
             None => continue,
         };
+        use crate::attribute::AttributeData::*;
         let err_message = match data {
-            AttributeData::VarInt => {
+            VarInt => {
                 if varint.is_none() {
                     varint = Some(span);
                     continue;
                 } else {
-                    "duplicate `varint` attribute on struct field"
+                    "duplicate `#[varint]` attribute on field"
                 }
             }
-            AttributeData::Case(_) => "`case` attribute not allowed to annotate struct field",
-            AttributeData::From(_) => continue,
-            AttributeData::Fixed(fixd) => {
+            Case(_) => "`#[case(id)]` not allowed on field",
+            From(_) => continue,
+            Fixed(fixd) => {
                 if fixed.is_none() {
                     fixed = Some((span, fixd));
                     continue;
                 } else {
-                    "duplicate `fixed` attribute on struct field"
+                    "duplicate `#[fixed(prec, ty)]` attribute on field"
                 }
             }
-            AttributeData::StringUuid => {
-                if stringuuid.is_none() {
-                    stringuuid = Some(span);
-                    continue;
-                } else {
-                    "duplicate `stringuuid` attribute on struct field"
-                }
-            }
-            AttributeData::Counted(ty) => {
+            Counted(ty) => {
                 if count.is_none() {
                     count = Some((span, ty));
                     continue;
                 } else {
-                    "duplicate `count` attribute on struct field"
+                    "duplicate `#[counted(ty)]` attribute on field"
+                }
+            }
+            StringUuid => {
+                if stringuuid.is_none() {
+                    stringuuid = Some(span);
+                    continue;
+                } else {
+                    "duplicate `#[stringuuid]` attribute on field"
                 }
             }
         };
@@ -163,12 +160,6 @@ pub fn struct_field(attrs: impl Iterator<Item = syn::Attribute>, res: &mut Token
             }
             Attrs::StringUuid(s)
         }
-        // (Some(v), Some((fs, f)), a, b) => {
-        //     if a.is_some() || b.is_some() {
-        //         error!(fs, "`fixed` and `var` incompatible with other attribute(s)").to_tokens(res);
-        //     }
-        //     Attrs::FixedVar(fs, f, v)
-        // }
         (None, Some((fs, f)), a, b) => {
             if a.is_some() || b.is_some() {
                 error!(fs, "`fixed` incompatible with other attribute(s)").to_tokens(res);

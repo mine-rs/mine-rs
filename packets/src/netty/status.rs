@@ -1,11 +1,9 @@
 use crate::*;
 
-use miners_packets_derive::Protocol;
-
 pub mod clientbound;
 pub mod serverbound;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Ping0 {
     pub time: i64,
 }

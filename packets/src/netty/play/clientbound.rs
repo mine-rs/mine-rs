@@ -1,13 +1,11 @@
 use crate::*;
 use attrs::*;
 
-use miners_packets_derive::Protocol;
-use miners_packets_derive::ToStatic;
 use std::borrow::Cow;
 use std::str::FromStr;
 use uuid::Uuid;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct KeepAlive0 {
     pub id: i32,
 }
@@ -22,8 +20,8 @@ pub struct JoinGame0 {
     pub max_players: u8,
 }
 
-impl<'read> Decode<'read> for JoinGame0 {
-    fn decode(cursor: &mut std::io::Cursor<&'read [u8]>) -> decode::Result<Self> {
+impl<'dec> Decode<'dec> for JoinGame0 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let entity_id = i32::decode(cursor)?;
         let bitfield = u8::decode(cursor)?;
         let hardcore = bitfield & 0x08 != 0;
@@ -112,7 +110,7 @@ impl Encode for JoinGame1<'_> {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum GameMode0 {
     Survival = 0,
@@ -122,7 +120,7 @@ pub enum GameMode0 {
 
 pub use super::Difficulty0;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(i8)]
 pub enum Dimension0 {
     Nether = -1,
@@ -130,19 +128,19 @@ pub enum Dimension0 {
     End,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ChatMessage0 {
     // todo! add ChatMessage json thing
     pub message: String,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct TimeUpdate0 {
     pub ticks: i64,
     pub time_of_day: i64,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityEquipment0 {
     pub entity_id: i32,
     pub slot: EquipmentSlot0,
@@ -150,7 +148,7 @@ pub struct EntityEquipment0 {
     // item: Slot,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u16)]
 pub enum EquipmentSlot0 {
     Held = 0,
@@ -160,14 +158,14 @@ pub enum EquipmentSlot0 {
     Helmet,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnPosition0 {
     pub x: i32,
     pub y: i32,
     pub z: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct UpdateHealth0 {
     /// 0.0 means dead, 20.0 = full HP
     pub health: f32,
@@ -177,7 +175,7 @@ pub struct UpdateHealth0 {
     pub saturation: f32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Respawn0 {
     pub dimension: i32,
     pub difficulty: Difficulty0,
@@ -185,7 +183,7 @@ pub struct Respawn0 {
     pub gamemode: GameMode0,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Respawn1<'a> {
     pub dimension: i32,
     pub difficulty: Difficulty0,
@@ -195,7 +193,7 @@ pub struct Respawn1<'a> {
     pub level_type: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct PositionAndLook0 {
     pub x: f64,
     pub y: f64,
@@ -207,13 +205,13 @@ pub struct PositionAndLook0 {
     pub on_ground: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct HeldItemChange0 {
     /// The slot which the player has selected (0-8)
     pub slot: u8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct UseBed0 {
     pub entity_id: i32,
     pub x: i32,
@@ -221,14 +219,14 @@ pub struct UseBed0 {
     pub z: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Animation0 {
     #[varint]
     pub entity_id: i32,
     animation: super::AnimationId0,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnPlayer0<'a> {
     #[varint]
     pub entity_id: i32,
@@ -332,24 +330,24 @@ impl<'a> Encode for SpawnPlayer5<'a> {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerProperty<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
     pub signature: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 // todo! metadata
 pub struct EntityMetadata {}
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct CollectItem0 {
     pub collected_id: i32,
     pub collector_id: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnObject0 {
     #[varint]
     pub entity_id: i32,
@@ -370,7 +368,7 @@ pub struct SpawnObject0 {
     pub data: Object0,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 // todo! add #[separated] to have a custom option for
 // separated type and cursor/writer impl
@@ -417,11 +415,14 @@ pub enum Object0 {
     DragonFireball,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 // todo
-pub enum Orientation {}
+pub enum Orientation {
+    #[case(0)]
+    _NonExhaustive
+}
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub enum EntityKind0 {
     Mob = 48,
     Monster,
@@ -460,7 +461,7 @@ pub enum EntityKind0 {
     Villager = 120,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnMob0 {
     #[varint]
     pub entity_id: i32,
@@ -482,7 +483,7 @@ pub struct SpawnMob0 {
     pub metadata: EntityMetadata,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnPainting<'a> {
     #[varint]
     pub entity_id: i32,
@@ -495,7 +496,7 @@ pub struct SpawnPainting<'a> {
     pub direction: Direction0,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u32)]
 pub enum Direction0 {
     NegZ = 0,
@@ -504,7 +505,7 @@ pub enum Direction0 {
     PosX,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnExpOrb0 {
     #[varint]
     pub entity_id: i32,
@@ -549,18 +550,18 @@ impl Encode for EntityVelocity0 {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct DestroyEntities0 {
-    #[count(u8)]
+    #[counted(u8)]
     pub entities: Vec<i32>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Entity0 {
     pub entity_id: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityRelativeMove0 {
     pub entity_id: i32,
     // todo! round x and z but floor y
@@ -578,14 +579,14 @@ pub struct EntityRelativeMove0 {
     pub dz: f32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityLook0 {
     pub entity_id: i32,
     pub yaw: Angle,
     pub pitch: Angle,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityLookAndRelativeMove0 {
     pub entity_id: i32,
     // todo! round x and z but floor y
@@ -605,7 +606,7 @@ pub struct EntityLookAndRelativeMove0 {
     pub pitch: Angle,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityTeleport0 {
     pub entity_id: i32,
     // todo! round x and z but floor y
@@ -619,19 +620,19 @@ pub struct EntityTeleport0 {
     pub pitch: Angle,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityHeadLook0 {
     pub entity_id: i32,
     pub head_yaw: Angle,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityStatus0 {
     pub entity_id: i32,
     pub entity_status: Status0,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum Status0 {
     EntityHurt = 2,
@@ -651,20 +652,20 @@ pub enum Status0 {
     FireworkExplosion,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct AttachEntity0 {
     pub entity_id: i32,
     pub vehicle_id: i32,
     pub leash: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityMetadata0 {
     pub entity_id: i32,
     pub metadata: EntityMetadata,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityEffect0 {
     pub entity_id: i32,
     // todo! effect ids
@@ -673,34 +674,34 @@ pub struct EntityEffect0 {
     pub duration: i16,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct RemoveEntityEffect0 {
     pub entity_id: i32,
     pub effect_id: i8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SetExperience0 {
     pub experience_bar: f32,
     pub level: i16,
     pub total_exp: i16,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityProperties0<'a> {
     pub entity_id: i32,
-    #[count(u32)]
+    #[counted(u32)]
     pub properties: Vec<EntityProperty<'a>>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EntityProperty<'a> {
     pub key: Cow<'a, str>,
     pub value: f64,
     pub modifiers: Vec<Modifier>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Modifier {
     #[stringuuid]
     pub uuid: Uuid,
@@ -708,7 +709,7 @@ pub struct Modifier {
     pub operation: i8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 /// The mathematical behavior is as follows:
 ///
 ///   - add: Increment X by Amount
@@ -741,7 +742,7 @@ pub enum ModifierOperation0 {
     Multiply,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 // todo! make this nice to interact with
 pub struct ChunkData0<'a> {
     pub chunk_x: i32,
@@ -755,7 +756,7 @@ pub struct ChunkData0<'a> {
     // todo! waht is this for?
     /// Same as above, but this is used exclusively for the 'add' portion of the payload
     pub add_bitmap: u16,
-    #[count(u32)]
+    #[counted(u32)]
     pub compressed_data: Cow<'a, [u8]>,
 }
 
@@ -874,7 +875,7 @@ impl Encode for Record {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct BlockChange0 {
     pub x: i32,
     y: u8,
@@ -885,7 +886,7 @@ pub struct BlockChange0 {
     pub block_data: u8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct BlockAction0 {
     pub x: i32,
     pub y: i16,
@@ -896,7 +897,7 @@ pub struct BlockAction0 {
     pub block_type: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct BlockBreakAnimation0 {
     #[varint]
     pub entity_id: i32,
@@ -948,7 +949,7 @@ impl<'a> Encode for MapChunkBulk0<'a> {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ChunkMeta0 {
     pub chunk_x: i32,
     pub chunk_z: i32,
@@ -956,27 +957,27 @@ pub struct ChunkMeta0 {
     pub add_bitmap: u16,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Explosion0 {
     pub x: f32,
     pub y: f32,
     pub z: f32,
     pub radius: f32,
-    #[count(u32)]
+    #[counted(u32)]
     pub records: Vec<ExplosionRecord>,
     pub motion_x: f32,
     pub motion_y: f32,
     pub motion_z: f32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ExplosionRecord {
     pub dx: i8,
     pub dy: i8,
     pub dz: i8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 // todo! more detailed data using #[separated]
 pub struct Effect0 {
     pub effect_id: i32,
@@ -991,7 +992,7 @@ pub struct Effect0 {
     pub disable_rel_volume: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SoundEffect0<'a> {
     pub effect_id: Cow<'a, str>,
     // todo! relative? fixed point?
@@ -1008,7 +1009,7 @@ pub struct SoundEffect0<'a> {
     pub category: SoundCategory0,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum SoundCategory0 {
     Master = 0,
@@ -1021,7 +1022,7 @@ pub enum SoundCategory0 {
     Players,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SoundEffect1<'a> {
     pub effect_id: Cow<'a, str>,
     // todo! relative? fixed point?
@@ -1037,7 +1038,7 @@ pub struct SoundEffect1<'a> {
     pub pitch: u8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Particle0<'a> {
     // todo! specific strings into enum
     pub name: Cow<'a, str>,
@@ -1054,12 +1055,12 @@ pub struct Particle0<'a> {
     pub number: i32,
 }
 
-// #[derive(Protocol)]
+// #[derive(Encoding, ToStatic)]
 // struct ChangeGameState0 {
 //     reason: GameStateChangeReason,
 // }
 
-// #[derive(Protocol)]
+// #[derive(Encoding, ToStatic)]
 // #[from(u8)]
 #[derive(ToStatic)]
 pub enum ChangeGameState0 {
@@ -1077,7 +1078,7 @@ pub enum ChangeGameState0 {
     FadeTime(f32),
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum DemoMessage0 {
     WelcomeToDemo = 0,
@@ -1137,7 +1138,7 @@ impl Encode for ChangeGameState0 {
     }
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnGlobalEntity0 {
     #[varint]
     pub entity_id: i32,
@@ -1160,11 +1161,11 @@ pub struct OpenWindow0<'a> {
     pub use_title: bool,
 }
 
-impl<'read, 'a> Decode<'read> for OpenWindow0<'a>
+impl<'dec, 'a> Decode<'dec> for OpenWindow0<'a>
 where
-    'read: 'a,
+    'dec: 'a,
 {
-    fn decode(cursor: &mut std::io::Cursor<&'read [u8]>) -> decode::Result<Self> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let window_id = u8::decode(cursor)?;
         let kind = u8::decode(cursor)?;
         let title = Cow::decode(cursor)?;
@@ -1233,7 +1234,7 @@ impl<'a> Encode for OpenWindow0<'a> {
     }
 }
 
-// #[derive(Protocol)]
+// #[derive(Encoding, ToStatic)]
 #[derive(ToStatic)]
 // todo! very good place for #[separate]
 pub enum InventoryKind0 {
@@ -1257,13 +1258,13 @@ pub enum InventoryKind0 {
     },
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct CloseWindow0 {
     /// This is the id of the window that was closed. 0 for inventory.
     pub window_id: u8,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SetSlot0 {
     /// The window which is being updated. 0 for player inventory. Note that
     /// all known window types include the player inventory. This packet will
@@ -1278,16 +1279,16 @@ pub struct SetSlot0 {
     // data: Slot
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct WindowItems0 {
     /// The id of window which items are being sent for. 0 for player inventory.
     pub window_id: u8,
-    // #[count(u16)]
+    // #[counted(u16)]
     // todo! slot data
     // slots: Vec<Slot>
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 /// see https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Window_Property
 pub struct WindowProperty0 {
     pub window_id: u8,
@@ -1295,14 +1296,14 @@ pub struct WindowProperty0 {
     pub value: u16,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ConfirmTransaction0 {
     pub window_id: u8,
     pub action_number: i16,
     pub accepted: bool,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct UpdateSign0<'a> {
     pub x: i32,
     pub y: i16,
@@ -1313,7 +1314,7 @@ pub struct UpdateSign0<'a> {
     pub line4: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Maps0 {
     #[varint]
     pub item_damage: i32,
@@ -1333,7 +1334,7 @@ pub struct Maps0 {
 //     MapScale(u8)
 // }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct UpdateBlockEntity0 {
     pub x: i32,
     pub y: i16,
@@ -1347,19 +1348,19 @@ pub struct UpdateBlockEntity0 {
     // data: Nbt
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct SignEditorOpen0 {
     pub x: i32,
     pub y: i32,
     pub z: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Statistics0<'a> {
     pub entries: Vec<Statistic0<'a>>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Statistic0<'a> {
     pub name: Cow<'a, str>,
     #[varint]
@@ -1367,7 +1368,7 @@ pub struct Statistic0<'a> {
     pub amount: i32,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerListItem0<'a> {
     /// Supports chat colouring, limited to 16 characters.
     pub name: Cow<'a, str>,
@@ -1379,19 +1380,19 @@ pub struct PlayerListItem0<'a> {
 
 pub use super::PlayerAbilities0;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct TabComplete0<'a> {
     /// One eligible command
     pub matches: Vec<Cow<'a, str>>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct ScoreboardObjective0<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
     pub action: ScoreboardAction0,
 }
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum ScoreboardAction0 {
     #[case(0)]
@@ -1400,14 +1401,14 @@ pub enum ScoreboardAction0 {
     Update,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct UpdateScore0<'a> {
     /// The name of the score to be updated or removed
     pub name: Cow<'a, str>,
     pub action: UpdateScoreAction0<'a>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum UpdateScoreAction0<'a> {
     #[case(0)]
@@ -1420,13 +1421,13 @@ pub enum UpdateScoreAction0<'a> {
     Remove,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct DisplayScoreboard0<'a> {
     pub position: ScoreboardPosition,
     pub name: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum ScoreboardPosition {
     List = 0,
@@ -1434,13 +1435,13 @@ pub enum ScoreboardPosition {
     BelowName,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Teams0<'a> {
     pub name: Cow<'a, str>,
     pub action: TeamAction0<'a>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub enum TeamAction0<'a> {
     #[case(0)]
     Create {
@@ -1465,7 +1466,7 @@ pub enum TeamAction0<'a> {
     },
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum TeamFriendlyFire {
     Off = 0,
@@ -1474,7 +1475,7 @@ pub enum TeamFriendlyFire {
 }
 
 // for later protocol versions
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 #[from(&str)]
 pub enum NameTagVisibility /*version?*/ {
     #[case("always")]
@@ -1489,7 +1490,7 @@ pub enum NameTagVisibility /*version?*/ {
 
 pub use super::PluginMessage0;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {
     pub reason: Cow<'a, str>,
 }

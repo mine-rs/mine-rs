@@ -1,18 +1,17 @@
 use crate::*;
 use attrs::*;
 
-use miners_packets_derive::Protocol;
 use std::borrow::Cow;
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct LoginStart0<'a> {
     pub username: Cow<'a, str>,
 }
 
-#[derive(Protocol)]
+#[derive(Encoding, ToStatic)]
 pub struct EncryptionRequest0<'a> {
-    #[count(u16)]
+    #[counted(u16)]
     pub public_key: Cow<'a, [u8]>,
-    #[count(u16)]
+    #[counted(u16)]
     pub verify_token: Cow<'a, [u8]>,
 }

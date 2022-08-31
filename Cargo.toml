@@ -23,6 +23,7 @@ members = [
   "packets/derive",
   "packets/traits",
   "encoding",
+  "encoding/derive",
   "net",
   "auth", 
   "chat"

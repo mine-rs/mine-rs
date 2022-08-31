@@ -1,31 +1,18 @@
 #![deny(clippy::undocumented_unsafe_blocks)]
 mod packets;
 mod replace;
+mod to_static;
 
 use proc_macro::TokenStream;
-use protocol::tostaticgenerics;
+use to_static::to_static_generics;
 use quote::ToTokens;
 use syn::{parse_macro_input, DeriveInput};
 
-#[proc_macro_derive(Protocol, attributes(varint, case, count, from, fixed, stringuuid))]
-pub fn protocol(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-
-    match input.data {
-        syn::Data::Struct(strukt) => {
-            protocol::struct_protocol(input.ident, input.attrs, input.generics, strukt)
-        }
-        syn::Data::Enum(enom) => {
-            protocol::enum_protocol(input.attrs, input.ident, input.generics, enom)
-        }
-        syn::Data::Union(_) => panic!("Union structs not supported"),
-    }
-}
 #[proc_macro_derive(ToStatic)]
 pub fn to_static(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    let mut tostaticgenerics = tostaticgenerics(input.generics.clone());
+    let mut tostaticgenerics = to_static_generics(input.generics.clone());
     let generics = input.generics;
     let ident = input.ident;
     let where_clause = tostaticgenerics.where_clause.take();
@@ -152,5 +139,3 @@ pub fn replace(input: TokenStream) -> TokenStream {
         .collect::<proc_macro2::TokenStream>()
         .into()
 }
-
-mod protocol;
