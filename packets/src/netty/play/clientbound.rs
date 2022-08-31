@@ -110,7 +110,7 @@ impl Encode for JoinGame1<'_> {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Clone, Copy)]
 #[from(u8)]
 pub enum GameMode0 {
     Survival = 0,
@@ -1078,7 +1078,7 @@ pub enum ChangeGameState0 {
     FadeTime(f32),
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Clone, Copy)]
 #[from(u8)]
 pub enum DemoMessage0 {
     WelcomeToDemo = 0,
