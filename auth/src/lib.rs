@@ -14,22 +14,21 @@ use {
 const CACHE_FILE_NAME: &str = "auth.cache";
 
 #[derive(Debug, thiserror::Error)]
-pub enum HttpOrSerdeError {
-    #[error("Something went wrong while sending a http request.\n{0}")]
-    HttpError(#[from] reqwest::Error),
-    #[error("Something went wrong while decoding the json response:\n{0}")]
-    SerdeError(#[from] serde_json::Error),
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum ReadError {
-    #[error("Something went wrong while reading from the file.\nError: {0}")]
+pub enum Error {
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
+    #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error("String data was invalid utf-8.\nError: {0}")]
-    FromUtf8Error(#[from] FromUtf8Error),
+    #[error(transparent)]
+    String(#[from] FromUtf8Error),
+    #[error(transparent)]
+    MsAuth(#[from] MsAuthError),
+    
 }
 
-async fn read_string_from<R: AsyncRead + Unpin>(r: &mut R) -> Result<String, ReadError> {
+async fn read_string_from<R: AsyncRead + Unpin>(r: &mut R) -> Result<String, Error> {
     let mut bytes = [0u8; 2];
     r.read_exact(&mut bytes).await?;
     let len = u16::from_le_bytes(bytes);
@@ -67,7 +66,7 @@ struct McAuth {
 }
 
 impl McAuth {
-    async fn mc_profile(&self, client: &Client) -> Result<McProfile, HttpOrSerdeError> {
+    async fn mc_profile(&self, client: &Client) -> Result<McProfile, Error> {
         let pr_resp = client
             .get("https://api.minecraftservices.com/minecraft/profile")
             .header("Authorization", format!("Bearer {}", self.access_token))
@@ -100,7 +99,7 @@ struct XstsAuth {
 }
 
 impl XstsAuth {
-    async fn auth_mc(&self, client: &Client) -> Result<McAuth, HttpOrSerdeError> {
+    async fn auth_mc(&self, client: &Client) -> Result<McAuth, Error> {
         let json = json!({
             "identityToken": format!("XBL3.0 x={};{}", self.display_claims.xui[0].uhs, self.token)
         });
@@ -128,7 +127,7 @@ struct XblAuth {
 }
 
 impl XblAuth {
-    async fn auth_xsts(&self, client: &Client) -> Result<XstsAuth, HttpOrSerdeError> {
+    async fn auth_xsts(&self, client: &Client) -> Result<XstsAuth, Error> {
         let json = json!({
             "Properties": {
                 "SandboxId":  "RETAIL",
@@ -172,7 +171,7 @@ struct MsAuth {
 
 impl MsAuth {
     /// Checks if the access token is still valid and refreshes it if it isn't.
-    pub async fn refresh(&mut self, cid: &str, client: &Client) -> Result<bool, HttpOrSerdeError> {
+    pub async fn refresh(&mut self, cid: &str, client: &Client) -> Result<bool, Error> {
         if self.expires_after <= chrono::Utc::now().timestamp() {
             let resp = client
                 .post("https://login.live.com/oauth20_token.srf")
@@ -199,7 +198,7 @@ impl MsAuth {
         Ok(false)
     }
 
-    pub async fn auth_xbl(&self, client: &Client) -> Result<XblAuth, HttpOrSerdeError> {
+    pub async fn auth_xbl(&self, client: &Client) -> Result<XblAuth, Error> {
         let json = json!({
             "Properties": {
                 "AuthMethod": "RPS",
@@ -234,7 +233,7 @@ impl MsAuth {
         Ok(())
     }
 
-    pub async fn read_from<R: AsyncRead + Unpin>(r: &mut R) -> Result<MsAuth, ReadError> {
+    pub async fn read_from<R: AsyncRead + Unpin>(r: &mut R) -> Result<MsAuth, Error> {
         let mut bytes = [0u8; 2];
         r.read_exact(&mut bytes).await?;
         let len = u16::from_le_bytes(bytes) as usize;
@@ -294,28 +293,6 @@ pub struct DeviceCodeInner {
     pub message: String,
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum HttpOrSerdeOrMsAuthError {
-    #[error("{0}")]
-    MsAuthError(#[from] MsAuthError),
-    #[error("Something went wrong while sending a http request.\nError: {0}")]
-    HttpError(#[from] reqwest::Error),
-    #[error("Something went wrong while decoding the json response:\nError: {0}")]
-    SerdeError(#[from] serde_json::Error),
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum AuthenticateError {
-    #[error("{0}")]
-    HttpOrSerdeError(#[from] HttpOrSerdeError),
-    #[error("{0}")]
-    IoError(#[from] std::io::Error),
-    #[error("{0}")]
-    MsauthError(#[from] HttpOrSerdeOrMsAuthError),
-    #[error("{0}")]
-    ReadError(#[from] ReadError),
-}
-
 impl DeviceCode {
     /// Entry point of the auth flow.
     /// It's up to you how you show the user the user code and the link
@@ -324,7 +301,7 @@ impl DeviceCode {
         cid: &str,
         cache_file: Option<&str>,
         client: &Client,
-    ) -> Result<Self, HttpOrSerdeError> {
+    ) -> Result<Self, Error> {
         let (path, name) = match cache_file {
             Some(file) => (Path::new(file), file),
             None => (Path::new(CACHE_FILE_NAME), CACHE_FILE_NAME),
@@ -356,7 +333,7 @@ impl DeviceCode {
         Ok(device_code)
     }
 
-    async fn auth_ms(&self, client: &Client) -> Result<Option<MsAuth>, HttpOrSerdeOrMsAuthError> {
+    async fn auth_ms(&self, client: &Client) -> Result<Option<MsAuth>, Error> {
         match &self.inner {
             Some(inner) => loop {
                 std::thread::sleep(std::time::Duration::from_secs(inner.interval + 1));
@@ -397,7 +374,7 @@ impl DeviceCode {
 
     /// Call this method after creating the device code and having shown the user the code (but only if DeviceCode.cached is false)
     /// It might block for a while if the access token hasn't been cached yet.
-    pub async fn authenticate(&self, client: &Client) -> Result<Auth, AuthenticateError> {
+    pub async fn authenticate(&self, client: &Client) -> Result<Auth, Error> {
         let path: &Path = Path::new(&self.cache);
         let msa = match self.inner {
             Some(_) => {
