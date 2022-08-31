@@ -1,4 +1,8 @@
-#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::undocumented_unsafe_blocks
+)]
 
 #[macro_use]
 extern crate miners_packets_derive;

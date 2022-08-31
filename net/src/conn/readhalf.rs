@@ -12,6 +12,23 @@ use cfb8::Decryptor;
 use flate2::Decompress;
 use futures::{io::BufReader, AsyncRead, AsyncReadExt};
 
+/// The maximum packet length, 8 MiB
+const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;
+
+#[inline]
+fn verify_len(len: u32) -> std::io::Result<()> {
+    if len > MAX_PACKET_LENGTH {
+        Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "The data length exceeds the maximum packet length! {len} > {MAX_PACKET_LENGTH}"
+            ),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 // const AVG_PACKET_THRESHOLD: usize = 65536;
 
 /// The reading half of a connection.
@@ -85,7 +102,7 @@ where
 
             let len = read_encrypted_varint_async(&mut self.reader, decryptor).await?;
 
-            // todo! ensure read len is valid
+            verify_len(len)?;
 
             // reserve enough space
 
@@ -93,6 +110,8 @@ where
 
             // get the ref
 
+            // @rob9315 Please add a safety comment here
+            #[allow(clippy::undocumented_unsafe_blocks)]
             let readslice =
                 unsafe { slice::from_raw_parts_mut(self.readbuf.as_mut_ptr(), len as usize) };
 
@@ -117,8 +136,7 @@ where
 
                     let slice_start = readslice.as_mut_ptr() as usize;
                     let (cloned_decryptor, mut xchanged_buf) = blocking::unblock(move || {
-                        // UNSAFE: this is safe because i said so
-                        // (the buffer it is pointing to is owned by this closure)
+                        // SAFETY: This is save because the buffer it is pointing to is owned by this closure.
                         let xchangedbuf_slice = unsafe {
                             slice::from_raw_parts_mut(slice_start as *mut u8, len as usize)
                         };
@@ -155,7 +173,7 @@ where
 
             let len = read_varint_async(&mut self.reader).await?;
 
-            // todo! ensure read len is valid
+            verify_len(len)?;
 
             // reserve enough space
 
@@ -163,6 +181,8 @@ where
 
             // get the ref
 
+            // @rob9315 please add a safety comment here
+            #[allow(clippy::undocumented_unsafe_blocks)]
             let readslice =
                 unsafe { slice::from_raw_parts_mut(self.readbuf.as_mut_ptr(), len as usize) };
 
@@ -192,8 +212,8 @@ where
                 // compression was used
 
                 // ensure uncompressed len is valid
+                verify_len(data_len)?;
 
-                // todo! add a max size check so we don't try to alloc 4gb
                 // when a malformed packet is received
 
                 // reserve enough space to inflate data

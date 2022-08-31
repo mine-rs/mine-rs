@@ -5,13 +5,17 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [features]
-default = ["net", "packets"]
+default = ["net", "packets", "auth"]
 net = ["dep:miners-net"]
 packets = ["dep:miners-packets"]
+auth = ["dep:miners-auth"]
+chat = ["dep:miners-chat"]
 
 [dependencies]
 miners-packets = { path = "packets", version = "0.0.0-beta.0", optional = true }
 miners-net = { path = "net", version = "0.0.0-beta.0", optional = true }
+miners-auth = { path = "auth", version = "0.0.0-beta.0", optional = true}
+miners-chat = { path = "chat", version = "0.0.0-beta.0", optional = true}
 
 [workspace]
 members = [
@@ -19,5 +23,7 @@ members = [
   "packets/derive",
   "packets/traits",
   "encoding",
-  "net"
+  "net",
+  "auth", 
+  "chat"
 ]
