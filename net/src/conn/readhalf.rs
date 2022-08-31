@@ -10,7 +10,7 @@ use aes::{
 };
 use cfb8::Decryptor;
 use flate2::Decompress;
-use futures::{io::BufReader, AsyncRead, AsyncReadExt};
+use futures_lite::{io::BufReader, AsyncRead, AsyncReadExt};
 
 /// The maximum packet length, 8 MiB
 const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;

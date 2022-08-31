@@ -1,6 +1,6 @@
 use aes::cipher::InvalidLength;
-use futures::io::{BufReader, BufWriter};
-use futures::{AsyncRead, AsyncReadExt, AsyncWrite};
+use futures_lite::io::{AsyncRead, AsyncWrite};
+use futures_lite::io::{BufReader, BufWriter};
 mod readhalf;
 mod writehalf;
 pub use readhalf::ReadHalf;
@@ -60,12 +60,18 @@ impl<R, W> Connection<R, W> {
     }
 }
 
-/// Don't use this if there are alternative split methods available for the stream you're using
-impl<T: AsyncRead + AsyncWrite + Sized> From<T>
-    for Connection<futures::io::ReadHalf<T>, futures::io::WriteHalf<T>>
+impl<T: AsyncRead + AsyncWrite + Sized + Unpin>
+    Connection<futures_lite::io::ReadHalf<T>, futures_lite::io::WriteHalf<T>>
 {
-    fn from(rw: T) -> Self {
-        let (reader, writer) = rw.split();
+    /// Don't use this if there are alternative split methods available for the
+    /// stream you're using
+    ///
+    /// # Safety
+    ///
+    /// This isn't unsafe, you just probably should not be using it as there is
+    /// likely a better alternative
+    pub unsafe fn split_io(rw: T) -> Self {
+        let (reader, writer) = futures_lite::io::split(rw);
         Connection::new(reader, writer)
     }
 }

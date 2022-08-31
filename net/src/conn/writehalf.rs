@@ -2,13 +2,11 @@ use std::{io, num::NonZeroU32};
 
 use super::INITIAL_BUF_SIZE;
 
-use aes::{
-    cipher::{inout::InOutBuf, BlockEncryptMut, InvalidLength, KeyIvInit},
-    Aes128,
-};
+use aes::cipher::{inout::InOutBuf, BlockEncryptMut, InvalidLength, KeyIvInit};
+use aes::Aes128;
 use cfb8::Encryptor;
 use flate2::Compress;
-use futures::{io::BufWriter, AsyncWrite, AsyncWriteExt};
+use futures_lite::{io::BufWriter, AsyncWrite, AsyncWriteExt};
 
 /// compression threshold + 1 for memory layout optimization
 pub(super) struct Compression(Option<(NonZeroU32, flate2::Compression)>);
