@@ -24,10 +24,15 @@ impl<T: ?Sized, C> From<&T> for &Counted<T, C> {
     }
 }
 
-
 impl<T: ?Sized, C> AsRef<T> for Counted<T, C> {
     fn as_ref(&self) -> &T {
         &self.inner
+    }
+}
+
+impl<T: Sized, C> Counted<T, C> {
+    fn into_inner(self) -> T {
+        self.inner
     }
 }
 

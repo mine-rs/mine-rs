@@ -37,8 +37,8 @@ macro_rules! error {
 
 mod attribute;
 mod r#enum;
-mod generics;
 mod fields;
+mod generics;
 use r#enum::derive_enum;
 mod r#struct;
 use r#struct::derive_struct;

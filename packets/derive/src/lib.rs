@@ -4,9 +4,9 @@ mod replace;
 mod to_static;
 
 use proc_macro::TokenStream;
-use to_static::to_static_generics;
 use quote::ToTokens;
 use syn::{parse_macro_input, DeriveInput};
+use to_static::to_static_generics;
 
 #[proc_macro_derive(ToStatic)]
 pub fn to_static(input: TokenStream) -> TokenStream {

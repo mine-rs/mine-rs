@@ -419,7 +419,7 @@ pub enum Object0 {
 // todo
 pub enum Orientation {
     #[case(0)]
-    _NonExhaustive
+    _NonExhaustive,
 }
 
 #[derive(Encoding, ToStatic)]

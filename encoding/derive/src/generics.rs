@@ -1,5 +1,5 @@
 use proc_macro2::Ident;
-use syn::{Generics, Lifetime, WhereClause, punctuated::Punctuated, parse_quote};
+use syn::{parse_quote, punctuated::Punctuated, Generics, Lifetime, WhereClause};
 
 pub fn implgenerics(generics: Generics, traid: &Ident, lifetime: Option<Lifetime>) -> Generics {
     let mut where_clause = generics.where_clause.unwrap_or_else(|| WhereClause {

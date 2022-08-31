@@ -1,4 +1,5 @@
 use crate::*;
+use std::convert::Infallible;
 
 mod bool;
 mod cow;
@@ -24,6 +25,12 @@ pub enum Error {
     UnexpectedEndOfSlice,
     #[error("invalid id")]
     InvalidId,
+}
+
+impl From<Infallible> for Error {
+    fn from(i: Infallible) -> Self {
+        match i {}
+    }
 }
 
 pub trait Decode<'dec>: Sized {
