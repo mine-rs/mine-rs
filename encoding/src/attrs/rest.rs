@@ -31,7 +31,7 @@ impl<T: AsRef<[u8]>> Encode for Rest<T> {
 }
 
 impl<T> Rest<T> {
-    fn into_inner(self) -> T {
+   pub  fn into_inner(self) -> T {
         self.0
     }
 }

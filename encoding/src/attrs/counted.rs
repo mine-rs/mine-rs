@@ -31,7 +31,7 @@ impl<T: ?Sized, C> AsRef<T> for Counted<T, C> {
 }
 
 impl<T: Sized, C> Counted<T, C> {
-    fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T {
         self.inner
     }
 }
