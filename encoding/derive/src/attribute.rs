@@ -18,6 +18,7 @@ pub enum AttributeData {
     From(Type),
     Fixed(Fixed),
     Counted(TypePath),
+    Rest,
     StringUuid,
 }
 #[derive(Clone)]
@@ -85,6 +86,10 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
                 data: AttributeData::Counted(a.0),
             })
         }),
+        Some(ident) if ident == "rest" => Some(Ok(Attribute {
+            span: ident.span(),
+            data: AttributeData::Rest,
+        })),
         _ => None,
     }
 }
@@ -96,6 +101,7 @@ pub enum Attrs {
     Fixed(Span, Fixed),
     StringUuid(Span),
     Counted(Span, TypePath),
+    Rest(Span),
 }
 
 pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenStream) -> Attrs {
@@ -103,6 +109,8 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
     let mut fixed = None;
     let mut stringuuid = None;
     let mut count = None;
+    let mut rest = None;
+
     for attr_res in attrs.map(parse_attr) {
         let Attribute { span, data } = match attr_res {
             Some(Ok(attr)) => attr,
@@ -134,10 +142,26 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
             }
             Counted(ty) => {
                 if count.is_none() {
-                    count = Some((span, ty));
-                    continue;
+                    if rest.is_some() {
+                        "`#[counted]` and `#[rest]` are mutually exclusive"
+                    } else {
+                        count = Some((span, ty));
+                        continue;
+                    }
                 } else {
                     "duplicate `#[counted(ty)]` attribute on field"
+                }
+            }
+            Rest => {
+                if rest.is_none() {
+                    if count.is_some() {
+                        "`#[counted]` and `#[rest]` are mutually exclusive"
+                    } else {
+                        rest = Some(span);
+                        continue;
+                    }
+                } else {
+                    "duplicate `#[rest(ty)]` attribute on field"
                 }
             }
             StringUuid => {
@@ -151,26 +175,28 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
         };
         error!(span, err_message).to_tokens(res)
     }
-    match (varint, fixed, stringuuid, count) {
-        (None, None, None, None) => Attrs::None,
-        (None, None, None, Some((cs, c))) => Attrs::Counted(cs, c),
-        (None, None, Some(s), a) => {
+    match (varint, fixed, stringuuid, count, rest) {
+        (None, None, None, None, None) => Attrs::None,
+        (None, None, None, Some((cs, c)), None) => Attrs::Counted(cs, c),
+        (None, None, Some(s), a, None) => {
             if a.is_some() {
                 error!(s, "`stringuuid` incompatible with other attribute(s)").to_tokens(res);
             }
             Attrs::StringUuid(s)
         }
-        (None, Some((fs, f)), a, b) => {
+        (None, None, None, None, Some(cs)) => Attrs::Rest(cs),
+        (None, Some((fs, f)), a, b, None) => {
             if a.is_some() || b.is_some() {
                 error!(fs, "`fixed` incompatible with other attribute(s)").to_tokens(res);
             }
             Attrs::Fixed(fs, f)
         }
-        (Some(v), a, b, c) => {
+        (Some(v), a, b, c, None) => {
             if a.is_some() || b.is_some() || c.is_some() {
                 error!(v, "`varint` incompatible with other attribute(s)").to_tokens(res);
             }
             Attrs::Var(v)
         }
+        _ => todo!(),
     }
 }

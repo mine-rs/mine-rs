@@ -49,6 +49,7 @@ pub fn derive_enum(
             Fixed(_) => error!(span, "`#[fixed(prec, ty)]` not allowed on enum declaration"),
             Counted(_) => error!(span, "#[counted(ty)] not allowed on enum declaration"),
             StringUuid => error!(span, "#[stringuuid] not allowed on enum declaration"),
+            Rest => error!(span, "#[rest] not allowed on enum declaration"),
         }
         .to_tokens(&mut res);
     }
@@ -94,6 +95,7 @@ pub fn derive_enum(
                 Fixed(_) => "`#[fixed(prec, ty)]` not allowed on enum variant",
                 Counted(_) => "`#[counted(ty)]` not allowed on enum variant",
                 StringUuid => "`#[stringuuid]` not allowed on enum variant",
+                Rest => "#[rest]` not allowed on enum variant",
             };
             error!(span, err).to_tokens(&mut res);
         }

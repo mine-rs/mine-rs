@@ -31,6 +31,7 @@ pub fn derive_struct(
             From(_) => continue,
             Fixed(_) => "#[fixed(prec, ty)]",
             Counted(_) => "#[counted(ty)]",
+            Rest => "#[rest]",
             StringUuid => "#[stringuuid]",
         };
         error!(span, "`{}` not allowed on struct", kind).to_tokens(&mut res);
