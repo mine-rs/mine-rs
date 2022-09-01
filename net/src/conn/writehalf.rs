@@ -340,10 +340,9 @@ where
         {
             self.workbuf2.clear();
             packet.encode(&mut self.workbuf2)?;
-            let mut buf = Vec::<u8>::new();
-            std::mem::swap(&mut buf, &mut self.workbuf2);
+            let buf = std::mem::take(&mut self.workbuf2);
             self.write_raw_packet(id, &buf).await?;
-            std::mem::swap(&mut buf, &mut self.workbuf2);
+            self.workbuf2 = buf;
             Ok(())
         }
 
