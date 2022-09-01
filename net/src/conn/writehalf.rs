@@ -63,7 +63,7 @@ pub struct WriteHalf<W> {
     encryptor: Option<Encryptor<Aes128>>,
     pub(super) compression: Compression,
     workbuf: Vec<u8>,
-    #[cfg(feature = "packets")]
+    #[cfg(feature = "encoding")]
     /// used for serializing packets, only exists when `protocol` is enabled
     workbuf2: Vec<u8>,
     writer: BufWriter<W>,
@@ -91,7 +91,7 @@ impl<W> WriteHalf<W> {
             encryptor,
             compression,
             workbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
-            #[cfg(feature = "packets")]
+            #[cfg(feature = "encoding")]
             workbuf2: Vec::with_capacity(INITIAL_BUF_SIZE),
             writer,
             #[cfg(feature = "blocking")]
@@ -328,7 +328,26 @@ where
         Ok(())
     }
 
-    #[cfg(feature = "packets")]
+    // This will hopefully replace write_packet
+    #[cfg(feature = "encoding")]
+    pub async fn write_packet_no_duplication<P>(
+        &mut self,
+        id: i32,
+        packet: P,
+    ) -> Result<(), miners_encoding::encode::Error>
+    where
+        P: miners_encoding::Encode,
+        {
+            self.workbuf2.clear();
+            packet.encode(&mut self.workbuf2)?;
+            let mut buf = Vec::<u8>::new();
+            std::mem::swap(&mut buf, &mut self.workbuf2);
+            self.write_raw_packet(id, &buf).await?;
+            std::mem::swap(&mut buf, &mut self.workbuf2);
+            Ok(())
+        }
+
+    #[cfg(feature = "encoding")]
     pub async fn write_packet<P>(
         &mut self,
         id: i32,
