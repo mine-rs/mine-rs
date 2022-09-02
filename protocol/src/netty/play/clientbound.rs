@@ -235,6 +235,50 @@ pub struct PositionAndLook0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct PositionAndLook6 {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    /// Absolute rotation on the X Axis, in degrees
+    pub yaw: f32,
+    /// Absolute rotation on the Y Axis, in degrees
+    pub pitch: f32,
+    pub relativity: PositionAndLookBitfield6,
+}
+
+#[derive(Encoding, ToStatic)]
+#[bitfield(u8, reverse)]
+pub struct PositionAndLookBitfield6 {
+    #[bool]
+    x: bool,
+    #[bool]
+    y: bool,
+    #[bool]
+    z: bool,
+    #[bool]
+    pitch: bool,
+    #[bool]
+    yaw: bool,
+}
+
+#[test]
+fn position_and_look_bitfield6() {
+    let val = &[0b00011111u8];
+    let mut cursor = std::io::Cursor::new(&val[..]);
+    #[allow(clippy::unwrap_used)]
+    let res = PositionAndLookBitfield6::decode(&mut cursor).unwrap();
+    assert!(res.x);
+    assert!(res.y);
+    assert!(res.z);
+    assert!(res.pitch);
+    assert!(res.yaw);
+    let mut buf = vec![];
+    #[allow(clippy::unwrap_used)]
+    res.encode(&mut buf).unwrap();
+    assert_eq!(&buf[..], &val[..])
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct HeldItemChange0 {
     /// The slot which the player has selected (0-8)
     pub slot: u8,

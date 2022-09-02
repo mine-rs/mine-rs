@@ -4,7 +4,7 @@ use syn::{parse_quote, DataStruct, Generics};
 
 use crate::{
     attribute::{parse_attr, Attribute},
-    fields::{fields_codegen, fields_to_codegen_input, FieldsCode, bitfield_codegen},
+    fields::{bitfield_codegen, fields_codegen, fields_to_codegen_input, FieldsCode},
     generics::implgenerics,
 };
 
@@ -48,6 +48,7 @@ pub fn derive_struct(
                 continue;
             }
             Bits(_) => "#[bits(size)]",
+            Bool => "#[bool]",
         };
         error!(span, "`{}` not allowed on struct", kind).to_tokens(&mut res);
     }
@@ -55,7 +56,7 @@ pub fn derive_struct(
     if let Some((span, ty)) = bitfield {
         bitfield_codegen(span, ty, ident, strukt, &mut res);
 
-        return res
+        return res;
     }
 
     let FieldsCode {

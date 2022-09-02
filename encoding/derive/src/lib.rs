@@ -6,7 +6,7 @@ extern crate proc_macro;
 
 #[proc_macro_derive(
     Encoding,
-    attributes(varint, case, counted, from, fixed, stringuuid, bitfield, bits)
+    attributes(varint, case, counted, from, fixed, stringuuid, bitfield, bits, bool)
 )]
 pub fn encoding(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let DeriveInput {

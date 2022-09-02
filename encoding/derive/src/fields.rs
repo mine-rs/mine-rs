@@ -2,7 +2,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote_spanned, ToTokens};
 use syn::{spanned::Spanned, Fields, Type};
 
-use crate::attribute::{field_attrs, parse_attr, Attribute, Attrs, Fixed};
+use crate::attribute::{field_attrs, parse_attr, Attribute, Attrs, BitField, Fixed};
 
 #[derive(Clone, Copy)]
 pub enum Naming {
@@ -158,14 +158,14 @@ pub fn fields_codegen((kind, fields): (Naming, Vec<Field>)) -> FieldsCode {
 
 pub fn bitfield_codegen(
     span: proc_macro2::Span,
-    ty: Option<syn::Type>,
+    BitField(ty, reverse): BitField,
     ident: Ident,
     strukt: syn::DataStruct,
     res: &mut TokenStream,
 ) {
     let mut cumultative_size = 0;
 
-    let mut bitfields: Vec<(u8, Ident, Type)> = vec![];
+    let mut bitfields: Vec<(bool, u8, Ident, Type)> = vec![];
 
     let mut destructuring = quote! {};
 
@@ -175,6 +175,11 @@ pub fn bitfield_codegen(
         Fields::Unit => panic!("`#[bitfield]` not allowed on unit structs"),
     };
 
+    // let fields: Vec<_> = match reverse {
+    //     true => strukt.fields.into_iter().rev().enumerate().collect(),
+    //     false => strukt.fields.into_iter().enumerate().collect(),
+    // };
+
     for (
         i,
         syn::Field {
@@ -182,7 +187,7 @@ pub fn bitfield_codegen(
         },
     ) in strukt.fields.into_iter().enumerate()
     {
-        let mut size = None;
+        let mut bool_and_size = None;
         for attr in attrs.into_iter().flat_map(parse_attr) {
             let Attribute { span, data } = match attr {
                 Ok(attr) => attr,
@@ -202,21 +207,33 @@ pub fn bitfield_codegen(
                 StringUuid => "`#[stringuuid]`",
                 BitField(_) => "`#[bitfield]`",
                 Bits(s) => {
-                    if size.is_some() {
+                    if bool_and_size.is_some() {
                         error!(
                             span,
-                            "duplicate `#[bits(size)]` attribute specified on field"
+                            "duplicate `#[bits(size)]` or `#[bool]` attribute specified on field"
                         )
                         .to_tokens(res);
                     } else {
-                        size = Some(s);
+                        bool_and_size = Some((false, s));
+                    }
+                    continue;
+                }
+                Bool => {
+                    if bool_and_size.is_some() {
+                        error!(
+                            span,
+                            "duplicate `#[bits(size)]` or `#[bool]` attribute specified on field"
+                        )
+                        .to_tokens(res);
+                    } else {
+                        bool_and_size = Some((true, 1));
                     }
                     continue;
                 }
             };
             error!(span, "{} not allowed on field", err).to_tokens(res)
         }
-        let size = match size {
+        let (is_bool, size) = match bool_and_size {
             Some(size) => size,
             None => {
                 let span = ident.span();
@@ -231,11 +248,11 @@ pub fn bitfield_codegen(
 
         quote! {#ident,}.to_tokens(&mut destructuring);
 
-        bitfields.push((size, ident, ty));
+        bitfields.push((is_bool, size, ident, ty));
     }
 
     let destructuring = match kind {
-        Naming::Named => quote!{{#destructuring}},
+        Naming::Named => quote! {{#destructuring}},
         Naming::Unnamed => quote!((#destructuring)),
     };
 
@@ -259,25 +276,44 @@ pub fn bitfield_codegen(
     };
 
     /* | ((x as ty & (ty::BITS as ty - size)) << offset) */
-    let mut encode = quote!{0};
-    let mut decode = quote!{};
-    let mut neg_checks = quote!{};
+    let mut encode = quote! {0};
+    let mut decode = quote! {};
+    let mut neg_checks = quote! {};
 
     let mut offset = 0;
 
-    for (size, ident, field_ty) in bitfields {
-        offset += size;
-        quote!{
-            | ((*#ident as #ty & (!0 >> (#ty::BITS as #ty - #size as #ty))) << (#ty::BITS as #ty - #offset as #ty))
-        }.to_tokens(&mut encode);
-        quote!{
-            let mut #ident = ((__value >> (#ty::BITS as #ty - #offset as #ty) as #ty) & !0 >> (#ty::BITS as #ty - #size as #ty)) as _;
-        }.to_tokens(&mut decode);
-        quote!{
-            if #field_ty::MIN != 0 && #ident >= 1 << (#size as #field_ty - 1) {
-                #ident ^= -1 << #size as #field_ty;
+    for (is_bool, size, ident, field_ty) in bitfields {
+        let shift = if reverse {
+            let shift = quote! { (#offset as #ty)};
+            offset += size;
+            shift
+        } else {
+            offset += size;
+            quote! { (#ty::BITS as #ty - #offset as #ty) }
+        };
+        if !is_bool {
+            quote! {
+                | ((*#ident as #ty & (!0 >> (#ty::BITS as #ty - #size as #ty))) << #shift)
             }
-        }.to_tokens(&mut neg_checks);
+            .to_tokens(&mut encode);
+            quote!{
+                let mut #ident = ((__value >> #shift) & !0 >> (#ty::BITS as #ty - #size as #ty)) as _;
+            }.to_tokens(&mut decode);
+            quote! {
+                if #field_ty::MIN != 0 && #ident >= 1 << (#size as #field_ty - 1) {
+                    #ident ^= -1 << #size as #field_ty;
+                }
+            }
+            .to_tokens(&mut neg_checks);
+        } else {
+            quote! {
+                | ((*#ident as #ty & (!0 >> (#ty::BITS as #ty - #size as #ty))) << #shift)
+            }
+            .to_tokens(&mut encode);
+            quote!{
+                let mut #ident = ((__value >> #shift) & !0 >> (#ty::BITS as #ty - #size as #ty)) != 0;
+            }.to_tokens(&mut decode);
+        }
     }
 
     quote! {
