@@ -3,6 +3,7 @@ use crate::*;
 use crate::netty::Position;
 use attrs::Var;
 use std::borrow::Cow;
+use uuid::Uuid;
 
 #[derive(Encoding, ToStatic)]
 pub struct KeepAlive0 {
@@ -760,4 +761,9 @@ pub enum ClientStatus0 {
 pub struct PluginMessage0<'a> {
     pub channel: Cow<'a, str>,
     pub data: Cow<'a, [u8]>,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct Spectate17 {
+    pub target_player: Uuid,
 }

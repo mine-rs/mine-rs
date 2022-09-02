@@ -1480,6 +1480,27 @@ pub struct Particle0<'a> {
     pub number: i32,
 }
 
+#[derive(Encoding, ToStatic)]
+pub struct Particle17<'a> {
+    // todo! specific strings into enum
+    pub name: Cow<'a, str>,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    /// This is added to the X position after being multiplied by random.nextGaussian()
+    pub offset_x: f32,
+    /// This is added to the Y position after being multiplied by random.nextGaussian()
+    pub offset_y: f32,
+    /// This is added to the Z position after being multiplied by random.nextGaussian()
+    pub offset_z: f32,
+    pub speed: f32,
+    pub number: i32,
+    // todo! read exact number of varints using enum of possible names
+    // https://wiki.vg/index.php?title=Protocol&oldid=7368#Particle_2
+    #[rest]
+    pub data: Cow<'a, [u8]>,
+}
+
 // #[derive(Encoding, ToStatic)]
 // struct ChangeGameState0 {
 //     reason: GameStateChangeReason,
@@ -1942,6 +1963,43 @@ pub struct PlayerListItem7<'a> {
     pub ping: i32,
 }
 
+#[derive(Encoding, ToStatic)]
+pub enum PlayerListItem17<'a> {
+    #[case(0)]
+    AddPlayers(Vec<PlayerListAddPlayer17<'a>>),
+    UpdateGamemode(Vec<PlayerListUpdateGamemode17>),
+    UpdateLatency(Vec<PlayerListUpdateLatency17>),
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct PlayerListAddPlayer17<'a> {
+    pub uuid: Uuid,
+    pub name: Cow<'a, str>,
+    pub gamemode: GameMode17,
+    #[varint]
+    pub ping: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct PlayerListUpdateGamemode17 {
+    pub uuid: Uuid,
+    pub gamemode: GameMode17,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct PlayerListUpdateLatency17 {
+    pub uuid: Uuid,
+    #[varint]
+    pub ping: i32,
+}
+
+#[derive(Encoding, ToStatic, Clone, Copy)]
+pub enum GameMode17 {
+    Survival = 0,
+    Creative,
+    Adventure,
+}
+
 #[derive(ToStatic)]
 pub struct PlayerAbilities0 {
     pub invulnerable: bool,
@@ -2284,14 +2342,14 @@ pub enum WorldBorder15 {
         /// number of real-time ticks/seconds (?) until New Radius is reached.
         /// From experiments, it appears that Notchian server does not sync
         /// world border speed to game ticks, so it gets out of sync with
-        /// server lag 
+        /// server lag
         #[varint]
         speed: i32,
     },
     SetCenter {
         x: f64,
         z: f64,
-    }
+    },
 }
 
 #[derive(Encoding, ToStatic)]
@@ -2306,7 +2364,7 @@ pub enum WorldBorder16 {
         /// number of real-time ticks/seconds (?) until New Radius is reached.
         /// From experiments, it appears that Notchian server does not sync
         /// world border speed to game ticks, so it gets out of sync with
-        /// server lag 
+        /// server lag
         #[varint]
         speed: i32,
     },
@@ -2321,8 +2379,53 @@ pub enum WorldBorder16 {
         new_radius: f64,
         #[varint]
         speed: i32,
-        /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984. 
+        /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984.
         #[varint]
-        portal_tp_boundary: i32
-    }
+        portal_tp_boundary: i32,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
+pub enum WorldBorder17 {
+    #[case(0)]
+    SetSize {
+        radius: f64,
+    },
+    LerpSize {
+        old_radius: f64,
+        new_radius: f64,
+        /// number of real-time ticks/seconds (?) until New Radius is reached.
+        /// From experiments, it appears that Notchian server does not sync
+        /// world border speed to game ticks, so it gets out of sync with
+        /// server lag
+        #[varint]
+        speed: i32,
+    },
+    SetCenter {
+        x: f64,
+        z: f64,
+    },
+    SetWarningTime {
+        #[varint]
+        warning_time: i32,
+    },
+    SetWarningBlocks {
+        #[varint]
+        warning_blocks: i32,
+    },
+    Initialize {
+        x: f64,
+        z: f64,
+        old_radius: f64,
+        new_radius: f64,
+        #[varint]
+        speed: i32,
+        /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984.
+        #[varint]
+        portal_tp_boundary: i32,
+        #[varint]
+        warning_time: i32,
+        #[varint]
+        warning_blocks: i32,
+    },
 }
