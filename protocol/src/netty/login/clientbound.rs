@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 #[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {
+    // chat most likely, for sure starting pv13
     pub reason: Cow<'a, str>,
 }
 

@@ -7,7 +7,7 @@ parsing_tree! {
     login_cb_custom login_cb_tree clientbound::;
     0x00 => {
         0..=12 => Disconnect0<'a>,
-        // 13..=384 => _13,
+        13..=384 => Disconnect0<'a>,
         // 385..=390 => _385,
     },
     0x01 => {

@@ -1663,6 +1663,7 @@ impl<'a> Encode for OpenWindow0<'a> {
 pub struct OpenWindow6<'a> {
     pub window_id: u8,
     pub kind: InventoryKind6,
+    // chat component? at least starting pv13
     pub title: Cow<'a, str>,
     pub slot_count: u8,
 }
@@ -2022,6 +2023,8 @@ pub enum ScoreboardObjectiveAction12<'a> {
     },
 }
 
+// todo! check that there aren't any other cases in later supported protocol versions
+// support up to pv66
 #[derive(Encoding, ToStatic)]
 #[from(&str)]
 pub enum ScoreboardObjectiveKind12 {
@@ -2218,6 +2221,7 @@ pub struct PluginMessage0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {
+    // chatcomponent, at least starting pv13
     pub reason: Cow<'a, str>,
 }
 
