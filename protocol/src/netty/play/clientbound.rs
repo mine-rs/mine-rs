@@ -2429,3 +2429,23 @@ pub enum WorldBorder17 {
         warning_blocks: i32,
     },
 }
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum Title18<'a> {
+    #[case(0)]
+    SetTitle {
+        text: Cow<'a, str>,
+    },
+    SetSubTitle {
+        text: Cow<'a, str>,
+    },
+    SetTimesAndDisplay {
+        /// ticks
+        fade_in: i32,
+        /// ticks
+        stay: i32,
+        /// ticks
+        fade_out: i32,
+    },
+}
