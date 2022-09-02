@@ -2121,6 +2121,43 @@ pub enum TeamAction7<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct Teams11<'a> {
+    pub name: Cow<'a, str>,
+    pub action: TeamAction11<'a>,
+}
+
+#[derive(Encoding, ToStatic)]
+pub enum TeamAction11<'a> {
+    #[case(0)]
+    Create {
+        display_name: Cow<'a, str>,
+        prefix: Cow<'a, str>,
+        suffix: Cow<'a, str>,
+        friendly_fire: TeamFriendlyFire,
+        name_tag_vis: NameTagVisibility11,
+        /// Same as Chat colors
+        color: u8,
+        players: Vec<Cow<'a, str>>,
+    },
+    Remove,
+    Update {
+        display_name: Cow<'a, str>,
+        prefix: Cow<'a, str>,
+        suffix: Cow<'a, str>,
+        friendly_fire: TeamFriendlyFire,
+        name_tag_vis: NameTagVisibility11,
+        /// Same as Chat colors
+        color: u8,
+    },
+    AddPlayers {
+        players: Vec<Cow<'a, str>>,
+    },
+    RemovePlayers {
+        players: Vec<Cow<'a, str>>,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum TeamFriendlyFire {
     Off = 0,
@@ -2128,10 +2165,9 @@ pub enum TeamFriendlyFire {
     FriendliesVisible = 3,
 }
 
-// for later protocol versions
 #[derive(Encoding, ToStatic)]
 #[from(&str)]
-pub enum NameTagVisibility /*version?*/ {
+pub enum NameTagVisibility11 {
     #[case("always")]
     Always,
     #[case("hideForOtherTeams")]
