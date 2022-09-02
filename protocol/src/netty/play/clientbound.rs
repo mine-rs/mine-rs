@@ -2001,6 +2001,37 @@ pub enum ScoreboardAction0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct ScoreboardObjective12<'a> {
+    pub name: Cow<'a, str>,
+    pub value: Cow<'a, str>,
+    pub action: ScoreboardAction0,
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum ScoreboardObjectiveAction12<'a> {
+    #[case(0)]
+    Create {
+        value: Cow<'a, str>,
+        kind: ScoreboardObjectiveKind12,
+    },
+    Remove,
+    Update {
+        value: Cow<'a, str>,
+        kind: ScoreboardObjectiveKind12,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(&str)]
+pub enum ScoreboardObjectiveKind12 {
+    #[case("integer")]
+    Integer,
+    #[case("hearts")]
+    Hearts,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct UpdateScore0<'a> {
     /// The name of the score to be updated or removed
     pub name: Cow<'a, str>,

@@ -1671,7 +1671,7 @@ parsing_tree! {
     },
     0x3b => {
         0..=11 => ScoreboardObjective0<'a>,
-        // 12..=66 => _12,
+        12..=66 => ScoreboardObjective12<'a>,
         // 67..=76 => _67,
         // 77..=85 => _77,
         // 86..=317 => _86,
