@@ -213,7 +213,7 @@ parsing_tree! {
         5 => SpawnPlayer5<'a>,
         6 => SpawnPlayer0<'a>,
         7..=13 => SpawnPlayer7<'a>,
-        // 14..=18 => _14,
+        14..=18 => SpawnPlayer5<'a>,
         // 19..=48 => _19,
         // 49..=66 => _49,
         // 67..=317 => _67,
