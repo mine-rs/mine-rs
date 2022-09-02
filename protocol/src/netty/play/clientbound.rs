@@ -512,6 +512,30 @@ impl<'a> Encode for SpawnPlayer7<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct SpawnPlayer19<'a> {
+    #[varint]
+    pub entity_id: i32,
+    pub player_uuid: Uuid,
+    pub name: Cow<'a, str>,
+    #[fixed(5, i32)]
+    /// Player X as a Fixed-Point number
+    pub x: f64,
+    #[fixed(5, i32)]
+    /// Player Y as a Fixed-Point number
+    pub y: f64,
+    #[fixed(5, i32)]
+    /// Player Z as a Fixed-Point number
+    pub z: f64,
+    pub yaw: Angle,
+    pub pitch: Angle,
+    /// The item the player is currently holding. Note that this should be 0
+    /// for "no item", unlike -1 used in other packets. A negative value
+    /// crashes clients.
+    pub current_item: u16,
+    pub metadata: EntityMetadata,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct PlayerProperty<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
@@ -1991,6 +2015,62 @@ pub struct PlayerListUpdateLatency17 {
     pub uuid: Uuid,
     #[varint]
     pub ping: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub enum PlayerListItem19<'a> {
+    #[case(0)]
+    AddPlayers(Vec<PlayerListAddPlayer19<'a>>),
+    UpdateGamemode(Vec<PlayerListUpdateGamemode17>),
+    UpdateLatency(Vec<PlayerListUpdateLatency17>),
+    RemovePlayers(Vec<Uuid>),
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct PlayerListAddPlayer19<'a> {
+    pub uuid: Uuid,
+    pub name: Cow<'a, str>,
+    pub properties: Vec<PlayerProperty19<'a>>,
+    pub gamemode: GameMode17,
+    #[varint]
+    pub ping: i32,
+}
+
+#[derive(ToStatic)]
+pub struct PlayerProperty19<'a> {
+    pub name: Cow<'a, str>,
+    pub value: Cow<'a, str>,
+    // todo! default Option impl?
+    pub signature: Option<Cow<'a, str>>,
+}
+impl<'dec, 'a> Decode<'dec> for PlayerProperty19<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        Ok(Self {
+            name: Cow::decode(cursor)?,
+            value: Cow::decode(cursor)?,
+            signature: if bool::decode(cursor)? {
+                Some(Cow::decode(cursor)?)
+            } else {
+                None
+            },
+        })
+    }
+}
+impl<'a> Encode for PlayerProperty19<'a> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> encode::Result<()> {
+        self.name.encode(writer)?;
+        self.value.encode(writer)?;
+        if let Some(signature) = &self.signature {
+            true.encode(writer)?;
+            signature.encode(writer)?;
+        } else {
+            false.encode(writer)?;
+        };
+        Ok(())
+    }
 }
 
 #[derive(Encoding, ToStatic, Clone, Copy)]

@@ -214,7 +214,7 @@ parsing_tree! {
         6 => SpawnPlayer0<'a>,
         7..=13 => SpawnPlayer7<'a>,
         14..=18 => SpawnPlayer5<'a>,
-        // 19..=48 => _19,
+        19..=48 => SpawnPlayer19<'a>,
         // 49..=66 => _49,
         // 67..=317 => _67,
         // 318..=331 => _318,
@@ -1561,7 +1561,7 @@ parsing_tree! {
         0..=6 => PlayerListItem0<'a>,
         7..=16 => PlayerListItem7<'a>,
         17..=18 => PlayerListItem17<'a>,
-        // 19..=27 => _19,
+        19..=27 => PlayerListItem19<'a>,
         // 28..=66 => _28,
         // 67..=79 => _67,
         // 80..=85 => _80,
@@ -1715,7 +1715,9 @@ parsing_tree! {
     0x3c => {
         0..=6 => UpdateScore0<'a>,
         7..=18 => UpdateScore7<'a>,
-        // 19..=20 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=20 => UpdateScore7<'a>,
         // 21..=66 => _21,
         // 67..=76 => _67,
         // 77..=85 => _77,
@@ -1916,7 +1918,9 @@ parsing_tree! {
     0x42 => {
         7 => CombatEvent7<'a>,
         8..=18 => CombatEvent8<'a>,
-        // 19..=48 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=48 => CombatEvent8<'a>,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -1989,7 +1993,9 @@ parsing_tree! {
         15 => WorldBorder15,
         16 => WorldBorder16,
         17..=18 => WorldBorder17,
-        // 19..=31 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=31 => WorldBorder17,
         // 32..=66 => _32,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -2023,7 +2029,9 @@ parsing_tree! {
     },
     0x45 => {
         18 => Title18<'a>,
-        // 19..=66 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=66 => Title18<'a>,
         // 67..=76 => _67,
         // 77..=79 => _77,
         // 80..=85 => _80,
@@ -3000,7 +3008,9 @@ parsing_tree! {
     0x02 => {
         0..=6 => UseEntity0,
         7..=18 => UseEntity7,
-        // 19..=32 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=32 => UseEntity7,
         // 33..=48 => _33,
         // 49..=66 => _49,
         // 67..=79 => _67,
@@ -3083,7 +3093,9 @@ parsing_tree! {
     0x07 => {
         0..=5 => PlayerDigging0,
         6..=18 => PlayerDigging6,
-        // 19..=66 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=66 => PlayerDigging6,
         // 67..=79 => _67,
         // 80..=82 => _80,
         // 83..=317 => _83,
@@ -3167,7 +3179,9 @@ parsing_tree! {
     0x0b => {
         0..=6 => EntityAction0,
         7..=18 => EntityAction7,
-        // 19..=48 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=48 => EntityAction7,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -3428,7 +3442,9 @@ parsing_tree! {
     },
     0x16 => {
         0..=18 => ClientStatus0,
-        // 19..=48 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=48 => ClientStatus0,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,

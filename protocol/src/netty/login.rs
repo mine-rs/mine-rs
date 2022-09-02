@@ -12,7 +12,7 @@ parsing_tree! {
     },
     0x01 => {
         0..=18 => EncryptionResponse0<'a>,
-        // 19..=384 => _19,
+        19..=384 => EncryptionResponse19<'a>,
         // 385..=390 => _385,
     },
     0x02 => {
@@ -66,7 +66,7 @@ parsing_tree! {
     },
     0x01 => {
         0..=18 => EncryptionRequest0<'a>,
-        // 19..=384 => _19,
+        19..=384 => EncryptionRequest19<'a>,
         // 385..=390 => _385,
         // 391..=758 => _391,
         // 759..=760 => _759,

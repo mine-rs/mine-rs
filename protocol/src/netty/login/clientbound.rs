@@ -20,6 +20,13 @@ pub struct EncryptionResponse0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EncryptionResponse19<'a> {
+    pub server_id: Cow<'a, str>,
+    pub public_key: Cow<'a, [u8]>,
+    pub verify_token: Cow<'a, [u8]>,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct Success0<'a> {
     #[stringuuid]
     pub uuid: Uuid,
