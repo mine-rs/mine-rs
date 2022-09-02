@@ -2182,3 +2182,9 @@ pub enum CombatEvent8<'a> {
         message: Cow<'a, str>,
     },
 }
+
+#[derive(Encoding, ToStatic)]
+pub struct Camera9 {
+    #[varint]
+    pub entity_id: i32,
+}
