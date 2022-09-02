@@ -50,6 +50,14 @@ pub struct PlayerPosition0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct PlayerPosition10 {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub on_ground: bool,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct PlayerLook0 {
     pub yaw: f32,
     pub pitch: f32,
@@ -62,6 +70,16 @@ pub struct PlayerPositionAndLook0 {
     pub y: f64,
     /// Used to modify the players bounding box when going up stairs, crouching, etc…
     pub stance: f64,
+    pub z: f64,
+    pub yaw: f32,
+    pub pitch: f32,
+    pub on_ground: bool,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct PlayerPositionAndLook10 {
+    pub x: f64,
+    pub y: f64,
     pub z: f64,
     pub yaw: f32,
     pub pitch: f32,

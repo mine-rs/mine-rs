@@ -1022,6 +1022,18 @@ pub struct EntityEffect7 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityEffect10 {
+    #[varint]
+    pub entity_id: i32,
+    // todo! effect ids
+    pub effect_id: i8,
+    pub amplifier: i8,
+    #[varint]
+    pub duration: i32,
+    pub hide_particles: bool,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct RemoveEntityEffect0 {
     pub entity_id: i32,
     pub effect_id: i8,
