@@ -2293,3 +2293,36 @@ pub enum WorldBorder15 {
         z: f64,
     }
 }
+
+#[derive(Encoding, ToStatic)]
+pub enum WorldBorder16 {
+    #[case(0)]
+    SetSize {
+        radius: f64,
+    },
+    LerpSize {
+        old_radius: f64,
+        new_radius: f64,
+        /// number of real-time ticks/seconds (?) until New Radius is reached.
+        /// From experiments, it appears that Notchian server does not sync
+        /// world border speed to game ticks, so it gets out of sync with
+        /// server lag 
+        #[varint]
+        speed: i32,
+    },
+    SetCenter {
+        x: f64,
+        z: f64,
+    },
+    Initialize {
+        x: f64,
+        z: f64,
+        old_radius: f64,
+        new_radius: f64,
+        #[varint]
+        speed: i32,
+        /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984. 
+        #[varint]
+        portal_tp_boundary: i32
+    }
+}
