@@ -131,11 +131,11 @@ pub fn fields_codegen((kind, fields): (Naming, Vec<Field>)) -> FieldsCode {
             }
             Attrs::Rest(cs) => {
                 quote_spanned! {cs=>
-                    let #ident = <Rest<_> as Decode>::decode(cursor)?.inner;
+                    let #ident = <Rest<_> as Decode>::decode(cursor)?.into_inner();
                 }
                 .to_tokens(&mut parsing);
                 quote_spanned! {cs=>
-                    Encode::encode(<&Rest<#ty>>)
+                    Encode::encode(<&Rest<#ty>>::from(#ident), writer)?;
                 }
                 .to_tokens(&mut serialization)
             }
