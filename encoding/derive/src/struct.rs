@@ -4,7 +4,7 @@ use syn::{parse_quote, DataStruct, Generics};
 
 use crate::{
     attribute::{parse_attr, Attribute},
-    fields::{fields_codegen, fields_to_codegen_input, FieldsCode},
+    fields::{fields_codegen, fields_to_codegen_input, FieldsCode, bitfield_codegen},
     generics::implgenerics,
 };
 
@@ -15,6 +15,8 @@ pub fn derive_struct(
     strukt: DataStruct,
 ) -> TokenStream {
     let mut res = TokenStream::new();
+
+    let mut bitfield = None;
 
     for attr_res in attrs.into_iter().flat_map(parse_attr) {
         let Attribute { span, data } = match attr_res {
@@ -28,13 +30,32 @@ pub fn derive_struct(
         let kind = match data {
             VarInt => "#[varint]",
             Case(_) => "#[case(ty)]",
-            From(_) => continue,
+            From(_) => "#[from(ty)]",
             Fixed(_) => "#[fixed(prec, ty)]",
             Counted(_) => "#[counted(ty)]",
             Rest => "#[rest]",
             StringUuid => "#[stringuuid]",
+            BitField(ty) => {
+                if bitfield.is_some() {
+                    error!(
+                        span,
+                        "duplicate `#[bitfield]` specified on struct declaration"
+                    )
+                    .to_tokens(&mut res);
+                } else {
+                    bitfield = Some((span, ty));
+                };
+                continue;
+            }
+            Bits(_) => "#[bits(size)]",
         };
         error!(span, "`{}` not allowed on struct", kind).to_tokens(&mut res);
+    }
+
+    if let Some((span, ty)) = bitfield {
+        bitfield_codegen(span, ty, ident, strukt, &mut res);
+
+        return res
     }
 
     let FieldsCode {

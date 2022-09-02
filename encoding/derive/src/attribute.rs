@@ -20,6 +20,8 @@ pub enum AttributeData {
     Counted(TypePath),
     Rest,
     StringUuid,
+    BitField(Option<Type>),
+    Bits(u8),
 }
 #[derive(Clone)]
 pub struct Fixed {
@@ -36,6 +38,13 @@ impl Parse for Fixed {
                 input.parse()?
             },
         })
+    }
+}
+pub struct Bits(u8);
+impl Parse for Bits {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let litint: LitInt = input.parse()?;
+        Ok(Bits(litint.base10_parse()?))
     }
 }
 
@@ -90,6 +99,18 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
             span: ident.span(),
             data: AttributeData::Rest,
         })),
+        Some(ident) if ident == "bitfield" => Some({
+            Ok(Attribute {
+                span,
+                data: AttributeData::BitField(parse2::<UnParen<Type>>(tokens).ok().map(|a| a.0)),
+            })
+        }),
+        Some(ident) if ident == "bits" => Some({
+            parse2::<UnParen<Bits>>(tokens).map(|a| Attribute {
+                span: ident.span(),
+                data: AttributeData::Bits(a.0 .0),
+            })
+        }),
         _ => None,
     }
 }
@@ -171,6 +192,10 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
                 } else {
                     "duplicate `#[stringuuid]` attribute on field"
                 }
+            }
+            BitField(_) => "`#[bitfield]` not allowed on field",
+            Bits(_) => {
+                "`#[bits(size)]` not allowed on field without `#[bitfield]` on struct declaration"
             }
         };
         error!(span, err_message).to_tokens(res)

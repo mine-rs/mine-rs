@@ -132,9 +132,24 @@ pub enum Dimension0 {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct ChatMessage0 {
+pub struct ChatMessage0<'a> {
     // todo! add ChatMessage json thing
-    pub message: String,
+    pub message: Cow<'a, str>,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct ChatMessage6<'a> {
+    // todo! add ChatMessage json thing
+    pub message: Cow<'a, str>,
+    pub position: ChatMessagePosition6,
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum ChatMessagePosition6 {
+    Chat = 0,
+    System,
+    Hotbar,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -166,6 +181,17 @@ pub struct SpawnPosition0 {
     pub x: i32,
     pub y: i32,
     pub z: i32,
+}
+
+#[derive(Encoding, ToStatic, Clone, Copy)]
+#[bitfield]
+pub struct SpawnPosition5 {
+    #[bits(26)]
+    pub x: i32,
+    #[bits(26)]
+    pub z: i32,
+    #[bits(12)]
+    pub y: i16,
 }
 
 #[derive(Encoding, ToStatic)]

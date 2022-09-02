@@ -2,7 +2,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote_spanned, ToTokens};
 use syn::{spanned::Spanned, Fields, Type};
 
-use crate::attribute::{field_attrs, Attrs, Fixed};
+use crate::attribute::{field_attrs, parse_attr, Attribute, Attrs, Fixed};
 
 #[derive(Clone, Copy)]
 pub enum Naming {
@@ -154,4 +154,148 @@ pub fn fields_codegen((kind, fields): (Naming, Vec<Field>)) -> FieldsCode {
         // to_static,
         // into_static,
     }
+}
+
+pub fn bitfield_codegen(
+    span: proc_macro2::Span,
+    ty: Option<syn::Type>,
+    ident: Ident,
+    strukt: syn::DataStruct,
+    res: &mut TokenStream,
+) {
+    let mut cumultative_size = 0;
+
+    let mut bitfields: Vec<(u8, Ident, Type)> = vec![];
+
+    let mut destructuring = quote! {};
+
+    let kind = match strukt.fields {
+        Fields::Named(_) => Naming::Named,
+        Fields::Unnamed(_) => Naming::Unnamed,
+        Fields::Unit => panic!("`#[bitfield]` not allowed on unit structs"),
+    };
+
+    for (
+        i,
+        syn::Field {
+            attrs, ident, ty, ..
+        },
+    ) in strukt.fields.into_iter().enumerate()
+    {
+        let mut size = None;
+        for attr in attrs.into_iter().flat_map(parse_attr) {
+            let Attribute { span, data } = match attr {
+                Ok(attr) => attr,
+                Err(e) => {
+                    e.into_compile_error().to_tokens(res);
+                    continue;
+                }
+            };
+            use crate::attribute::AttributeData::*;
+            let err = match data {
+                VarInt => "`#[varint]`",
+                Case(_) => "`#[case(id)]`",
+                From(_) => "`#[from(ty)]`",
+                Fixed(_) => "`#[fixed(prec, ty)]`",
+                Counted(_) => "`#[counted(ty)]`",
+                Rest => "`#[rest]`",
+                StringUuid => "`#[stringuuid]`",
+                BitField(_) => "`#[bitfield]`",
+                Bits(s) => {
+                    if size.is_some() {
+                        error!(
+                            span,
+                            "duplicate `#[bits(size)]` attribute specified on field"
+                        )
+                        .to_tokens(res);
+                    } else {
+                        size = Some(s);
+                    }
+                    continue;
+                }
+            };
+            error!(span, "{} not allowed on field", err).to_tokens(res)
+        }
+        let size = match size {
+            Some(size) => size,
+            None => {
+                let span = ident.span();
+                error!(span, "no `#[bits(size)]` attribute on `#[bitfield]` field").to_tokens(res);
+                continue;
+            }
+        };
+        cumultative_size += size;
+
+        let ident =
+            ident.unwrap_or_else(|| Ident::new(&format!("_{i}"), proc_macro2::Span::mixed_site()));
+
+        quote! {#ident,}.to_tokens(&mut destructuring);
+
+        bitfields.push((size, ident, ty));
+    }
+
+    let destructuring = match kind {
+        Naming::Named => quote!{{#destructuring}},
+        Naming::Unnamed => quote!((#destructuring)),
+    };
+
+    let ty = match ty {
+        Some(ty) => ty.to_token_stream(),
+        None => match cumultative_size {
+            0..=8 => quote!(u8),
+            9..=16 => quote!(u16),
+            17..=32 => quote!(u32),
+            33..=64 => quote!(u64),
+            65..=128 => quote!(u128),
+            _ => {
+                error!(
+                span,
+                "bitfield size too large, maximum is currently `u128`, rust's largest number type"
+            )
+                .to_tokens(res);
+                return;
+            }
+        },
+    };
+
+    /* | ((x as ty & (ty::BITS as ty - size)) << offset) */
+    let mut encode = quote!{0};
+    let mut decode = quote!{};
+    let mut neg_checks = quote!{};
+
+    let mut offset = 0;
+
+    for (size, ident, field_ty) in bitfields {
+        offset += size;
+        quote!{
+            | ((*#ident as #ty & (!0 >> (#ty::BITS as #ty - #size as #ty))) << (#ty::BITS as #ty - #offset as #ty))
+        }.to_tokens(&mut encode);
+        quote!{
+            let mut #ident = ((__value >> (#ty::BITS as #ty - #offset as #ty) as #ty) & !0 >> (#ty::BITS as #ty - #size as #ty)) as _;
+        }.to_tokens(&mut decode);
+        quote!{
+            if #field_ty::MIN != 0 && #ident >= 1 << (#size as #field_ty - 1) {
+                #ident ^= -1 << #size as #field_ty;
+            }
+        }.to_tokens(&mut neg_checks);
+    }
+
+    quote! {
+        impl<'dec> Decode<'dec> for #ident {
+            fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+                let __value = #ty::decode(cursor)?;
+                #decode
+                #neg_checks
+                Ok(Self #destructuring)
+            }
+        }
+        impl Encode for #ident {
+            fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
+                let Self #destructuring = self;
+                #[allow(clippy::identity_op)]
+                (#encode).encode(writer)
+            }
+        }
+    }
+    .to_tokens(res)
 }

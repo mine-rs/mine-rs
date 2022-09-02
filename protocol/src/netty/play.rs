@@ -47,8 +47,8 @@ parsing_tree! {
         // ... and all other versions
     },
     0x02 => {
-        0..=5 => ChatMessage0,
-        // 6..=12 => _6,
+        0..=5 => ChatMessage0<'a>,
+        6..=12 => ChatMessage6<'a>,
         // 13..=66 => _13,
         // 67..=99 => _67,
         // 100..=719 => _100,
