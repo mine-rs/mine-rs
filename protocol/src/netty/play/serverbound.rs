@@ -489,7 +489,6 @@ pub struct UpdateSign0<'a> {
     pub line4: Cow<'a, str>,
 }
 
-
 #[derive(ToStatic)]
 pub struct PlayerAbilities0 {
     pub invulnerable: bool,

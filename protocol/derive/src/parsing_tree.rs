@@ -159,13 +159,14 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
             quote! {, #lts}.to_tokens(&mut generics);
             quote! {'dec: #lts,}.to_tokens(&mut where_clause);
         }
-        let mut match_body = quote!{};
+        let mut match_body = quote! {};
         for (id, lo, hi) in mappings {
-            quote!{
+            quote! {
                 #lo..=#hi => Some(#id),
-            }.to_tokens(&mut match_body)
+            }
+            .to_tokens(&mut match_body)
         }
-        quote!{_ => None}.to_tokens(&mut match_body);
+        quote! {_ => None}.to_tokens(&mut match_body);
         quote! {
             impl<'dec #generics> Packet<'dec> for #prefix #path
             where #where_clause {
