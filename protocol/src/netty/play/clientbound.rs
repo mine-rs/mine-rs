@@ -2145,12 +2145,12 @@ pub enum CombatEvent7<'a> {
     EndCombat {
         #[varint]
         duration: i32,
-        entity_id: i32
+        entity_id: i32,
     },
     EntityDead {
         #[varint]
         player_id: i32,
         entity_id: i32,
-        message: Cow<'a, str>
-    }
+        message: Cow<'a, str>,
+    },
 }
