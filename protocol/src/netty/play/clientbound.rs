@@ -1,3 +1,4 @@
+use crate::netty::Position;
 use crate::*;
 use attrs::*;
 
@@ -250,15 +251,15 @@ pub struct PositionAndLook6 {
 #[bitfield(u8, reverse)]
 pub struct PositionAndLookBitfield6 {
     #[bool]
-    x: bool,
+    pub x: bool,
     #[bool]
-    y: bool,
+    pub y: bool,
     #[bool]
-    z: bool,
+    pub z: bool,
     #[bool]
-    pitch: bool,
+    pub pitch: bool,
     #[bool]
-    yaw: bool,
+    pub yaw: bool,
 }
 
 #[test]
@@ -290,6 +291,12 @@ pub struct UseBed0 {
     pub x: i32,
     pub y: i8,
     pub z: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct UseBed6 {
+    pub entity_id: i32,
+    pub location: Position,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -963,12 +970,32 @@ pub struct BlockChange0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct BlockChange6 {
+    pub location: Position,
+    // todo! global palette block id, maybe separate into id and type?
+    // https://wiki.vg/index.php?title=Protocol&oldid=7368#Block_Change
+    #[varint]
+    pub block_id: i32,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct BlockAction0 {
     pub x: i32,
     pub y: i16,
     pub z: i32,
     pub action_id: u8,
     pub action_param: u8,
+    /// The block type ID for the block, not including metadata/damage value
+    #[varint]
+    pub block_type: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct BlockAction6 {
+    pub location: Position,
+    pub action_id: u8,
+    pub action_param: u8,
+    /// The block type ID for the block, not including metadata/damage value
     #[varint]
     pub block_type: i32,
 }
@@ -980,6 +1007,15 @@ pub struct BlockBreakAnimation0 {
     pub x: i32,
     pub y: i32,
     pub z: i32,
+    /// 0-9
+    pub destroy_stage: u8,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct BlockBreakAnimation6 {
+    #[varint]
+    pub entity_id: i32,
+    pub location: Position,
     /// 0-9
     pub destroy_stage: u8,
 }
@@ -1067,6 +1103,15 @@ pub struct Effect0 {
     pub y: i8,
     /// The Z location of the effect multiplied by 8
     pub z: i32,
+    pub effect_data: i32,
+    pub disable_rel_volume: bool,
+}
+
+#[derive(Encoding, ToStatic)]
+// todo! see above
+pub struct Effect6 {
+    pub effect_id: i32,
+    pub location: Position,
     pub effect_data: i32,
     pub disable_rel_volume: bool,
 }
@@ -1313,10 +1358,105 @@ impl<'a> Encode for OpenWindow0<'a> {
     }
 }
 
+#[derive(ToStatic)]
+pub struct OpenWindow6<'a> {
+    pub window_id: u8,
+    pub kind: InventoryKind6,
+    pub title: Cow<'a, str>,
+    pub slot_count: u8,
+}
+
+impl<'dec, 'a> Decode<'dec> for OpenWindow6<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let window_id = u8::decode(cursor)?;
+        let kind = <&str>::decode(cursor)?;
+        let title = Cow::decode(cursor)?;
+        let slot_count = u8::decode(cursor)?;
+        use InventoryKind6::*;
+        let kind = match kind {
+            "minecraft:chest" => Chest,
+            "minecraft:crafting_table" => CraftingTable,
+            "minecraft:furnace" => Furnace,
+            "minecraft:dispenser" => Dispenser,
+            "minecraft:enchanting_table" => EnchantmentTable,
+            "minecraft:brewing_stand" => BrewingStand,
+            "minecraft:villager" => Villager,
+            "minecraft:beacon" => Beacon,
+            "minecraft:anvil" => Anvil,
+            "minecraft:hopper" => Hopper,
+            "minecraft:dropper" => Dropper,
+            "EntityHorse" => Horse {
+                entity_id: i32::decode(cursor)?,
+            },
+            _ => return Err(decode::Error::InvalidId),
+        };
+        Ok(Self {
+            window_id,
+            kind,
+            title,
+            slot_count,
+        })
+    }
+}
+impl<'a> Encode for OpenWindow6<'a> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> encode::Result<()> {
+        self.window_id.encode(writer)?;
+        use InventoryKind6::*;
+        let (kind, entity_id) = match self.kind {
+            Chest => ("minecraft:chest", None),
+            CraftingTable => ("minecraft:crafting_table", None),
+            Furnace => ("minecraft:furnace", None),
+            Dispenser => ("minecraft:dispenser", None),
+            EnchantmentTable => ("minecraft:enchanting_table", None),
+            BrewingStand => ("minecraft:brewing_stand", None),
+            Villager => ("minecraft:villager", None),
+            Beacon => ("minecraft:beacon", None),
+            Anvil => ("minecraft:anvil", None),
+            Hopper => ("minecraft:hopper", None),
+            Dropper => ("minecraft:dropper", None),
+            Horse { entity_id } => ("EntityHorse", Some(entity_id)),
+        };
+        kind.encode(writer)?;
+        self.title.encode(writer)?;
+        self.slot_count.encode(writer)?;
+        if let Some(entity_id) = entity_id {
+            entity_id.encode(writer)?;
+        }
+        Ok(())
+    }
+}
+
 // #[derive(Encoding, ToStatic)]
 #[derive(ToStatic)]
 // todo! very good place for #[separate]
 pub enum InventoryKind0 {
+    /// Chest, large chest, or minecart with chest
+    // #[from(0)]
+    Chest,
+    CraftingTable,
+    Furnace,
+    Dispenser,
+    EnchantmentTable,
+    BrewingStand,
+    Villager,
+    Beacon,
+    Anvil,
+    /// Hopper or minecart with hopper
+    Hopper,
+    Dropper,
+    /// Horse, donkey, or mule
+    Horse {
+        entity_id: i32,
+    },
+}
+
+// #[derive(Encoding, ToStatic)]
+#[derive(ToStatic)]
+// todo! very good place for #[separate]
+pub enum InventoryKind6 {
     /// Chest, large chest, or minecart with chest
     // #[from(0)]
     Chest,
@@ -1394,6 +1534,15 @@ pub struct UpdateSign0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct UpdateSign6<'a> {
+    pub location: Position,
+    pub line1: Cow<'a, str>,
+    pub line2: Cow<'a, str>,
+    pub line3: Cow<'a, str>,
+    pub line4: Cow<'a, str>,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct Maps0 {
     #[varint]
     pub item_damage: i32,
@@ -1428,10 +1577,33 @@ pub struct UpdateBlockEntity0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct UpdateBlockEntity6 {
+    pub location: Position,
+    /// The type of update to perform
+    pub action: u8,
+    /// varies
+    pub data_length: u16,
+    // Present if data length > 0. Compressed with gzip. Varies
+    // todo! nbt
+    // data: Nbt
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct SignEditorOpen0 {
     pub x: i32,
     pub y: i32,
     pub z: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+#[bitfield]
+pub struct SignEditorOpen6 {
+    #[bits(26)]
+    pub x: i32,
+    #[bits(26)]
+    pub z: i32,
+    #[bits(12)]
+    pub y: i16,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -1613,4 +1785,9 @@ pub struct PluginMessage0<'a> {
 #[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {
     pub reason: Cow<'a, str>,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct ServerDifficulty6 {
+    pub difficulty: Difficulty0,
 }

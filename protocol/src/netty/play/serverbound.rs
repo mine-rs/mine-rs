@@ -1,5 +1,6 @@
 use crate::*;
 
+use crate::netty::Position;
 use std::borrow::Cow;
 
 #[derive(Encoding, ToStatic)]
@@ -90,53 +91,53 @@ pub enum PlayerDigging0 {
 }
 
 impl<'dec> Decode<'dec> for PlayerDigging0 {
-    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> Result<Self, decode::Error> {
-        let action = u8::decode(buf)?;
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> Result<Self, decode::Error> {
+        let action = u8::decode(cursor)?;
         use PlayerDigging0::*;
         Ok(match action {
             0 => Started {
-                x: i32::decode(buf)?,
-                y: u8::decode(buf)?,
-                z: i32::decode(buf)?,
-                face: BlockFace0::decode(buf)?,
+                x: i32::decode(cursor)?,
+                y: u8::decode(cursor)?,
+                z: i32::decode(cursor)?,
+                face: BlockFace0::decode(cursor)?,
             },
             1 => Cancelled {
-                x: i32::decode(buf)?,
-                y: u8::decode(buf)?,
-                z: i32::decode(buf)?,
-                face: BlockFace0::decode(buf)?,
+                x: i32::decode(cursor)?,
+                y: u8::decode(cursor)?,
+                z: i32::decode(cursor)?,
+                face: BlockFace0::decode(cursor)?,
             },
             2 => Finished {
-                x: i32::decode(buf)?,
-                y: u8::decode(buf)?,
-                z: i32::decode(buf)?,
-                face: BlockFace0::decode(buf)?,
+                x: i32::decode(cursor)?,
+                y: u8::decode(cursor)?,
+                z: i32::decode(cursor)?,
+                face: BlockFace0::decode(cursor)?,
             },
             3 => {
-                if !(i32::decode(buf)? == 0
-                    && u8::decode(buf)? == 0
-                    && i32::decode(buf)? == 0
-                    && u8::decode(buf)? == 0)
+                if !(i32::decode(cursor)? == 0
+                    && u8::decode(cursor)? == 0
+                    && i32::decode(cursor)? == 0
+                    && u8::decode(cursor)? == 0)
                 {
                     return Err(decode::Error::InvalidId);
                 }
                 DropItemStack
             }
             4 => {
-                if !(i32::decode(buf)? == 0
-                    && u8::decode(buf)? == 0
-                    && i32::decode(buf)? == 0
-                    && u8::decode(buf)? == 0)
+                if !(i32::decode(cursor)? == 0
+                    && u8::decode(cursor)? == 0
+                    && i32::decode(cursor)? == 0
+                    && u8::decode(cursor)? == 0)
                 {
                     return Err(decode::Error::InvalidId);
                 }
                 DropItem
             }
             5 => {
-                if !(i32::decode(buf)? == 0
-                    && u8::decode(buf)? == 0
-                    && i32::decode(buf)? == 0
-                    && u8::decode(buf)? == 255)
+                if !(i32::decode(cursor)? == 0
+                    && u8::decode(cursor)? == 0
+                    && i32::decode(cursor)? == 0
+                    && u8::decode(cursor)? == 255)
                 {
                     return Err(decode::Error::InvalidId);
                 }
@@ -161,6 +162,81 @@ impl Encode for PlayerDigging0 {
         x.encode(writer)?;
         y.encode(writer)?;
         z.encode(writer)?;
+        face.encode(writer)?;
+        Ok(())
+    }
+}
+
+#[derive(ToStatic)]
+pub enum PlayerDigging6 {
+    Started {
+        location: Position,
+        face: BlockFace0,
+    },
+    Cancelled {
+        location: Position,
+        face: BlockFace0,
+    },
+    Finished {
+        location: Position,
+        face: BlockFace0,
+    },
+    DropItemStack,
+    DropItem,
+    FinishRightClick,
+}
+impl<'dec> Decode<'dec> for PlayerDigging6 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let action = u8::decode(cursor)?;
+        use PlayerDigging6::*;
+        Ok(match action {
+            0 => Started {
+                location: Position::decode(cursor)?,
+                face: BlockFace0::decode(cursor)?,
+            },
+            1 => Cancelled {
+                location: Position::decode(cursor)?,
+                face: BlockFace0::decode(cursor)?,
+            },
+            2 => Finished {
+                location: Position::decode(cursor)?,
+                face: BlockFace0::decode(cursor)?,
+            },
+            3 => {
+                if !(Position::decode(cursor)?.is_0() && u8::decode(cursor)? == 0) {
+                    return Err(decode::Error::InvalidId);
+                }
+                DropItemStack
+            }
+            4 => {
+                if !(Position::decode(cursor)?.is_0() && u8::decode(cursor)? == 0) {
+                    return Err(decode::Error::InvalidId);
+                }
+                DropItem
+            }
+            5 => {
+                if !(Position::decode(cursor)?.is_0() && u8::decode(cursor)? == 255) {
+                    return Err(decode::Error::InvalidId);
+                }
+                FinishRightClick
+            }
+            _ => return Err(decode::Error::InvalidId),
+        })
+    }
+}
+impl Encode for PlayerDigging6 {
+    fn encode(&self, writer: &mut impl std::io::Write) -> encode::Result<()> {
+        use PlayerDigging6::*;
+        let (action, location, face) = match *self {
+            Started { location, face } => (0, location, face as u8),
+            Cancelled { location, face } => (1, location, face as u8),
+            Finished { location, face } => (2, location, face as u8),
+            DropItemStack => (3, Position { x: 0, y: 0, z: 0 }, 0),
+            DropItem => (4, Position { x: 0, y: 0, z: 0 }, 0),
+            FinishRightClick => (5, Position { x: 0, y: 0, z: 0 }, 255),
+        };
+        action.encode(writer)?;
+        location.encode(writer)?;
         face.encode(writer)?;
         Ok(())
     }
@@ -202,6 +278,12 @@ pub struct PlayerBlockPlacement0 {
     pub y: u8,
     pub z: i32,
     // todo! WTF
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct PlayerBlockPlacement6 {
+    pub location: Position,
+    // todo! WTF (see above)
 }
 
 #[derive(Encoding, ToStatic)]
@@ -257,12 +339,12 @@ pub struct ClickWindow0 {
     // item: Slot
 }
 impl<'dec> Decode<'dec> for ClickWindow0 {
-    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let window_id = u8::decode(buf)?;
-        let slot = i16::decode(buf)?;
-        let button = u8::decode(buf)?;
-        let action_id = i16::decode(buf)?;
-        let mode = u8::decode(buf)?;
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let window_id = u8::decode(cursor)?;
+        let slot = i16::decode(cursor)?;
+        let button = u8::decode(cursor)?;
+        let action_id = i16::decode(cursor)?;
+        let mode = u8::decode(cursor)?;
 
         fn mouse_button(button: u8) -> Result<MouseButton, decode::Error> {
             Ok(match button {
@@ -341,7 +423,7 @@ impl<'dec> Decode<'dec> for ClickWindow0 {
             window_id,
             action,
             action_id,
-            // slot: Decode::read(buf)?,
+            // slot: Decode::read(cursor)?,
         })
     }
 }
@@ -489,6 +571,15 @@ pub struct UpdateSign0<'a> {
     pub line4: Cow<'a, str>,
 }
 
+#[derive(Encoding, ToStatic)]
+pub struct UpdateSign6<'a> {
+    pub location: Position,
+    pub line1: Cow<'a, str>,
+    pub line2: Cow<'a, str>,
+    pub line3: Cow<'a, str>,
+    pub line4: Cow<'a, str>,
+}
+
 #[derive(ToStatic)]
 pub struct PlayerAbilities0 {
     pub invulnerable: bool,
@@ -535,15 +626,18 @@ pub struct TabComplete0<'a> {
 #[derive(Encoding, ToStatic)]
 pub struct ClientSettings0<'a> {
     pub locale: Cow<'a, str>,
+    // todo! find out exactly when this field changed to the pv6's version of it
+    // instead of being an enum there it is plainly the exact view distance in chunks
     pub view_distance: ViewDistance0,
     // todo! custom chat flags
     // https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Client_Settings
     pub chat_flags: u8,
     /// ????
-    ___: bool,
-    difficulty: super::Difficulty0,
+    pub ___: bool,
+    pub difficulty: super::Difficulty0,
     pub show_cape: bool,
 }
+
 #[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum ViewDistance0 {
@@ -551,6 +645,46 @@ pub enum ViewDistance0 {
     Normal,
     Short,
     Tiny,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct ClientSettings6<'a> {
+    pub locale: Cow<'a, str>,
+    /// Client-side render distance, in chunks
+    pub view_distance: u8,
+    // todo! custom chat flags
+    // https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Client_Settings
+    pub chat_mode: ChatMode6,
+    /// ????
+    pub ___: bool,
+    pub difficulty: DisplayedSkinParts6,
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum ChatMode6 {
+    Enabled = 0,
+    CommandsOnly,
+    Hidden,
+}
+
+#[derive(Encoding, ToStatic)]
+#[bitfield(u8, reverse)]
+pub struct DisplayedSkinParts6 {
+    #[bool]
+    pub cape: bool,
+    #[bool]
+    pub jacket: bool,
+    #[bool]
+    pub left_sleeve: bool,
+    #[bool]
+    pub right_sleeve: bool,
+    #[bool]
+    pub left_pants: bool,
+    #[bool]
+    pub right_pants: bool,
+    #[bool]
+    pub hat: bool,
 }
 
 #[derive(Encoding, ToStatic)]

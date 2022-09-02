@@ -19,6 +19,11 @@ pub struct Position {
     #[bits(12)]
     pub y: i16,
 }
+impl Position {
+    fn is_0(&self) -> bool {
+        self.x == 0 && self.y == 0 && self.z == 0
+    }
+}
 
 #[test]
 fn position() {
