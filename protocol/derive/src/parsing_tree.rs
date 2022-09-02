@@ -44,10 +44,20 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
                     break;
                 }
             };
+
+            let packet = ver.packet;
+            let last_ident = packet
+                .path
+                .segments
+                .last()
+                .expect("path without last segment?")
+                .ident
+                .clone();
+
             for (pv_lo, pv_hi, pv_span) in versions {
                 ver_id_mappings.insert(
                     Def {
-                        ident: ver.packet.clone(),
+                        ident: last_ident.clone(),
                         id: idi32,
                         id_span,
                         pv_lo,
@@ -58,19 +68,11 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
                 )
             }
 
+            all_packets.insert(last_ident, packet.clone());
+
             let mut ver_pat = TS::new();
 
             ver_pat.append_separated(ver.pat, quote!(|));
-
-            let packet = ver.packet;
-            let last_ident = packet
-                .path
-                .segments
-                .last()
-                .expect("path without last segment?")
-                .ident
-                .clone();
-            all_packets.insert(last_ident, packet.clone());
 
             pv_match_body.extend(quote!(
                 #ver_pat => {
@@ -102,13 +104,13 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
     ret.extend(quote!(
         #[allow(unused)]
         macro_rules! #custom {
-        ($($t:tt)*) => {
-            replace!{
-                #custom_body ;
-                $($t)*
+            ($($t:tt)*) => {
+                replace!{
+                    #custom_body ;
+                    $($t)*
+                }
             }
         }
-    }
     ));
 
     let tree = x.tree;
@@ -122,6 +124,60 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
             }
         }
     });
+
+    let packet_to_id_mappings: BTreeMap<Ident, _> = all_packets
+        .into_iter()
+        .map(|(ident, path)| {
+            let ids: Vec<(i32, i32, i32)> = ver_id_mappings
+                .stuff
+                .iter()
+                .filter(|a| a.ident == ident)
+                .map(|def| (def.id, def.pv_lo, def.pv_hi))
+                .collect();
+            (ident, (path, ids))
+        })
+        .collect();
+
+    for (_, (path, mappings)) in packet_to_id_mappings {
+        let ltsiter = path
+            .path
+            .segments
+            .iter()
+            .filter_map(|segment| match &segment.arguments {
+                syn::PathArguments::AngleBracketed(bracketed) => Some(bracketed),
+                _ => None,
+            })
+            .flat_map(|bracketed| {
+                bracketed.args.iter().filter_map(|arg| match arg {
+                    syn::GenericArgument::Lifetime(lt) => Some(lt),
+                    _ => None,
+                })
+            });
+        let mut generics = quote! {};
+        let mut where_clause = quote! {};
+        for lts in ltsiter {
+            quote! {, #lts}.to_tokens(&mut generics);
+            quote! {'dec: #lts,}.to_tokens(&mut where_clause);
+        }
+        let mut match_body = quote!{};
+        for (id, lo, hi) in mappings {
+            quote!{
+                #lo..=#hi => Some(#id),
+            }.to_tokens(&mut match_body)
+        }
+        quote!{_ => None}.to_tokens(&mut match_body);
+        quote! {
+            impl<'dec #generics> Packet<'dec> for #prefix #path
+            where #where_clause {
+                fn id_for_version(version: i32) -> Option<i32> {
+                    match version {
+                        #match_body
+                    }
+                }
+            }
+        }
+        .to_tokens(&mut ret)
+    }
 
     ret.into()
 }
@@ -240,7 +296,7 @@ impl IdPvMappings {
     }
 }
 pub struct Def {
-    pub ident: TypePath,
+    pub ident: Ident,
     pub id: i32,
     pub id_span: Span,
     pub pv_lo: i32,

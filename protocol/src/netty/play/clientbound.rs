@@ -70,7 +70,10 @@ pub struct JoinGame1<'a> {
     pub level_type: Cow<'a, str>,
 }
 
-impl<'dec> Decode<'dec> for JoinGame1<'dec> {
+impl<'dec, 'a> Decode<'dec> for JoinGame1<'a>
+where
+    'dec: 'a,
+{
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let entity_id = i32::decode(cursor)?;
         let bitfield = u8::decode(cursor)?;
@@ -272,7 +275,10 @@ pub struct SpawnPlayer5<'a> {
     pub current_item: u16,
     pub metadata: EntityMetadata,
 }
-impl<'dec> Decode<'dec> for SpawnPlayer5<'dec> {
+impl<'dec, 'a> Decode<'dec> for SpawnPlayer5<'a>
+where
+    'dec: 'a,
+{
     fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let entity_id = Var::decode(buf)?.into_inner();
         let uuid = <&str>::decode(buf)?;
@@ -854,7 +860,7 @@ pub struct Record {
     pub rel_z: u8,
 }
 
-impl Decode<'_> for Record {
+impl<'dec> Decode<'dec> for Record {
     fn decode(cursor: &'_ mut std::io::Cursor<&[u8]>) -> decode::Result<Self> {
         let xz = u8::decode(cursor)?;
         Ok(Record {
@@ -916,8 +922,11 @@ pub struct MapChunkBulk0<'a> {
     pub data: Cow<'a, [u8]>,
     pub column_metas: Vec<ChunkMeta0>,
 }
-impl<'a> Decode<'a> for MapChunkBulk0<'a> {
-    fn decode(cursor: &'_ mut std::io::Cursor<&'a [u8]>) -> decode::Result<Self> {
+impl<'dec, 'a> Decode<'dec> for MapChunkBulk0<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &'_ mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let column_count = u16::decode(cursor)?;
         let data_len = u32::decode(cursor)?;
         let skylight_sent = bool::decode(cursor)?;
@@ -1087,7 +1096,7 @@ pub enum DemoMessage0 {
     InventoryControl,
 }
 
-impl Decode<'_> for ChangeGameState0 {
+impl<'dec> Decode<'dec> for ChangeGameState0 {
     fn decode(cursor: &'_ mut std::io::Cursor<&[u8]>) -> decode::Result<Self> {
         let reason = u8::decode(cursor)?;
         let value = f32::decode(cursor)?;
@@ -1378,7 +1387,43 @@ pub struct PlayerListItem0<'a> {
     pub ping: i16,
 }
 
-pub use super::PlayerAbilities0;
+#[derive(ToStatic)]
+pub struct PlayerAbilities0 {
+    pub invulnerable: bool,
+    pub flying: bool,
+    pub allow_flying: bool,
+    pub creative_mode: bool,
+    pub flying_speed: f32,
+    /// Modifies the field of view, like a speed potion. A Notchian server will
+    /// use the same value as the movement speed (send in the Entity Properties
+    /// packet).
+    pub fov: f32,
+}
+impl<'dec> Decode<'dec> for PlayerAbilities0 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> Result<Self, decode::Error> {
+        let flags = u8::decode(cursor)?;
+        Ok(PlayerAbilities0 {
+            invulnerable: flags & 0b0001 != 0,
+            flying: flags & 0b0010 != 0,
+            allow_flying: flags & 0b0100 != 0,
+            creative_mode: flags & 0b1000 != 0,
+            flying_speed: f32::decode(cursor)?,
+            fov: f32::decode(cursor)?,
+        })
+    }
+}
+impl Encode for PlayerAbilities0 {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
+        ((self.invulnerable as u8)
+            + ((self.flying as u8) << 1)
+            + ((self.allow_flying as u8) << 2)
+            + ((self.creative_mode as u8) << 3))
+            .encode(writer)?;
+        self.flying_speed.encode(writer)?;
+        self.fov.encode(writer)?;
+        Ok(())
+    }
+}
 
 #[derive(Encoding, ToStatic)]
 pub struct TabComplete0<'a> {
@@ -1488,7 +1533,12 @@ pub enum NameTagVisibility /*version?*/ {
     Never,
 }
 
-pub use super::PluginMessage0;
+#[derive(Encoding, ToStatic)]
+// https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
+pub struct PluginMessage0<'a> {
+    pub channel: Cow<'a, str>,
+    pub data: Cow<'a, [u8]>,
+}
 
 #[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {

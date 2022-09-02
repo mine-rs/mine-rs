@@ -3,4 +3,7 @@ use crate::*;
 #[derive(Encoding, ToStatic)]
 pub struct Request0 {}
 
-pub use super::Ping0;
+#[derive(Encoding, ToStatic)]
+pub struct Ping0 {
+    pub time: i64,
+}

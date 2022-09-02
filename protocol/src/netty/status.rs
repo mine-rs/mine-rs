@@ -3,11 +3,6 @@ use crate::*;
 pub mod clientbound;
 pub mod serverbound;
 
-#[derive(Encoding, ToStatic)]
-pub struct Ping0 {
-    pub time: i64,
-}
-
 parsing_tree! {
     status_cb_custom status_cb_tree clientbound::;
     0x00 => {

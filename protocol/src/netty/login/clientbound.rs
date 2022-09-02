@@ -25,12 +25,16 @@ pub struct Success0<'a> {
     pub username: Cow<'a, str>,
 }
 
+#[derive(ToStatic)]
 pub struct Success5<'a> {
     pub uuid: Option<Uuid>,
     pub username: Cow<'a, str>,
 }
 
-impl<'dec> Decode<'dec> for Success5<'dec> {
+impl<'dec, 'a> Decode<'dec> for Success5<'a>
+where
+    'dec: 'a,
+{
     fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let uuid = <&str as Decode>::decode(buf)?;
 
