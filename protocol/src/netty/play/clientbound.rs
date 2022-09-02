@@ -673,7 +673,7 @@ pub struct SpawnMob0 {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct SpawnPainting<'a> {
+pub struct SpawnPainting0<'a> {
     #[varint]
     pub entity_id: i32,
     // todo! #[max_len(13)]
@@ -682,6 +682,16 @@ pub struct SpawnPainting<'a> {
     pub x: i32,
     pub y: i32,
     pub z: i32,
+    pub direction: Direction0,
+}
+#[derive(Encoding, ToStatic)]
+pub struct SpawnPainting8<'a> {
+    #[varint]
+    pub entity_id: i32,
+    // todo! #[max_len(13)]
+    /// Name of the painting. Max length 13
+    pub title: Cow<'a, str>,
+    pub location: Position,
     pub direction: Direction0,
 }
 
@@ -2140,6 +2150,24 @@ pub struct ServerDifficulty6 {
 #[derive(Encoding, ToStatic)]
 #[from(i32)]
 pub enum CombatEvent7<'a> {
+    #[case(0)]
+    EnterCombat,
+    EndCombat {
+        #[varint]
+        duration: i32,
+        entity_id: i32,
+    },
+    EntityDead {
+        #[varint]
+        player_id: i32,
+        entity_id: i32,
+        message: Cow<'a, str>,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum CombatEvent8<'a> {
     #[case(0)]
     EnterCombat,
     EndCombat {
