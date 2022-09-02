@@ -168,6 +168,15 @@ pub struct EntityEquipment0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityEquipment7 {
+    #[varint]
+    pub entity_id: i32,
+    pub slot: EquipmentSlot0,
+    // todo! slot data
+    // item: Slot,
+}
+
+#[derive(Encoding, ToStatic)]
 #[from(u16)]
 pub enum EquipmentSlot0 {
     Held = 0,
@@ -186,7 +195,7 @@ pub struct SpawnPosition0 {
 
 #[derive(Encoding, ToStatic, Clone, Copy)]
 #[bitfield]
-pub struct SpawnPosition5 {
+pub struct SpawnPosition6 {
     #[bits(26)]
     pub x: i32,
     #[bits(26)]
@@ -201,6 +210,17 @@ pub struct UpdateHealth0 {
     pub health: f32,
     /// 0-20
     pub food: i16,
+    /// 0.0 to 5.0 in integer increments?
+    pub saturation: f32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct UpdateHealth7 {
+    /// 0.0 means dead, 20.0 = full HP
+    pub health: f32,
+    /// 0-20
+    #[varint]
+    pub food: i32,
     /// 0.0 to 5.0 in integer increments?
     pub saturation: f32,
 }
@@ -273,10 +293,10 @@ fn position_and_look_bitfield6() {
     assert!(res.z);
     assert!(res.pitch);
     assert!(res.yaw);
-    let mut buf = vec![];
+    let mut cursor = vec![];
     #[allow(clippy::unwrap_used)]
-    res.encode(&mut buf).unwrap();
-    assert_eq!(&buf[..], &val[..])
+    res.encode(&mut cursor).unwrap();
+    assert_eq!(&cursor[..], &val[..])
 }
 
 #[derive(Encoding, ToStatic)]
@@ -295,6 +315,13 @@ pub struct UseBed0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct UseBed6 {
+    pub entity_id: i32,
+    pub location: Position,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct UseBed7 {
+    #[varint]
     pub entity_id: i32,
     pub location: Position,
 }
@@ -356,9 +383,9 @@ impl<'dec, 'a> Decode<'dec> for SpawnPlayer5<'a>
 where
     'dec: 'a,
 {
-    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let entity_id = Var::decode(buf)?.into_inner();
-        let uuid = <&str>::decode(buf)?;
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let entity_id = Var::decode(cursor)?.into_inner();
+        let uuid = <&str>::decode(cursor)?;
 
         Ok(Self {
             entity_id,
@@ -367,20 +394,20 @@ where
             } else {
                 None
             },
-            properties: Vec::decode(buf)?,
-            name: Decode::decode(buf)?,
-            x: Fixed::<5, i32, _>::decode(buf)?.into_inner(),
-            y: Fixed::<5, i32, _>::decode(buf)?.into_inner(),
-            z: Fixed::<5, i32, _>::decode(buf)?.into_inner(),
-            yaw: Decode::decode(buf)?,
-            pitch: Decode::decode(buf)?,
-            current_item: Decode::decode(buf)?,
-            metadata: Decode::decode(buf)?,
+            properties: Vec::decode(cursor)?,
+            name: Decode::decode(cursor)?,
+            x: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
+            y: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
+            z: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
+            yaw: Decode::decode(cursor)?,
+            pitch: Decode::decode(cursor)?,
+            current_item: Decode::decode(cursor)?,
+            metadata: Decode::decode(cursor)?,
         })
     }
 }
 impl<'a> Encode for SpawnPlayer5<'a> {
-    fn encode(&self, buf: &mut impl ::std::io::Write) -> encode::Result<()> {
+    fn encode(&self, cursor: &mut impl ::std::io::Write) -> encode::Result<()> {
         let Self {
             entity_id,
             player_uuid,
@@ -394,21 +421,92 @@ impl<'a> Encode for SpawnPlayer5<'a> {
             current_item,
             metadata,
         } = self;
-        Encode::encode(&Var::from(*entity_id), buf)?;
+        Encode::encode(&Var::from(*entity_id), cursor)?;
         if let Some(player_uuid) = player_uuid {
-            Encode::encode(&StringUuid::from(*player_uuid), buf)?;
+            Encode::encode(&StringUuid::from(*player_uuid), cursor)?;
         } else {
-            "".encode(buf)?;
+            "".encode(cursor)?;
         }
-        name.encode(buf)?;
-        properties.encode(buf)?;
-        Fixed::<5, i32, _>::from(x).encode(buf)?;
-        Fixed::<5, i32, _>::from(y).encode(buf)?;
-        Fixed::<5, i32, _>::from(z).encode(buf)?;
-        yaw.encode(buf)?;
-        pitch.encode(buf)?;
-        current_item.encode(buf)?;
-        metadata.encode(buf)?;
+        name.encode(cursor)?;
+        properties.encode(cursor)?;
+        Fixed::<5, i32, _>::from(x).encode(cursor)?;
+        Fixed::<5, i32, _>::from(y).encode(cursor)?;
+        Fixed::<5, i32, _>::from(z).encode(cursor)?;
+        yaw.encode(cursor)?;
+        pitch.encode(cursor)?;
+        current_item.encode(cursor)?;
+        metadata.encode(cursor)?;
+        Ok(())
+    }
+}
+
+#[derive(ToStatic)]
+pub struct SpawnPlayer7<'a> {
+    // varint
+    pub entity_id: i32,
+    pub player_uuid: Uuid,
+    pub name: Cow<'a, str>,
+    pub properties: Vec<PlayerProperty<'a>>,
+    // fixed(5, i32)
+    pub x: f64,
+    // fixed(5, i32)
+    pub y: f64,
+    // fixed(5, i32)
+    pub z: f64,
+    pub yaw: Angle,
+    pub pitch: Angle,
+    /// The item the player is currently holding. Note that this should be 0
+    /// for "no item", unlike -1 used in other packets. A negative value
+    /// crashes clients.
+    pub current_item: u16,
+    pub metadata: EntityMetadata,
+}
+impl<'dec, 'a> Decode<'dec> for SpawnPlayer7<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        Ok(Self {
+            entity_id: Var::decode(cursor)?.into_inner(),
+            player_uuid: StringUuid::decode(cursor)?.into_inner(),
+            properties: Vec::decode(cursor)?,
+            name: Decode::decode(cursor)?,
+            x: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
+            y: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
+            z: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
+            yaw: Decode::decode(cursor)?,
+            pitch: Decode::decode(cursor)?,
+            current_item: Decode::decode(cursor)?,
+            metadata: Decode::decode(cursor)?,
+        })
+    }
+}
+impl<'a> Encode for SpawnPlayer7<'a> {
+    fn encode(&self, cursor: &mut impl ::std::io::Write) -> encode::Result<()> {
+        let Self {
+            entity_id,
+            player_uuid,
+            name,
+            properties,
+            x,
+            y,
+            z,
+            yaw,
+            pitch,
+            current_item,
+            metadata,
+        } = self;
+        Encode::encode(&Var::from(*entity_id), cursor)?;
+        Encode::encode(&StringUuid::from(*player_uuid), cursor)?;
+        name.encode(cursor)?;
+        properties.encode(cursor)?;
+        Fixed::<5, i32, _>::from(x).encode(cursor)?;
+        Fixed::<5, i32, _>::from(y).encode(cursor)?;
+        Fixed::<5, i32, _>::from(z).encode(cursor)?;
+        yaw.encode(cursor)?;
+        pitch.encode(cursor)?;
+        current_item.encode(cursor)?;
+        metadata.encode(cursor)?;
         Ok(())
     }
 }
@@ -427,6 +525,14 @@ pub struct EntityMetadata {}
 #[derive(Encoding, ToStatic)]
 pub struct CollectItem0 {
     pub collected_id: i32,
+    pub collector_id: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct CollectItem7 {
+    #[varint]
+    pub collected_id: i32,
+    #[varint]
     pub collector_id: i32,
 }
 
@@ -613,22 +719,53 @@ pub struct EntityVelocity0 {
     pub z: f32,
 }
 impl<'dec> Decode<'dec> for EntityVelocity0 {
-    fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         Ok(Self {
-            entity_id: Decode::decode(buf)?,
-            x: Fixed::<0, i16, f32>::decode(buf)?.into_inner() / 8000.0,
-            y: Fixed::<0, i16, f32>::decode(buf)?.into_inner() / 8000.0,
-            z: Fixed::<0, i16, f32>::decode(buf)?.into_inner() / 8000.0,
+            entity_id: Decode::decode(cursor)?,
+            x: Fixed::<0, i16, f32>::decode(cursor)?.into_inner() / 8000.0,
+            y: Fixed::<0, i16, f32>::decode(cursor)?.into_inner() / 8000.0,
+            z: Fixed::<0, i16, f32>::decode(cursor)?.into_inner() / 8000.0,
         })
     }
 }
 impl Encode for EntityVelocity0 {
-    fn encode(&self, buf: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
+    fn encode(&self, cursor: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
         let Self { entity_id, x, y, z } = self;
-        entity_id.encode(buf)?;
-        Fixed::<0, i16, f32>::from(x * 8000.0).encode(buf)?;
-        Fixed::<0, i16, f32>::from(y * 8000.0).encode(buf)?;
-        Fixed::<0, i16, f32>::from(z * 8000.0).encode(buf)?;
+        entity_id.encode(cursor)?;
+        Fixed::<0, i16, f32>::from(x * 8000.0).encode(cursor)?;
+        Fixed::<0, i16, f32>::from(y * 8000.0).encode(cursor)?;
+        Fixed::<0, i16, f32>::from(z * 8000.0).encode(cursor)?;
+        Ok(())
+    }
+}
+#[derive(ToStatic)]
+pub struct EntityVelocity7 {
+    // varint
+    pub entity_id: i32,
+    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    pub x: f32,
+    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    pub y: f32,
+    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    pub z: f32,
+}
+impl<'dec> Decode<'dec> for EntityVelocity7 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        Ok(Self {
+            entity_id: Var::decode(cursor)?.into_inner(),
+            x: Fixed::<0, i16, f32>::decode(cursor)?.into_inner() / 8000.0,
+            y: Fixed::<0, i16, f32>::decode(cursor)?.into_inner() / 8000.0,
+            z: Fixed::<0, i16, f32>::decode(cursor)?.into_inner() / 8000.0,
+        })
+    }
+}
+impl Encode for EntityVelocity7 {
+    fn encode(&self, cursor: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
+        let Self { entity_id, x, y, z } = self;
+        Var::from(*entity_id).encode(cursor)?;
+        Fixed::<0, i16, f32>::from(x * 8000.0).encode(cursor)?;
+        Fixed::<0, i16, f32>::from(y * 8000.0).encode(cursor)?;
+        Fixed::<0, i16, f32>::from(z * 8000.0).encode(cursor)?;
         Ok(())
     }
 }
@@ -639,13 +776,61 @@ pub struct DestroyEntities0 {
     pub entities: Vec<i32>,
 }
 
+#[derive(ToStatic)]
+pub struct DestroyEntities7 {
+    pub entities: Vec<i32>,
+}
+impl<'dec> Decode<'dec> for DestroyEntities7 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let len = Var::<u32>::decode(cursor)?.into_inner();
+        let entities = (0..len)
+            .map(|_| Var::<i32>::decode(cursor).map(|var| var.into_inner()))
+            .collect::<Result<_, _>>()?;
+        Ok(Self { entities })
+    }
+}
+impl Encode for DestroyEntities7 {
+    fn encode(&self, writer: &mut impl std::io::Write) -> encode::Result<()> {
+        Var::from(self.entities.len() as u32).encode(writer)?;
+        for entity in &self.entities {
+            Var::from(*entity).encode(writer)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Encoding, ToStatic)]
 pub struct Entity0 {
     pub entity_id: i32,
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct Entity7 {
+    #[varint]
+    pub entity_id: i32,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct EntityRelativeMove0 {
+    pub entity_id: i32,
+    // todo! round x and z but floor y
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dx: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dy: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dz: f32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct EntityRelativeMove7 {
+    #[varint]
     pub entity_id: i32,
     // todo! round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
@@ -670,7 +855,36 @@ pub struct EntityLook0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityLook7 {
+    #[varint]
+    pub entity_id: i32,
+    pub yaw: Angle,
+    pub pitch: Angle,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct EntityLookAndRelativeMove0 {
+    pub entity_id: i32,
+    // todo! round x and z but floor y
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dx: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dy: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dz: f32,
+    pub yaw: Angle,
+    pub pitch: Angle,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct EntityLookAndRelativeMove7 {
+    #[varint]
     pub entity_id: i32,
     // todo! round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
@@ -704,7 +918,29 @@ pub struct EntityTeleport0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityTeleport7 {
+    #[varint]
+    pub entity_id: i32,
+    // todo! round x and z but floor y
+    #[fixed(5, i32)]
+    pub x: f64,
+    #[fixed(5, i32)]
+    pub y: f64,
+    #[fixed(5, i32)]
+    pub z: f64,
+    pub yaw: Angle,
+    pub pitch: Angle,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct EntityHeadLook0 {
+    pub entity_id: i32,
+    pub head_yaw: Angle,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct EntityHeadLook7 {
+    #[varint]
     pub entity_id: i32,
     pub head_yaw: Angle,
 }
@@ -749,6 +985,13 @@ pub struct EntityMetadata0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityMetadata7 {
+    #[varint]
+    pub entity_id: i32,
+    pub metadata: EntityMetadata,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct EntityEffect0 {
     pub entity_id: i32,
     // todo! effect ids
@@ -758,7 +1001,24 @@ pub struct EntityEffect0 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityEffect7 {
+    #[varint]
+    pub entity_id: i32,
+    // todo! effect ids
+    pub effect_id: i8,
+    pub amplifier: i8,
+    #[varint]
+    pub duration: i32,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct RemoveEntityEffect0 {
+    pub entity_id: i32,
+    pub effect_id: i8,
+}
+#[derive(Encoding, ToStatic)]
+pub struct RemoveEntityEffect7 {
+    #[varint]
     pub entity_id: i32,
     pub effect_id: i8,
 }
@@ -769,27 +1029,46 @@ pub struct SetExperience0 {
     pub level: i16,
     pub total_exp: i16,
 }
+#[derive(Encoding, ToStatic)]
+pub struct SetExperience7 {
+    pub experience_bar: f32,
+    #[varint]
+    pub level: i32,
+    #[varint]
+    pub total_exp: i32,
+}
 
 #[derive(Encoding, ToStatic)]
 pub struct EntityProperties0<'a> {
     pub entity_id: i32,
     #[counted(u32)]
-    pub properties: Vec<EntityProperty<'a>>,
+    pub properties: Vec<EntityProperty0<'a>>,
 }
-
 #[derive(Encoding, ToStatic)]
-pub struct EntityProperty<'a> {
+pub struct EntityProperty0<'a> {
     pub key: Cow<'a, str>,
     pub value: f64,
-    pub modifiers: Vec<Modifier>,
+    #[counted(u16)]
+    pub modifiers: Vec<Modifier0>,
+}
+#[derive(Encoding, ToStatic)]
+pub struct Modifier0 {
+    pub uuid: Uuid,
+    pub amount: f64,
+    pub operation: ModifierOperation0,
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct Modifier {
-    #[stringuuid]
-    pub uuid: Uuid,
-    pub amount: f64,
-    pub operation: i8,
+pub struct EntityProperties7<'a> {
+    pub entity_id: i32,
+    #[counted(u32)]
+    pub properties: Vec<EntityProperty7<'a>>,
+}
+#[derive(Encoding, ToStatic)]
+pub struct EntityProperty7<'a> {
+    pub key: Cow<'a, str>,
+    pub value: f64,
+    pub modifiers: Vec<Modifier0>,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -1323,7 +1602,7 @@ where
     }
 }
 impl<'a> Encode for OpenWindow0<'a> {
-    fn encode(&self, buf: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
+    fn encode(&self, cursor: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
         let Self {
             window_id,
             kind,
@@ -1346,13 +1625,13 @@ impl<'a> Encode for OpenWindow0<'a> {
             Dropper => (10, None),
             Horse { entity_id } => (11, Some(entity_id)),
         };
-        window_id.encode(buf)?;
-        kind.encode(buf)?;
-        title.encode(buf)?;
-        slot_count.encode(buf)?;
-        use_title.encode(buf)?;
+        window_id.encode(cursor)?;
+        kind.encode(cursor)?;
+        title.encode(cursor)?;
+        slot_count.encode(cursor)?;
+        use_title.encode(cursor)?;
         if let Some(entity_id) = entity_id {
-            Encode::encode(entity_id, buf)?;
+            Encode::encode(entity_id, cursor)?;
         }
         Ok(())
     }
@@ -1629,6 +1908,17 @@ pub struct PlayerListItem0<'a> {
     pub ping: i16,
 }
 
+#[derive(Encoding, ToStatic)]
+pub struct PlayerListItem7<'a> {
+    /// Supports chat colouring, limited to 16 characters.
+    pub name: Cow<'a, str>,
+    /// The client will remove the user from the list if false.
+    pub online: bool,
+    /// Ping, presumably in ms.
+    #[varint]
+    pub ping: i32,
+}
+
 #[derive(ToStatic)]
 pub struct PlayerAbilities0 {
     pub invulnerable: bool,
@@ -1709,6 +1999,27 @@ pub enum UpdateScoreAction0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct UpdateScore7<'a> {
+    /// The name of the score to be updated or removed
+    pub name: Cow<'a, str>,
+    pub action: UpdateScoreAction7<'a>,
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum UpdateScoreAction7<'a> {
+    #[case(0)]
+    Update {
+        /// The name of the objective the score belongs to
+        text: Cow<'a, str>,
+        /// The score to be displayed next to the entry
+        #[varint]
+        kind: i32,
+    },
+    Remove,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct DisplayScoreboard0<'a> {
     pub position: ScoreboardPosition,
     pub name: Cow<'a, str>,
@@ -1730,6 +2041,40 @@ pub struct Teams0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub enum TeamAction0<'a> {
+    #[case(0)]
+    Create {
+        display_name: Cow<'a, str>,
+        prefix: Cow<'a, str>,
+        suffix: Cow<'a, str>,
+        friendly_fire: TeamFriendlyFire,
+        #[counted(u16)]
+        players: Vec<Cow<'a, str>>,
+    },
+    Remove,
+    Update {
+        display_name: Cow<'a, str>,
+        prefix: Cow<'a, str>,
+        suffix: Cow<'a, str>,
+        friendly_fire: TeamFriendlyFire,
+    },
+    AddPlayers {
+        #[counted(u16)]
+        players: Vec<Cow<'a, str>>,
+    },
+    RemovePlayers {
+        #[counted(u16)]
+        players: Vec<Cow<'a, str>>,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct Teams7<'a> {
+    pub name: Cow<'a, str>,
+    pub action: TeamAction7<'a>,
+}
+
+#[derive(Encoding, ToStatic)]
+pub enum TeamAction7<'a> {
     #[case(0)]
     Create {
         display_name: Cow<'a, str>,
@@ -1790,4 +2135,22 @@ pub struct Disconnect0<'a> {
 #[derive(Encoding, ToStatic)]
 pub struct ServerDifficulty6 {
     pub difficulty: Difficulty0,
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(i32)]
+pub enum CombatEvent7<'a> {
+    #[case(0)]
+    EnterCombat,
+    EndCombat {
+        #[varint]
+        duration: i32,
+        entity_id: i32
+    },
+    EntityDead {
+        #[varint]
+        player_id: i32,
+        entity_id: i32,
+        message: Cow<'a, str>
+    }
 }

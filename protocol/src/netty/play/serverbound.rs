@@ -1,10 +1,17 @@
 use crate::*;
 
 use crate::netty::Position;
+use attrs::Var;
 use std::borrow::Cow;
 
 #[derive(Encoding, ToStatic)]
 pub struct KeepAlive0 {
+    pub id: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct KeepAlive7 {
+    #[varint]
     pub id: i32,
 }
 
@@ -16,6 +23,13 @@ pub struct ChatMessage0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct UseEntity0 {
+    pub target_id: i32,
+    pub mouse: i8,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct UseEntity7 {
+    #[varint]
     pub target_id: i32,
     pub mouse: i8,
 }
@@ -298,11 +312,25 @@ pub struct Animation0 {
     animation: super::AnimationId0,
 }
 
+/// Sent when the player's arm swings
+#[derive(Encoding, ToStatic)]
+pub struct Animation7 {}
+
 #[derive(Encoding, ToStatic)]
 pub struct EntityAction0 {
     pub entity_id: i32,
     pub action: EntityAction,
     /// Horse jump boost. Ranged from 0 -> 100.
+    pub jump_boost: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct EntityAction7 {
+    #[varint]
+    pub entity_id: i32,
+    pub action: EntityAction,
+    /// Horse jump boost. Ranged from 0 -> 100.
+    #[varint]
     pub jump_boost: i32,
 }
 
@@ -321,6 +349,20 @@ pub struct SteerVehicle0 {
     pub sideways: f32,
     pub forward: f32,
     pub jump: bool,
+    pub unmount: bool,
+}
+#[derive(Encoding, ToStatic)]
+pub struct SteerVehicle7 {
+    pub sideways: f32,
+    pub forward: f32,
+    pub flags: SteerVehicleFlags7,
+}
+#[derive(Encoding, ToStatic)]
+#[bitfield(u8, reverse)]
+pub struct SteerVehicleFlags7 {
+    #[bool]
+    pub jump: bool,
+    #[bool]
     pub unmount: bool,
 }
 

@@ -7,6 +7,7 @@ mod num;
 mod slice;
 mod str;
 mod string;
+mod uuid;
 mod vec;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -18,7 +19,7 @@ pub enum Error {
     #[error(transparent)]
     IntError(#[from] std::num::TryFromIntError),
     #[error(transparent)]
-    Uuid(#[from] uuid::Error),
+    Uuid(#[from] ::uuid::Error),
     #[error(transparent)]
     Utf8(#[from] std::str::Utf8Error),
     #[error("unexpected end of slice")]
