@@ -11,4 +11,4 @@ proc-macro = true
 convert_case = "0.5.0"
 proc-macro2 = "1.0.43"
 quote = "1.0.21"
-syn = "1.0.99"
+syn = { version = "1.0.99", features = ["full"] }

@@ -3,7 +3,7 @@ use crate::*;
 pub mod clientbound;
 pub mod serverbound;
 
-miners_packets_derive::packets! {
+parsing_tree! {
     login_cb_custom login_cb_tree clientbound::;
     0x00 => {
         0..=12 => Disconnect0<'a>,
@@ -52,7 +52,7 @@ impl<'a> CbLogin<'a> {
     }
 }
 
-miners_packets_derive::packets! {
+parsing_tree! {
     login_sb_custom login_sb_tree serverbound::;
     0x00 => {
         0..=384 => LoginStart0<'a>,

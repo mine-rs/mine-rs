@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::ToTokens;
 use syn::{parse_quote, DataStruct, Generics};
 
 use crate::{

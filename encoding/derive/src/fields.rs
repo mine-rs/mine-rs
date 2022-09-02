@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, quote_spanned, ToTokens};
+use quote::{quote_spanned, ToTokens};
 use syn::{spanned::Spanned, Fields, Type};
 
 use crate::attribute::{field_attrs, Attrs, Fixed};

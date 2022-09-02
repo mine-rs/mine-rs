@@ -74,7 +74,7 @@ pub struct PluginMessage0<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-packets! {
+parsing_tree! {
     play_cb_custom play_cb_tree clientbound::;
     0x00 => {
         0..=31 => KeepAlive0,
@@ -3028,7 +3028,7 @@ impl<'a> CbPlay<'a> {
     }
 }
 
-packets! {
+parsing_tree! {
     play_sb_custom play_sb_tree serverbound::;
     0x00 => {
         0..=6 => KeepAlive0,

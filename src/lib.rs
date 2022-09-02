@@ -8,5 +8,7 @@ pub use miners_auth as auth;
 pub use miners_chat as chat;
 #[cfg(feature = "net")]
 pub use miners_net as net;
-#[cfg(feature = "packets")]
-pub use miners_packets as packets;
+#[cfg(feature = "packet")]
+pub use miners_packet as packet;
+#[cfg(feature = "protocol")]
+pub use miners_protocol as protocol;

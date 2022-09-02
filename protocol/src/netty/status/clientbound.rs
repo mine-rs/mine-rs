@@ -10,7 +10,7 @@ pub struct Response0<'a> {
 
 pub use super::Ping0;
 
-packets! {
+parsing_tree! {
     status_cb_custom status_cb_tree;
     0x00 => {
         0..=760 => Response0::<'a>,

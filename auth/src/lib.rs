@@ -25,7 +25,6 @@ pub enum Error {
     String(#[from] FromUtf8Error),
     #[error(transparent)]
     MsAuth(#[from] MsAuthError),
-    
 }
 
 async fn read_string_from<R: AsyncRead + Unpin>(r: &mut R) -> Result<String, Error> {
@@ -297,11 +296,7 @@ impl DeviceCode {
     /// Entry point of the auth flow.
     /// It's up to you how you show the user the user code and the link
     /// Only show the user code and the link when cached is false because they'll be empty if not.
-    pub async fn new(
-        cid: &str,
-        cache_file: Option<&str>,
-        client: &Client,
-    ) -> Result<Self, Error> {
+    pub async fn new(cid: &str, cache_file: Option<&str>, client: &Client) -> Result<Self, Error> {
         let (path, name) = match cache_file {
             Some(file) => (Path::new(file), file),
             None => (Path::new(CACHE_FILE_NAME), CACHE_FILE_NAME),

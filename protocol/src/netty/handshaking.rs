@@ -2,7 +2,7 @@ use crate::*;
 
 pub mod serverbound;
 
-miners_packets_derive::packets! {
+parsing_tree! {
     handshaking_sb_custom handshaking_sb_tree serverbound::;
     0x00 => {
         0..=760 => Handshake0::<'a>,
