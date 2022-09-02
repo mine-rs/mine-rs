@@ -1,7 +1,5 @@
 use crate::*;
 
-use std::borrow::Cow;
-
 pub mod clientbound;
 pub mod serverbound;
 
@@ -20,44 +18,6 @@ pub enum AnimationId0 {
     Uncrouch,
 }
 
-#[derive(ToStatic)]
-pub struct PlayerAbilities0 {
-    pub invulnerable: bool,
-    pub flying: bool,
-    pub allow_flying: bool,
-    pub creative_mode: bool,
-    pub flying_speed: f32,
-    /// Modifies the field of view, like a speed potion. A Notchian server will
-    /// use the same value as the movement speed (send in the Entity Properties
-    /// packet).
-    pub fov: f32,
-}
-impl<'dec> Decode<'dec> for PlayerAbilities0 {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> Result<Self, decode::Error> {
-        let flags = u8::decode(cursor)?;
-        Ok(PlayerAbilities0 {
-            invulnerable: flags & 0b0001 != 0,
-            flying: flags & 0b0010 != 0,
-            allow_flying: flags & 0b0100 != 0,
-            creative_mode: flags & 0b1000 != 0,
-            flying_speed: f32::decode(cursor)?,
-            fov: f32::decode(cursor)?,
-        })
-    }
-}
-impl Encode for PlayerAbilities0 {
-    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
-        ((self.invulnerable as u8)
-            + ((self.flying as u8) << 1)
-            + ((self.allow_flying as u8) << 2)
-            + ((self.creative_mode as u8) << 3))
-            .encode(writer)?;
-        self.flying_speed.encode(writer)?;
-        self.fov.encode(writer)?;
-        Ok(())
-    }
-}
-
 #[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum Difficulty0 {
@@ -67,14 +27,7 @@ pub enum Difficulty0 {
     Hard,
 }
 
-#[derive(Encoding, ToStatic)]
-// https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
-pub struct PluginMessage0<'a> {
-    pub channel: Cow<'a, str>,
-    pub data: Cow<'a, [u8]>,
-}
-
-packets! {
+parsing_tree! {
     play_cb_custom play_cb_tree clientbound::;
     0x00 => {
         0..=31 => KeepAlive0,
@@ -94,9 +47,9 @@ packets! {
         // ... and all other versions
     },
     0x02 => {
-        0..=5 => ChatMessage0,
-        // 6..=12 => _6,
-        // 13..=66 => _13,
+        0..=5 => ChatMessage0<'a>,
+        6..=12 => ChatMessage6<'a>,
+        13..=66 => ChatMessage6<'a>,
         // 67..=99 => _67,
         // 100..=719 => _100,
         // 721..=758 => _721,
@@ -118,7 +71,7 @@ packets! {
     },
     0x04 => {
         0..=6 => EntityEquipment0,
-        // 7..=48 => _7,
+        7..=48 => EntityEquipment7,
         // 49..=66 => _49,
         // 67..=94 => _67,
         // 95..=352 => _95,
@@ -130,7 +83,7 @@ packets! {
     },
     0x05 => {
         0..=5 => SpawnPosition0,
-        // 6..=66 => _6,
+        6..=66 => SpawnPosition6,
         // 67..=99 => _67,
         // 100..=498 => _100,
         // 550..=719 => _550,
@@ -147,7 +100,7 @@ packets! {
     },
     0x06 => {
         0..=6 => UpdateHealth0,
-        // 7..=66 => _7,
+        7..=66 => UpdateHealth7,
         // 67..=719 => _67,
         // 721..=754 => _721,
         // 755..=758 => _755,
@@ -179,7 +132,7 @@ packets! {
     },
     0x08 => {
         0..=5 => PositionAndLook0,
-        // 6..=66 => _6,
+        6..=66 => PositionAndLook6,
         // 67..=317 => _67,
         // 318..=320 => _318,
         // 321..=323 => _321,
@@ -219,8 +172,8 @@ packets! {
     },
     0x0a => {
         0..=5 => UseBed0,
-        // 6 => _6,
-        // 7..=66 => _7,
+        6 => UseBed6,
+        7..=66 => UseBed7,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=498 => _332,
@@ -258,10 +211,10 @@ packets! {
     0x0c => {
         0..=4 => SpawnPlayer0<'a>,
         5 => SpawnPlayer5<'a>,
-        // 6 => _6,
-        // 7..=13 => _7,
-        // 14..=18 => _14,
-        // 19..=48 => _19,
+        6 => SpawnPlayer0<'a>,
+        7..=13 => SpawnPlayer7<'a>,
+        14..=18 => SpawnPlayer5<'a>,
+        19..=48 => SpawnPlayer19<'a>,
         // 49..=66 => _49,
         // 67..=317 => _67,
         // 318..=331 => _318,
@@ -282,7 +235,7 @@ packets! {
     },
     0x0d => {
         0..=6 => CollectItem0,
-        // 7..=66 => _7,
+        7..=66 => CollectItem7,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=463 => _332,
@@ -347,8 +300,8 @@ packets! {
         // 1073741906..=1073741907 => _1073741906,
     },
     0x10 => {
-        0..=7 => SpawnPainting<'a>,
-        // 8..=66 => _8,
+        0..=7 => SpawnPainting0<'a>,
+        8..=66 => SpawnPainting8<'a>,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=342 => _332,
@@ -398,7 +351,7 @@ packets! {
     },
     0x12 => {
         0..=6 => EntityVelocity0,
-        // 7..=66 => _7,
+        7..=66 => EntityVelocity7,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=344 => _332,
@@ -422,7 +375,7 @@ packets! {
     },
     0x13 => {
         0..=6 => DestroyEntities0,
-        // 7..=66 => _7,
+        7..=66 => DestroyEntities7,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=344 => _332,
@@ -446,7 +399,7 @@ packets! {
     },
     0x14 => {
         0..=6 => Entity0,
-        // 7..=66 => _7,
+        7..=66 => Entity7,
         // 67..=210 => _67,
         // 301..=317 => _301,
         // 318..=331 => _318,
@@ -475,7 +428,7 @@ packets! {
     },
     0x15 => {
         0..=6 => EntityRelativeMove0,
-        // 7..=21 => _7,
+        7..=21 => EntityRelativeMove7,
         // 22..=66 => _22,
         // 67..=317 => _67,
         // 318..=331 => _318,
@@ -490,7 +443,7 @@ packets! {
     },
     0x16 => {
         0..=6 => EntityLook0,
-        // 7..=21 => _7,
+        7..=21 => EntityLook7,
         // 22..=66 => _22,
         // 67..=317 => _67,
         // 318..=331 => _318,
@@ -520,7 +473,7 @@ packets! {
     },
     0x17 => {
         0..=6 => EntityLookAndRelativeMove0,
-        // 7..=21 => _7,
+        7..=21 => EntityLookAndRelativeMove7,
         // 22..=66 => _22,
         // 67..=317 => _67,
         // 318..=331 => _318,
@@ -549,7 +502,7 @@ packets! {
     },
     0x18 => {
         0..=6 => EntityTeleport0,
-        // 7..=21 => _7,
+        7..=21 => EntityTeleport7,
         // 22..=66 => _22,
         // 67..=317 => _67,
         // 318..=331 => _318,
@@ -578,7 +531,7 @@ packets! {
     },
     0x19 => {
         0..=6 => EntityHeadLook0,
-        // 7..=66 => _7,
+        7..=66 => EntityHeadLook7,
         // 67..=79 => _67,
         // 80..=94 => _80,
         // 95..=110 => _95,
@@ -664,7 +617,7 @@ packets! {
     },
     0x1c => {
         0..=6 => EntityMetadata0,
-        // 7..=66 => _7,
+        7..=66 => EntityMetadata7,
         // 67..=79 => _67,
         // 80..=317 => _80,
         // 318..=331 => _318,
@@ -692,8 +645,8 @@ packets! {
     },
     0x1d => {
         0..=6 => EntityEffect0,
-        // 7..=9 => _7,
-        // 10..=66 => _10,
+        7..=9 => EntityEffect7,
+        10..=66 => EntityEffect10,
         // 67..=79 => _67,
         // 80..=317 => _80,
         // 318..=331 => _318,
@@ -722,7 +675,7 @@ packets! {
     },
     0x1e => {
         0..=6 => RemoveEntityEffect0,
-        // 7..=66 => _7,
+        7..=66 => RemoveEntityEffect7,
         // 67..=79 => _67,
         // 80..=85 => _80,
         // 86..=317 => _86,
@@ -752,7 +705,7 @@ packets! {
     },
     0x1f => {
         0..=6 => SetExperience0,
-        // 7..=66 => _7,
+        7..=66 => SetExperience7,
         // 67..=79 => _67,
         // 80..=85 => _80,
         // 86..=317 => _86,
@@ -784,7 +737,7 @@ packets! {
     },
     0x20 => {
         0..=6 => EntityProperties0<'a>,
-        // 7..=66 => _7,
+        7..=66 => EntityProperties7<'a>,
         // 67..=69 => _67,
         // 70..=79 => _70,
         // 80..=85 => _80,
@@ -891,7 +844,7 @@ packets! {
     },
     0x23 => {
         0..=5 => BlockChange0,
-        // 6..=24 => _6,
+        6..=24 => BlockChange6,
         // 25..=61 => _25,
         // 62..=66 => _62,
         // 67..=79 => _67,
@@ -928,7 +881,7 @@ packets! {
     },
     0x24 => {
         0..=5 => BlockAction0,
-        // 6..=61 => _6,
+        6..=61 => BlockAction6,
         // 62..=66 => _62,
         // 67..=85 => _67,
         // 86..=317 => _86,
@@ -964,7 +917,7 @@ packets! {
     },
     0x25 => {
         0..=5 => BlockBreakAnimation0,
-        // 6..=61 => _6,
+        6..=61 => BlockBreakAnimation6,
         // 62..=66 => _62,
         // 67..=85 => _67,
         // 86..=99 => _86,
@@ -1071,7 +1024,7 @@ packets! {
     },
     0x28 => {
         0..=5 => Effect0,
-        // 6..=66 => _6,
+        6..=66 => Effect6,
         // 67..=85 => _67,
         // 86..=317 => _86,
         // 318..=344 => _318,
@@ -1128,7 +1081,7 @@ packets! {
     },
     0x2a => {
         0..=16 => Particle0<'a>,
-        // 17..=26 => _17,
+        17..=26 => Particle17<'a>,
         // 27..=28 => _27,
         // 29..=66 => _29,
         // 67..=79 => _67,
@@ -1222,8 +1175,8 @@ packets! {
     },
     0x2d => {
         0..=5 => OpenWindow0<'a>,
-        // 6..=12 => _6,
-        // 13..=66 => _13,
+        6..=12 => OpenWindow6<'a>,
+        13..=66 => OpenWindow6<'a>,
         // 67..=79 => _67,
         // 80..=85 => _80,
         // 86..=317 => _86,
@@ -1426,7 +1379,7 @@ packets! {
     },
     0x33 => {
         0..=5 => UpdateSign0<'a>,
-        // 6..=20 => _6,
+        6..=20 => UpdateSign6<'a>,
         // 21..=66 => _21,
         // 67..=79 => _67,
         // 80..=85 => _80,
@@ -1501,7 +1454,7 @@ packets! {
     },
     0x35 => {
         0..=5 => UpdateBlockEntity0,
-        // 6..=66 => _6,
+        6..=66 => UpdateBlockEntity6,
         // 67..=79 => _67,
         // 80..=85 => _80,
         // 86..=317 => _86,
@@ -1537,7 +1490,7 @@ packets! {
     },
     0x36 => {
         0..=5 => SignEditorOpen0,
-        // 6..=66 => _6,
+        6..=66 => SignEditorOpen6,
         // 67..=79 => _67,
         // 80..=85 => _80,
         // 86..=317 => _86,
@@ -1606,9 +1559,9 @@ packets! {
     },
     0x38 => {
         0..=6 => PlayerListItem0<'a>,
-        // 7..=16 => _7,
-        // 17..=18 => _17,
-        // 19..=27 => _19,
+        7..=16 => PlayerListItem7<'a>,
+        17..=18 => PlayerListItem17<'a>,
+        19..=27 => PlayerListItem19<'a>,
         // 28..=66 => _28,
         // 67..=79 => _67,
         // 80..=85 => _80,
@@ -1718,7 +1671,7 @@ packets! {
     },
     0x3b => {
         0..=11 => ScoreboardObjective0<'a>,
-        // 12..=66 => _12,
+        12..=66 => ScoreboardObjective12<'a>,
         // 67..=76 => _67,
         // 77..=85 => _77,
         // 86..=317 => _86,
@@ -1761,8 +1714,10 @@ packets! {
     },
     0x3c => {
         0..=6 => UpdateScore0<'a>,
-        // 7..=18 => _7,
-        // 19..=20 => _19,
+        7..=18 => UpdateScore7<'a>,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=20 => UpdateScore7<'a>,
         // 21..=66 => _21,
         // 67..=76 => _67,
         // 77..=85 => _77,
@@ -1828,8 +1783,8 @@ packets! {
     },
     0x3e => {
         0..=6 => Teams0<'a>,
-        // 7..=10 => _7,
-        // 11..=66 => _11,
+        7..=10 => Teams7<'a>,
+        11..=66 => Teams11<'a>,
         // 67..=76 => _67,
         // 77..=85 => _77,
         // 86..=317 => _86,
@@ -1896,7 +1851,7 @@ packets! {
     },
     0x40 => {
         0..=12 => Disconnect0<'a>,
-        // 13..=66 => _13,
+        13..=66 => Disconnect0<'a>,
         // 67..=76 => _67,
         // 77..=85 => _77,
         // 86..=317 => _86,
@@ -1928,7 +1883,7 @@ packets! {
         // 1073741920 => _1073741920,
     },
     0x41 => {
-        // 6..=66 => _6,
+        6..=66 => ServerDifficulty6,
         // 67..=76 => _67,
         // 77..=79 => _77,
         // 80..=85 => _80,
@@ -1961,9 +1916,11 @@ packets! {
         // 1073741920 => _1073741920,
     },
     0x42 => {
-        // 7 => _7,
-        // 8..=18 => _8,
-        // 19..=48 => _19,
+        7 => CombatEvent7<'a>,
+        8..=18 => CombatEvent8<'a>,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=48 => CombatEvent8<'a>,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -1998,7 +1955,7 @@ packets! {
         // 1073741921..=1073741923 => _1073741921,
     },
     0x43 => {
-        // 9..=66 => _9,
+        9..=66 => Camera9,
         // 67..=76 => _67,
         // 77..=79 => _77,
         // 80..=85 => _80,
@@ -2033,10 +1990,12 @@ packets! {
         // 1073741920 => _1073741920,
     },
     0x44 => {
-        // 15 => _15,
-        // 16 => _16,
-        // 17..=18 => _17,
-        // 19..=31 => _19,
+        15 => WorldBorder15,
+        16 => WorldBorder16,
+        17..=18 => WorldBorder17,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=31 => WorldBorder17,
         // 32..=66 => _32,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -2069,8 +2028,10 @@ packets! {
         // 1073741920 => _1073741920,
     },
     0x45 => {
-        // 18 => _18,
-        // 19..=66 => _19,
+        18 => Title18<'a>,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=66 => Title18<'a>,
         // 67..=76 => _67,
         // 77..=79 => _77,
         // 80..=85 => _80,
@@ -3028,11 +2989,11 @@ impl<'a> CbPlay<'a> {
     }
 }
 
-packets! {
+parsing_tree! {
     play_sb_custom play_sb_tree serverbound::;
     0x00 => {
         0..=6 => KeepAlive0,
-        // 7..=66 => _7,
+        7..=66 => KeepAlive7,
         // 67..=79 => _67,
     },
     0x01 => {
@@ -3046,8 +3007,10 @@ packets! {
     },
     0x02 => {
         0..=6 => UseEntity0,
-        // 7..=18 => _7,
-        // 19..=32 => _19,
+        7..=18 => UseEntity7,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=32 => UseEntity7,
         // 33..=48 => _33,
         // 49..=66 => _49,
         // 67..=79 => _67,
@@ -3075,7 +3038,7 @@ packets! {
     },
     0x04 => {
         0..=9 => PlayerPosition0,
-        // 10..=66 => _10,
+        10..=66 => PlayerPosition10,
         // 67..=79 => _67,
         // 80..=317 => _80,
         // 318..=335 => _318,
@@ -3112,7 +3075,7 @@ packets! {
     },
     0x06 => {
         0..=9 => PlayerPositionAndLook0,
-        // 10..=66 => _10,
+        10..=66 => PlayerPositionAndLook10,
         // 67..=79 => _67,
         // 80..=317 => _80,
         // 318..=335 => _318,
@@ -3129,8 +3092,10 @@ packets! {
     },
     0x07 => {
         0..=5 => PlayerDigging0,
-        // 6..=18 => _6,
-        // 19..=66 => _19,
+        6..=18 => PlayerDigging6,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=66 => PlayerDigging6,
         // 67..=79 => _67,
         // 80..=82 => _80,
         // 83..=317 => _83,
@@ -3150,7 +3115,7 @@ packets! {
     },
     0x08 => {
         0..=5 => PlayerBlockPlacement0,
-        // 6..=48 => _6,
+        6..=48 => PlayerBlockPlacement6,
         // 49..=66 => _49,
         // 67..=79 => _67,
         // 80..=317 => _80,
@@ -3192,7 +3157,7 @@ packets! {
     },
     0x0a => {
         0..=6 => Animation0,
-        // 7..=48 => _7,
+        7..=48 => Animation7,
         // 49..=66 => _49,
         // 67..=79 => _67,
         // 80..=317 => _80,
@@ -3213,8 +3178,10 @@ packets! {
     },
     0x0b => {
         0..=6 => EntityAction0,
-        // 7..=18 => _7,
-        // 19..=48 => _19,
+        7..=18 => EntityAction7,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=48 => EntityAction7,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -3240,7 +3207,7 @@ packets! {
     },
     0x0c => {
         0..=6 => SteerVehicle0,
-        // 7..=48 => _7,
+        7..=48 => SteerVehicle7,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=317 => _77,
@@ -3378,7 +3345,7 @@ packets! {
     },
     0x12 => {
         0..=5 => UpdateSign0<'a>,
-        // 6..=20 => _6,
+        6..=20 => UpdateSign6<'a>,
         // 21..=46 => _21,
         // 47 => _47,
         // 48 => _48,
@@ -3452,7 +3419,7 @@ packets! {
     },
     0x15 => {
         0..=5 => ClientSettings0<'a>,
-        // 6..=48 => _6,
+        6..=48 => ClientSettings6<'a>,
         // 49..=58 => _49,
         // 59..=66 => _59,
         // 67..=76 => _67,
@@ -3475,7 +3442,9 @@ packets! {
     },
     0x16 => {
         0..=18 => ClientStatus0,
-        // 19..=48 => _19,
+        // changed to using varint, range of values
+        // makes u8 compatible though
+        19..=48 => ClientStatus0,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -3524,7 +3493,7 @@ packets! {
         // 1073741908..=1073741921 => _1073741908,
     },
     0x18 => {
-        // 17..=48 => _17,
+        17..=48 => Spectate17,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,

@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::ToTokens;
 use syn::{parse_quote, spanned::Spanned, DataEnum, Generics, Variant};
 
 use crate::{
@@ -50,6 +50,9 @@ pub fn derive_enum(
             Counted(_) => error!(span, "#[counted(ty)] not allowed on enum declaration"),
             StringUuid => error!(span, "#[stringuuid] not allowed on enum declaration"),
             Rest => error!(span, "#[rest] not allowed on enum declaration"),
+            BitField(_) => error!(span, "#[bitfield] not allowed on enum declaration"),
+            Bits(_) => error!(span, "#[bits(size)] not allowed on enum declaration"),
+            Bool => error!(span, "#[bool] not allowed on enum declaration"),
         }
         .to_tokens(&mut res);
     }
@@ -95,7 +98,10 @@ pub fn derive_enum(
                 Fixed(_) => "`#[fixed(prec, ty)]` not allowed on enum variant",
                 Counted(_) => "`#[counted(ty)]` not allowed on enum variant",
                 StringUuid => "`#[stringuuid]` not allowed on enum variant",
-                Rest => "#[rest]` not allowed on enum variant",
+                Rest => "`#[rest]` not allowed on enum variant",
+                BitField(_) => "`#[bitfield]` not allowed on enum variant",
+                Bits(_) => "`#[bits(size)]` not allowed on enum variant",
+                Bool => "`#[bool]` not allowed on enum variant",
             };
             error!(span, err).to_tokens(&mut res);
         }

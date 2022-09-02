@@ -20,6 +20,9 @@ pub enum AttributeData {
     Counted(TypePath),
     Rest,
     StringUuid,
+    BitField(BitField),
+    Bits(u8),
+    Bool,
 }
 #[derive(Clone)]
 pub struct Fixed {
@@ -36,6 +39,30 @@ impl Parse for Fixed {
                 input.parse()?
             },
         })
+    }
+}
+#[derive(Default)]
+pub struct BitField(pub Option<Type>, pub bool);
+impl Parse for BitField {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(input
+            .parse()
+            .map(|ty| {
+                BitField(Some(ty), {
+                    <Token![,]>::parse(input)
+                        .and_then(|_| Ident::parse(input))
+                        .map(|ident| ident == "reverse")
+                        .unwrap_or_default()
+                })
+            })
+            .unwrap_or_default())
+    }
+}
+pub struct Bits(u8);
+impl Parse for Bits {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let litint: LitInt = input.parse()?;
+        Ok(Bits(litint.base10_parse()?))
     }
 }
 
@@ -89,6 +116,24 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
         Some(ident) if ident == "rest" => Some(Ok(Attribute {
             span: ident.span(),
             data: AttributeData::Rest,
+        })),
+        Some(ident) if ident == "bitfield" => Some({
+            let data = AttributeData::BitField(
+                parse2::<UnParen<BitField>>(tokens)
+                    .map(|a| a.0)
+                    .unwrap_or(BitField(None, false)),
+            );
+            Ok(Attribute { span, data })
+        }),
+        Some(ident) if ident == "bits" => Some({
+            parse2::<UnParen<Bits>>(tokens).map(|a| Attribute {
+                span: ident.span(),
+                data: AttributeData::Bits(a.0 .0),
+            })
+        }),
+        Some(ident) if ident == "bool" => Some(Ok(Attribute {
+            span,
+            data: AttributeData::Bool,
         })),
         _ => None,
     }
@@ -172,6 +217,11 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
                     "duplicate `#[stringuuid]` attribute on field"
                 }
             }
+            BitField(_) => "`#[bitfield]` not allowed on field",
+            Bits(_) => {
+                "`#[bits(size)]` not allowed on field without `#[bitfield]` on struct declaration"
+            }
+            Bool => "`#[bool]` not allowed on field without `#[bitfield]` on struct declaration",
         };
         error!(span, err_message).to_tokens(res)
     }

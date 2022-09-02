@@ -20,7 +20,9 @@ impl Compression {
             self.0 = None;
         } else {
             self.0 = Some((
-                // SAFETY: Since we know theshold is zero or more and we add one to it, we can be certain NonZeroU32::new() isn't supplied a zero so we can use `.unwrap_unchecked()`
+                // SAFETY: Since we know theshold is zero or more and we add
+                // one to it, we can be certain NonZeroU32::new() isn't
+                // supplied a zero so we can use `.unwrap_unchecked()`
                 unsafe { NonZeroU32::new((threshold + 1) as u32).unwrap_unchecked() },
                 compression,
             ));
@@ -337,14 +339,14 @@ where
     ) -> Result<(), miners_encoding::encode::Error>
     where
         P: miners_encoding::Encode,
-        {
-            self.workbuf2.clear();
-            packet.encode(&mut self.workbuf2)?;
-            let buf = std::mem::take(&mut self.workbuf2);
-            self.write_raw_packet(id, &buf).await?;
-            self.workbuf2 = buf;
-            Ok(())
-        }
+    {
+        self.workbuf2.clear();
+        packet.encode(&mut self.workbuf2)?;
+        let buf = std::mem::take(&mut self.workbuf2);
+        self.write_raw_packet(id, &buf).await?;
+        self.workbuf2 = buf;
+        Ok(())
+    }
 
     #[cfg(feature = "encoding")]
     pub async fn write_packet<P>(

@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 #[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {
+    // chat most likely, for sure starting pv13
     pub reason: Cow<'a, str>,
 }
 
@@ -19,18 +20,29 @@ pub struct EncryptionResponse0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EncryptionResponse19<'a> {
+    pub server_id: Cow<'a, str>,
+    pub public_key: Cow<'a, [u8]>,
+    pub verify_token: Cow<'a, [u8]>,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct Success0<'a> {
     #[stringuuid]
     pub uuid: Uuid,
     pub username: Cow<'a, str>,
 }
 
+#[derive(ToStatic)]
 pub struct Success5<'a> {
     pub uuid: Option<Uuid>,
     pub username: Cow<'a, str>,
 }
 
-impl<'dec> Decode<'dec> for Success5<'dec> {
+impl<'dec, 'a> Decode<'dec> for Success5<'a>
+where
+    'dec: 'a,
+{
     fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let uuid = <&str as Decode>::decode(buf)?;
 

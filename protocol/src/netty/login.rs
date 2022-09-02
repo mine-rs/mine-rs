@@ -3,23 +3,23 @@ use crate::*;
 pub mod clientbound;
 pub mod serverbound;
 
-miners_packets_derive::packets! {
+parsing_tree! {
     login_cb_custom login_cb_tree clientbound::;
     0x00 => {
         0..=12 => Disconnect0<'a>,
-        // 13..=384 => _13,
+        13..=384 => Disconnect0<'a>,
         // 385..=390 => _385,
     },
     0x01 => {
         0..=18 => EncryptionResponse0<'a>,
-        // 19..=384 => _19,
+        19..=384 => EncryptionResponse19<'a>,
         // 385..=390 => _385,
     },
     0x02 => {
         0..=4 => Success0<'a>,
         5 => Success5<'a>,
-        // 6..=13 => _6,
-        // 14..=384 => _14,
+        6..=13 => Success0<'a>,
+        14..=384 => Success5<'a>,
         // 385..=390 => _385,
         // 391..=706 => _391,
         // 707..=758 => _707,
@@ -52,7 +52,7 @@ impl<'a> CbLogin<'a> {
     }
 }
 
-miners_packets_derive::packets! {
+parsing_tree! {
     login_sb_custom login_sb_tree serverbound::;
     0x00 => {
         0..=384 => LoginStart0<'a>,
@@ -66,7 +66,7 @@ miners_packets_derive::packets! {
     },
     0x01 => {
         0..=18 => EncryptionRequest0<'a>,
-        // 19..=384 => _19,
+        19..=384 => EncryptionRequest19<'a>,
         // 385..=390 => _385,
         // 391..=758 => _391,
         // 759..=760 => _759,

@@ -2,13 +2,12 @@ use std::collections::BTreeMap;
 
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as TS, TokenTree};
-use proc_macro2_diagnostics::{Diagnostic, Level};
 use quote::ToTokens;
-use quote::{quote, quote_spanned, spanned::Spanned, TokenStreamExt};
+use quote::{quote_spanned, spanned::Spanned, TokenStreamExt};
 use syn::{braced, Token, TypePath};
 use syn::{punctuated::Punctuated, token::Brace, Expr, ExprLit, Lit, LitInt, Pat, PatLit, PatOr};
 
-pub fn packets(x: PacketsInput) -> TokenStream {
+pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
     let mut ret = TS::new();
 
     let prefix = x.prefix;
@@ -45,23 +44,6 @@ pub fn packets(x: PacketsInput) -> TokenStream {
                     break;
                 }
             };
-            for (pv_lo, pv_hi, pv_span) in versions {
-                let def = Def {
-                    ident: ver.packet.clone(),
-                    id: idi32,
-                    id_span,
-                    pv_lo,
-                    pv_hi,
-                    pv_span,
-                };
-                if let Some(err) = ver_id_mappings.insert(def) {
-                    ret.extend(err.emit_as_expr_tokens())
-                }
-            }
-
-            let mut ver_pat = TS::new();
-
-            ver_pat.append_separated(ver.pat, quote!(|));
 
             let packet = ver.packet;
             let last_ident = packet
@@ -71,7 +53,26 @@ pub fn packets(x: PacketsInput) -> TokenStream {
                 .expect("path without last segment?")
                 .ident
                 .clone();
+
+            for (pv_lo, pv_hi, pv_span) in versions {
+                ver_id_mappings.insert(
+                    Def {
+                        ident: last_ident.clone(),
+                        id: idi32,
+                        id_span,
+                        pv_lo,
+                        pv_hi,
+                        pv_span,
+                    },
+                    &mut ret,
+                )
+            }
+
             all_packets.insert(last_ident, packet.clone());
+
+            let mut ver_pat = TS::new();
+
+            ver_pat.append_separated(ver.pat, quote!(|));
 
             pv_match_body.extend(quote!(
                 #ver_pat => {
@@ -103,13 +104,13 @@ pub fn packets(x: PacketsInput) -> TokenStream {
     ret.extend(quote!(
         #[allow(unused)]
         macro_rules! #custom {
-        ($($t:tt)*) => {
-            replace!{
-                #custom_body ;
-                $($t)*
+            ($($t:tt)*) => {
+                replace!{
+                    #custom_body ;
+                    $($t)*
+                }
             }
         }
-    }
     ));
 
     let tree = x.tree;
@@ -124,17 +125,72 @@ pub fn packets(x: PacketsInput) -> TokenStream {
         }
     });
 
+    let packet_to_id_mappings: BTreeMap<Ident, _> = all_packets
+        .into_iter()
+        .map(|(ident, path)| {
+            let ids: Vec<(i32, i32, i32)> = ver_id_mappings
+                .stuff
+                .iter()
+                .filter(|a| a.ident == ident)
+                .map(|def| (def.id, def.pv_lo, def.pv_hi))
+                .collect();
+            (ident, (path, ids))
+        })
+        .collect();
+
+    for (_, (path, mappings)) in packet_to_id_mappings {
+        let ltsiter = path
+            .path
+            .segments
+            .iter()
+            .filter_map(|segment| match &segment.arguments {
+                syn::PathArguments::AngleBracketed(bracketed) => Some(bracketed),
+                _ => None,
+            })
+            .flat_map(|bracketed| {
+                bracketed.args.iter().filter_map(|arg| match arg {
+                    syn::GenericArgument::Lifetime(lt) => Some(lt),
+                    _ => None,
+                })
+            });
+        let mut generics = quote! {};
+        let mut where_clause = quote! {};
+        for lts in ltsiter {
+            quote! {, #lts}.to_tokens(&mut generics);
+            quote! {'dec: #lts,}.to_tokens(&mut where_clause);
+        }
+        let mut match_body = quote! {};
+        for (id, lo, hi) in mappings {
+            quote! {
+                #lo..=#hi => Some(#id),
+            }
+            .to_tokens(&mut match_body)
+        }
+        quote! {_ => None}.to_tokens(&mut match_body);
+        quote! {
+            impl<'dec #generics> Packet<'dec> for #prefix #path
+            where #where_clause {
+                fn id_for_version(version: i32) -> Option<i32> {
+                    match version {
+                        #match_body
+                    }
+                }
+            }
+        }
+        .to_tokens(&mut ret)
+    }
+
     ret.into()
 }
 
-pub struct PacketsInput {
+pub struct ParsingTreeInput {
     pub custom: Ident,
     pub tree: Ident,
     pub prefix: TS,
     id_mappings: Punctuated<IdMapping, Token![,]>,
 }
 
-impl syn::parse::Parse for PacketsInput {
+impl syn::parse::Parse for ParsingTreeInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let custom = input.parse()?;
         let tree = input.parse()?;
@@ -143,7 +199,7 @@ impl syn::parse::Parse for PacketsInput {
             input.parse::<TokenTree>()?.to_tokens(&mut prefix);
         }
         let _: Token![;] = input.parse()?;
-        Ok(PacketsInput {
+        Ok(ParsingTreeInput {
             custom,
             tree,
             prefix,
@@ -214,22 +270,20 @@ fn expr2i32(e: Expr) -> Result<(i32, Span), TS> {
 pub struct IdPvMappings {
     stuff: Vec<Def>,
 }
-fn mk_overlap_err(a: &Def, b: &Def, id: i32, lo: i32, hi: i32) -> Diagnostic {
-    Diagnostic::spanned(
-        &[a.ident.__span(), b.ident.__span()][..],
-        Level::Error,
-        &format!("Two Packets defined for id {id} and versions {lo}..={hi}"),
-    )
-    .span_help(&[a.id_span, a.pv_span][..], "first one defined here")
-    .span_help(&[b.id_span, b.pv_span][..], "second one defined here")
+fn mk_overlap_err(_a: &Def, b: &Def, id: i32, lo: i32, hi: i32, ret: &mut TS) {
+    let id_span = b.id_span;
+    let error = format!("Two Packets defined for id {id} and versions {lo}..={hi}");
+    quote_spanned! {id_span=>
+        compile_error!(#error);
+    }
+    .to_tokens(ret);
 }
 impl IdPvMappings {
-    fn insert(&mut self, x: Def) -> Option<Diagnostic> {
-        let ret = self
-            .has(x.id, x.pv_lo, x.pv_hi)
-            .map(|(a, id, lo, hi)| mk_overlap_err(a, &x, id, lo, hi));
+    fn insert(&mut self, x: Def, ret: &mut TS) {
+        if let Some((a, id, lo, hi)) = self.has(x.id, x.pv_lo, x.pv_hi) {
+            mk_overlap_err(a, &x, id, lo, hi, ret)
+        }
         self.stuff.push(x);
-        ret
     }
     fn has(&self, id: i32, pv_lo: i32, pv_hi: i32) -> Option<(&Def, i32, i32, i32)> {
         for x in &self.stuff {
@@ -243,7 +297,7 @@ impl IdPvMappings {
     }
 }
 pub struct Def {
-    pub ident: TypePath,
+    pub ident: Ident,
     pub id: i32,
     pub id_span: Span,
     pub pv_lo: i32,

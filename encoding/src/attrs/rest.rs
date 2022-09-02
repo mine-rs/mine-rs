@@ -114,6 +114,7 @@ impl<'dec> Decode<'dec> for Rest<String> {
 fn test() {
     let bytes = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     let mut reader = Cursor::new(bytes.as_slice());
+    #[allow(clippy::unwrap_used)]
     let new_bytes = Rest::<Vec<u8>>::decode(&mut reader).unwrap().into_inner();
     assert_eq!(bytes, new_bytes)
 }

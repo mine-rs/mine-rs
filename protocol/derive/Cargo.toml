@@ -1,8 +1,10 @@
 [package]
-name = "miners-packets-derive"
+name = "miners-protocol-derive"
 version = "0.0.0-beta.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
+
+description = "proc_macro helpers for miners-protocol-derive"
 
 [lib]
 proc-macro = true
@@ -10,6 +12,5 @@ proc-macro = true
 [dependencies]
 convert_case = "0.5.0"
 proc-macro2 = "1.0.43"
-proc-macro2-diagnostics = "0.9.1"
 quote = "1.0.21"
 syn = { version = "1.0.99", features = ["full"] }

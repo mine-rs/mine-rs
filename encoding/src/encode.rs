@@ -6,6 +6,7 @@ mod num;
 mod slice;
 mod str;
 mod string;
+mod uuid;
 mod vec;
 
 pub type Result<T> = std::result::Result<T, Error>;

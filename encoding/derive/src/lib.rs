@@ -1,8 +1,15 @@
 use syn::{parse_macro_input, DeriveInput};
 
+#[macro_use]
+extern crate quote;
 extern crate proc_macro;
 
-#[proc_macro_derive(Encoding, attributes(varint, case, counted, from, fixed, stringuuid))]
+#[proc_macro_derive(
+    Encoding,
+    attributes(
+        varint, case, counted, from, fixed, stringuuid, rest, bitfield, bits, bool
+    )
+)]
 pub fn encoding(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let DeriveInput {
         attrs,

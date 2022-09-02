@@ -1,9 +1,9 @@
 [package]
-name = "miners-packets-traits"
+name = "miners-packet"
 version = "0.0.0-beta.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-miners-encoding = { path = "../../encoding", version = "0.0.0-beta.0" }
+miners-encoding = { path = "../encoding", version = "0.0.0-beta.0" }
 uuid = "1.1.2"

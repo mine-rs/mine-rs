@@ -15,3 +15,9 @@ pub struct EncryptionRequest0<'a> {
     #[counted(u16)]
     pub verify_token: Cow<'a, [u8]>,
 }
+
+#[derive(Encoding, ToStatic)]
+pub struct EncryptionRequest19<'a> {
+    pub public_key: Cow<'a, [u8]>,
+    pub verify_token: Cow<'a, [u8]>,
+}
