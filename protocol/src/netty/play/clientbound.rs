@@ -2214,6 +2214,30 @@ pub enum UpdateScoreAction7<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct UpdateScore21<'a> {
+    /// The name of the score to be updated or removed
+    pub name: Cow<'a, str>,
+    pub action: UpdateScoreAction21<'a>,
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum UpdateScoreAction21<'a> {
+    #[case(0)]
+    Update {
+        /// The name of the objective the score belongs to
+        text: Cow<'a, str>,
+        /// The score to be displayed next to the entry
+        #[varint]
+        kind: i32,
+    },
+    Remove {
+        /// The name of the objective the score belongs to
+        text: Cow<'a, str>,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct DisplayScoreboard0<'a> {
     pub position: ScoreboardPosition,
     pub name: Cow<'a, str>,

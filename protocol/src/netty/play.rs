@@ -1380,7 +1380,8 @@ parsing_tree! {
     0x33 => {
         0..=5 => UpdateSign0<'a>,
         6..=20 => UpdateSign6<'a>,
-        // 21..=66 => _21,
+        // chatcomponent
+        21..=66 => UpdateSign6<'a>,
         // 67..=79 => _67,
         // 80..=85 => _80,
         // 86..=317 => _86,
@@ -1718,7 +1719,7 @@ parsing_tree! {
         // changed to using varint, range of values
         // makes u8 compatible though
         19..=20 => UpdateScore7<'a>,
-        // 21..=66 => _21,
+        21..=66 => UpdateScore21<'a>,
         // 67..=76 => _67,
         // 77..=85 => _77,
         // 86..=317 => _86,
@@ -3346,7 +3347,8 @@ parsing_tree! {
     0x12 => {
         0..=5 => UpdateSign0<'a>,
         6..=20 => UpdateSign6<'a>,
-        // 21..=46 => _21,
+        // chatcomponent
+        21..=46 => UpdateSign6<'a>,
         // 47 => _47,
         // 48 => _48,
         // 49..=66 => _49,
