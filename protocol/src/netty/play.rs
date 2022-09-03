@@ -807,7 +807,7 @@ parsing_tree! {
     0x22 => {
         0..=3 => MultiBlockChange0,
         4..=24 => MultiBlockChange4,
-        // 25..=61 => _25,
+        25..=61 => MultiBlockChange25,
         // 62..=66 => _62,
         // 67..=79 => _67,
         // 80..=85 => _80,
@@ -845,7 +845,7 @@ parsing_tree! {
     0x23 => {
         0..=5 => BlockChange0,
         6..=24 => BlockChange6,
-        // 25..=61 => _25,
+        25..=61 => BlockChange25,
         // 62..=66 => _62,
         // 67..=79 => _67,
         // 80..=85 => _80,

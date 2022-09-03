@@ -1297,7 +1297,7 @@ impl Encode for MultiBlockChange0 {
 #[derive(ToStatic)]
 pub struct MultiBlockChange4 {
     pub chunk_x: i32,
-    pub chunk_y: i32,
+    pub chunk_z: i32,
     // count(u16)
     pub records: Vec<Record>,
 }
@@ -1305,7 +1305,7 @@ pub struct MultiBlockChange4 {
 impl<'dec> Decode<'dec> for MultiBlockChange4 {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let chunk_x = i32::decode(cursor)?;
-        let chunk_y = i32::decode(cursor)?;
+        let chunk_z = i32::decode(cursor)?;
         let record_count = u16::decode(cursor)?;
         let data_size: i32 = i32::decode(cursor)?;
         if data_size != record_count as i32 * 4 {
@@ -1317,7 +1317,7 @@ impl<'dec> Decode<'dec> for MultiBlockChange4 {
             .collect::<Result<_, _>>()?;
         Ok(Self {
             chunk_x,
-            chunk_y,
+            chunk_z,
             records,
         })
     }
@@ -1326,7 +1326,7 @@ impl<'dec> Decode<'dec> for MultiBlockChange4 {
 impl Encode for MultiBlockChange4 {
     fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
         self.chunk_x.encode(writer)?;
-        self.chunk_y.encode(writer)?;
+        self.chunk_z.encode(writer)?;
         (self.records.len() as u16).encode(writer)?;
         (self.records.len() as i32 * 4).encode(writer)?;
         for record in &self.records {
@@ -1339,7 +1339,7 @@ impl Encode for MultiBlockChange4 {
 #[derive(ToStatic)]
 pub struct Record {
     pub block_state: u16,
-    y: u8,
+    pub y: u8,
     pub rel_x: u8,
     pub rel_z: u8,
 }
@@ -1366,9 +1366,34 @@ impl Encode for Record {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct MultiBlockChange25 {
+    pub chunk_x: i32,
+    pub chunk_z: i32,
+    pub records: Vec<Record25>,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct Record25 {
+    pub rel_pos: RecordRelativePosition25,
+    #[varint]
+    pub block_id: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+#[bitfield]
+pub struct RecordRelativePosition25 {
+    #[bits(4)]
+    pub x: u8,
+    #[bits(4)]
+    pub z: u8,
+    #[bits(8)]
+    pub y: u8,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct BlockChange0 {
     pub x: i32,
-    y: u8,
+    pub y: u8,
     pub z: i32,
     #[varint]
     // todo! extract the next two variables into concrete types for the version
@@ -1378,6 +1403,14 @@ pub struct BlockChange0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockChange6 {
+    pub location: Position,
+    #[varint]
+    pub block_type: i32,
+    pub block_data: u8,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct BlockChange25 {
     pub location: Position,
     // todo! global palette block id, maybe separate into id and type?
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Block_Change

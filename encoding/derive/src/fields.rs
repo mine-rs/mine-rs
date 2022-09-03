@@ -301,7 +301,7 @@ pub fn bitfield_codegen(
             }.to_tokens(&mut decode);
             quote! {
                 if #field_ty::MIN != 0 && #ident >= 1 << (#size as #field_ty - 1) {
-                    #ident ^= -1 << #size as #field_ty;
+                    #ident ^= !0 << #size as #field_ty;
                 }
             }
             .to_tokens(&mut neg_checks);
