@@ -1235,6 +1235,21 @@ pub struct ChunkData0<'a> {
     pub compressed_data: Cow<'a, [u8]>,
 }
 
+#[derive(Encoding, ToStatic)]
+// todo! make this nice to interact with
+pub struct ChunkData23<'a> {
+    pub chunk_x: i32,
+    pub chunk_y: i32,
+    /// This is True if the packet represents all sections in this vertical
+    /// column, where the primary bit map specifies exactly which sections are
+    /// included, and which are air
+    pub continuous: bool,
+    /// Bitmask with 1 for every 16x16x16 section which data follows in the compressed data.
+    pub primary_bitmap: u16,
+    #[counted(u32)]
+    pub compressed_data: Cow<'a, [u8]>,
+}
+
 #[derive(ToStatic)]
 pub struct MultiBlockChange0 {
     // varint
@@ -1428,11 +1443,13 @@ where
         let column_count = u16::decode(cursor)?;
         let data_len = u32::decode(cursor)?;
         let skylight_sent = bool::decode(cursor)?;
+        let pos = cursor.position();
         let data = cursor
             .get_ref()
-            .get(0..data_len as usize + cursor.position() as usize)
+            .get(pos as usize..data_len as usize + pos as usize)
             // todo! different error
             .ok_or(decode::Error::InvalidId)?;
+        cursor.set_position(data_len as u64 + pos);
         let column_metas = (0..column_count)
             .map(|_| ChunkMeta0::decode(cursor))
             .collect::<Result<_, _>>()?;
@@ -1462,6 +1479,60 @@ pub struct ChunkMeta0 {
     pub chunk_z: i32,
     pub primary_bitmap: u16,
     pub add_bitmap: u16,
+}
+
+#[derive(ToStatic)]
+pub struct MapChunkBulk23<'a> {
+    /// Whether or not the chunk data contains a light nibble array. This is
+    /// true in the main world, false in the end + nether
+    pub skylight_sent: bool,
+    pub data: Cow<'a, [u8]>,
+    pub column_metas: Vec<ChunkMeta23>,
+}
+
+impl<'dec, 'a> Decode<'dec> for MapChunkBulk23<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &'_ mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let column_count = u16::decode(cursor)?;
+        let data_len = u32::decode(cursor)?;
+        let skylight_sent = bool::decode(cursor)?;
+        let pos = cursor.position();
+        let data = cursor
+            .get_ref()
+            .get(pos as usize..data_len as usize + pos as usize)
+            // todo! different error
+            .ok_or(decode::Error::InvalidId)?;
+        cursor.set_position(data_len as u64 + pos);
+        let column_metas = (0..column_count)
+            .map(|_| ChunkMeta23::decode(cursor))
+            .collect::<Result<_, _>>()?;
+        Ok(Self {
+            skylight_sent,
+            data: Cow::Borrowed(data),
+            column_metas,
+        })
+    }
+}
+impl<'a> Encode for MapChunkBulk23<'a> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> Result<(), encode::Error> {
+        (self.column_metas.len() as u16).encode(writer)?;
+        (self.data.len() as u32).encode(writer)?;
+        self.skylight_sent.encode(writer)?;
+        writer.write_all(&self.data)?;
+        for meta in &self.column_metas {
+            meta.encode(writer)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct ChunkMeta23 {
+    pub chunk_x: i32,
+    pub chunk_z: i32,
+    pub primary_bitmap: u16,
 }
 
 #[derive(Encoding, ToStatic)]
