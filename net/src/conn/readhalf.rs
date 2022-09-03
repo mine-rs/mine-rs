@@ -1,4 +1,7 @@
 use core::slice;
+use std::io::Write;
+use std::pin::Pin;
+use std::task::Poll;
 use std::{fmt::Display, io};
 
 use super::INITIAL_BUF_SIZE;
@@ -8,9 +11,11 @@ use aes::{
     cipher::{inout::InOutBuf, BlockDecryptMut, InvalidLength, KeyIvInit},
     Aes128,
 };
+use blocking::{unblock, Task};
 use cfb8::Decryptor;
 use flate2::Decompress;
 use futures_lite::{io::BufReader, AsyncRead, AsyncReadExt};
+use futures_lite::{ready, FutureExt};
 
 /// The maximum packet length, 8 MiB
 const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;
@@ -29,17 +34,98 @@ fn verify_len(len: u32) -> std::io::Result<()> {
     }
 }
 
+fn decrypt_in_place(decryptor: &mut Decryptor<Aes128>, data: &mut [u8]) {
+    let (chunks, rest) = InOutBuf::from(data).into_chunks();
+    assert!(rest.is_empty());
+    decryptor.decrypt_blocks_inout_mut(chunks);
+}
+
+struct Decryption {
+    pub decryptor: Decryptor<Aes128>,
+    pub task: Option<Task<(Decryptor<Aes128>, Vec<u8>, usize)>>,
+    pub offset: usize,
+    pub buf: Vec<u8>, 
+}
+
 // const AVG_PACKET_THRESHOLD: usize = 65536;
 
 /// The reading half of a connection.
 /// Returned from `Connection::split()`
 pub struct ReadHalf<R> {
-    decryptor: Option<Decryptor<Aes128>>,
+    decryption: Option<Decryption>,
     pub(super) compression: Option<Vec<u8>>,
     readbuf: Vec<u8>,
     reader: BufReader<R>,
     #[cfg(feature = "blocking")]
     blocking: Option<u32>,
+}
+
+impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &mut [u8],
+    ) -> std::task::Poll<io::Result<usize>> {
+        let this = self.get_mut();
+        match &mut this.decryption {
+            None => Pin::new(&mut this.reader).poll_read(cx, buf),
+            Some(decryption) => {
+                // If task is None, that means we haven't spawned the task yet, so we spawn it.
+                if decryption.task.is_none() {
+                    // Clear the decryption buffer.
+                    decryption.buf.clear();
+                    decryption.buf.reserve(1024 * 8); // reserve 8 KiB
+                    decryption.buf.resize(1024 * 8, 0);
+
+                    // Read the data to the decryption buffer.
+                    let n = ready!(Pin::new(&mut this.reader).poll_read(cx, &mut decryption.buf))?;
+                    
+                    // We use std::mem::take because we can't pass the decryption buf directly.
+                    let mut owned_decryption_buf = std::mem::take(&mut decryption.buf);
+                    // We use clone because we can't pass the decryptor directly.
+                    let mut owned_decryptor = decryption.decryptor.clone();
+
+                    // Create and store the task.
+                    decryption.task = Some(unblock(move || -> (Decryptor<Aes128>, Vec<u8>, usize) {
+                        // Decryption
+                        let (chunks, _rest) =
+                            InOutBuf::from(&mut owned_decryption_buf[0..n]).into_chunks();
+                        owned_decryptor.decrypt_blocks_inout_mut(chunks);
+                        (owned_decryptor, owned_decryption_buf, n)
+                    }));
+                }
+                //This should be fine because if the task is None, we set it to Some in the above if clause.
+                #[allow(clippy::unwrap_used)]
+                let task = decryption.task.as_mut().unwrap();
+
+                
+                let (decryptor, decryption_buf, n) = ready!(task.poll(cx));
+                let len = buf.len();
+
+                let n = if len < n {
+                    buf.copy_from_slice(&decryption_buf[decryption.offset..len]);
+                    // Put the decryptor and buf back.
+                    decryption.buf = decryption_buf;
+                    decryption.decryptor = decryptor;
+                    // Set the offset
+                    decryption.offset = len;
+                    // Return the amount of bytes read to the buf supplied.
+                    len
+
+                } else {
+                    buf.copy_from_slice(&decryption_buf[decryption.offset..n]);
+                    // Put the decryptor and buf back.
+                    decryption.buf = decryption_buf;
+                    decryption.decryptor = decryptor;
+                    // Set the task to None.
+                    decryption.task = None;
+                    // Return the amount of bytes read to the buf supplied
+                    n - decryption.offset
+                };
+                Poll::Ready(Ok(n))
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -57,8 +143,19 @@ impl<R> ReadHalf<R> {
         compression: Option<Vec<u8>>,
         reader: BufReader<R>,
     ) -> Self {
+        let decryptor = match  decryptor {
+            None => None,
+            Some(decryptor) => Some(
+                Decryption {
+                    buf: Vec::with_capacity(INITIAL_BUF_SIZE),
+                    offset: 0,
+                    decryptor,
+                    task: None
+                }
+            )
+        };
         Self {
-            decryptor,
+            decryption: decryptor,
             compression,
             readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader,
@@ -68,7 +165,14 @@ impl<R> ReadHalf<R> {
     }
 
     pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
-        self.decryptor = Some(Decryptor::new_from_slices(key, key)?);
+        self.decryption = Some(
+            Decryption {
+                decryptor: Decryptor::new_from_slices(key, key)?,
+                buf: Vec::with_capacity(INITIAL_BUF_SIZE),
+                offset: 0,
+                task: None,
+            }
+        );
 
         Ok(())
     }
@@ -89,7 +193,7 @@ impl<R> ReadHalf<R> {
         }
     }
 }
-
+/*
 impl<R> ReadHalf<R>
 where
     R: AsyncRead + Unpin,
@@ -100,7 +204,7 @@ where
 
             // read encrypted packet length
 
-            let len = read_encrypted_varint_async(&mut self.reader, decryptor).await?;
+            let len = read_encrypted_varint_async(&mut self.reader, decryptor.0).await?;
 
             verify_len(len)?;
 
@@ -265,12 +369,6 @@ where
     Ok(val)
 }
 
-fn decrypt_in_place(decryptor: &mut Decryptor<Aes128>, data: &mut [u8]) {
-    let (chunks, rest) = InOutBuf::from(data).into_chunks();
-    assert!(rest.is_empty());
-    decryptor.decrypt_blocks_inout_mut(chunks);
-}
-
 async fn read_encrypted_varint_async<R>(
     reader: &mut R,
     decryptor: &mut Decryptor<Aes128>,
@@ -302,3 +400,4 @@ fn read_varint(reader: &mut &[u8]) -> io::Result<u32> {
     }
     Ok(val)
 }
+*/
