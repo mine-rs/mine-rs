@@ -2,18 +2,14 @@
 //TODO: Add documentation and fix naming
 
 use {
-    async_trait::async_trait,
     async_fs as fs,
+    async_trait::async_trait,
     futures_io::{AsyncRead, AsyncWrite},
     futures_util::{AsyncReadExt, AsyncWriteExt},
     http::StatusCode,
     serde_derive::{Deserialize, Serialize},
     serde_json::json,
-    std::{
-        fmt::Display,
-        path::Path, 
-        string::FromUtf8Error
-    },
+    std::{fmt::Display, path::Path, string::FromUtf8Error},
 };
 
 trait ResponseExt: Sized {
@@ -34,15 +30,21 @@ impl<T> ResponseExt for http::Response<T> {
 #[async_trait]
 pub trait HttpClient {
     type Body: AsRef<[u8]>;
-    async fn execute_request(&self, req: http::Request<Vec<u8>>) -> anyhow::Result<http::response::Response<Self::Body>>;
+    async fn execute_request(
+        &self,
+        req: http::Request<Vec<u8>>,
+    ) -> anyhow::Result<http::response::Response<Self::Body>>;
 }
 
 #[cfg(feature = "reqwest")]
 #[async_trait]
 impl HttpClient for reqwest::Client {
     type Body = bytes::Bytes;
-    
-    async fn execute_request(&self, req: http::Request<Vec<u8>>) -> anyhow::Result<http::response::Response<Self::Body>> {
+
+    async fn execute_request(
+        &self,
+        req: http::Request<Vec<u8>>,
+    ) -> anyhow::Result<http::response::Response<Self::Body>> {
         let req: reqwest::Request = req.try_into()?;
         //if let Some(b) = req.body() {
         //    dbg!(std::str::from_utf8(b.as_bytes().unwrap()).unwrap());
@@ -74,7 +76,7 @@ pub enum Error {
     #[error(transparent)]
     HttpStatus(#[from] HttpStatusError),
     #[error(transparent)]
-    Http(#[from] http::Error)
+    Http(#[from] http::Error),
 }
 
 #[derive(Debug)]
@@ -133,12 +135,11 @@ struct McAuth {
 
 impl McAuth {
     async fn mc_profile(&self, client: &impl HttpClient) -> Result<McProfile, Error> {
-        let pr_resp = client.execute_request(
-            http::request::Builder::new()
-            .header("Authorization", format!("Bearer {}", self.access_token))
-            .body(
-                Vec::new()
-            )?
+        let pr_resp = client
+            .execute_request(
+                http::request::Builder::new()
+                    .header("Authorization", format!("Bearer {}", self.access_token))
+                    .body(Vec::new())?,
             )
             .await?
             .error_for_status()?
@@ -181,12 +182,13 @@ impl XstsAuth {
             "identityToken": format!("XBL3.0 x={};{}", self.display_claims.xui[0].uhs, self.token)
         });
 
-        let mc_resp = client.execute_request(
-            http::request::Builder::new()
-                .uri("https://api.minecraftservices.com/authentication/login_with_xbox")
-                .method(http::Method::POST)
-                .header("content-type", "application/json")
-                .body(serde_json::to_vec(&json)?)?
+        let mc_resp = client
+            .execute_request(
+                http::request::Builder::new()
+                    .uri("https://api.minecraftservices.com/authentication/login_with_xbox")
+                    .method(http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(serde_json::to_vec(&json)?)?,
             )
             .await?
             .error_for_status()?
@@ -224,13 +226,16 @@ impl XblAuth {
             "RelyingParty": "rp://api.minecraftservices.com/",
             "TokenType":    "JWT",
         });
-        let xsts_resp = client.execute_request(
-            http::request::Builder::new()
+        let xsts_resp = client
+            .execute_request(
+                http::request::Builder::new()
                     .uri("https://xsts.auth.xboxlive.com/xsts/authorize")
                     .method(http::Method::POST)
                     .header("content-type", "application/json")
-                    .body(serde_json::to_vec(&json)?)?
-        ).await?.into_body();
+                    .body(serde_json::to_vec(&json)?)?,
+            )
+            .await?
+            .into_body();
 
         //let xsts_resp = client
         //    .post("https://xsts.auth.xboxlive.com/xsts/authorize")
@@ -319,12 +324,15 @@ impl MsAuth {
             "TokenType":    "JWT",
         });
 
-        let xbl_resp = client.execute_request(
-            http::request::Builder::new()
-            .uri("https://user.auth.xboxlive.com/user/authenticate")
-            .method(http::Method::POST)
-            .body(serde_json::to_vec(&json)?)?
-        ).await?.into_body();
+        let xbl_resp = client
+            .execute_request(
+                http::request::Builder::new()
+                    .uri("https://user.auth.xboxlive.com/user/authenticate")
+                    .method(http::Method::POST)
+                    .body(serde_json::to_vec(&json)?)?,
+            )
+            .await?
+            .into_body();
         //let xbl_resp = client
         //    .post("https://user.auth.xboxlive.com/user/authenticate")
         //    .header("Accept", "application/json")
@@ -474,17 +482,18 @@ impl DeviceCode {
                     "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code",
                     &self.cid as &str,
                     &inner.device_code
-                ).into_bytes();
-                let code_resp = client.execute_request(
-                    http::request::Builder::new()
+                )
+                .into_bytes();
+                let code_resp = client
+                    .execute_request(
+                        http::request::Builder::new()
                             .method(http::Method::POST)
                             .header("content-type", "application/x-www-form-urlencoded")
                             .header("content-length", body.len())
-                            .uri(
-                                "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
-                            )
-                            .body(body)?
-                ).await?;
+                            .uri("https://login.microsoftonline.com/consumers/oauth2/v2.0/token")
+                            .body(body)?,
+                    )
+                    .await?;
                 //let code_resp = client
                 //    .post("https://login.microsoftonline.com/consumers/oauth2/v2.0/token")
                 //    .form(&[
