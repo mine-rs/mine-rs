@@ -882,6 +882,26 @@ pub struct EntityRelativeMove7 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityRelativeMove22 {
+    #[varint]
+    pub entity_id: i32,
+    // todo! round x and z but floor y
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dx: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dy: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dz: f32,
+    pub on_ground: bool,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct EntityLook0 {
     pub entity_id: i32,
     pub yaw: Angle,
@@ -894,6 +914,15 @@ pub struct EntityLook7 {
     pub entity_id: i32,
     pub yaw: Angle,
     pub pitch: Angle,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct EntityLook22 {
+    #[varint]
+    pub entity_id: i32,
+    pub yaw: Angle,
+    pub pitch: Angle,
+    pub on_ground: bool,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -938,6 +967,28 @@ pub struct EntityLookAndRelativeMove7 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct EntityLookAndRelativeMove22 {
+    #[varint]
+    pub entity_id: i32,
+    // todo! round x and z but floor y
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dx: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dy: f32,
+    /// watch out, this must satisfy -4.0 <= x < 4.0
+    /// if it is, use EntityTeleport instead
+    #[fixed(5, i8)]
+    pub dz: f32,
+    pub yaw: Angle,
+    pub pitch: Angle,
+    pub on_ground: bool,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct EntityTeleport0 {
     pub entity_id: i32,
     // todo! round x and z but floor y
@@ -964,6 +1015,22 @@ pub struct EntityTeleport7 {
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct EntityTeleport22 {
+    #[varint]
+    pub entity_id: i32,
+    // todo! round x and z but floor y
+    #[fixed(5, i32)]
+    pub x: f64,
+    #[fixed(5, i32)]
+    pub y: f64,
+    #[fixed(5, i32)]
+    pub z: f64,
+    pub yaw: Angle,
+    pub pitch: Angle,
+    pub on_ground: bool,
 }
 
 #[derive(Encoding, ToStatic)]

@@ -429,7 +429,7 @@ parsing_tree! {
     0x15 => {
         0..=6 => EntityRelativeMove0,
         7..=21 => EntityRelativeMove7,
-        // 22..=66 => _22,
+        22..=66 => EntityRelativeMove22,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=344 => _332,
@@ -444,7 +444,7 @@ parsing_tree! {
     0x16 => {
         0..=6 => EntityLook0,
         7..=21 => EntityLook7,
-        // 22..=66 => _22,
+        22..=66 => EntityLook22,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=344 => _332,
@@ -474,7 +474,7 @@ parsing_tree! {
     0x17 => {
         0..=6 => EntityLookAndRelativeMove0,
         7..=21 => EntityLookAndRelativeMove7,
-        // 22..=66 => _22,
+        22..=66 => EntityLookAndRelativeMove22,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=344 => _332,
@@ -503,7 +503,7 @@ parsing_tree! {
     0x18 => {
         0..=6 => EntityTeleport0,
         7..=21 => EntityTeleport7,
-        // 22..=66 => _22,
+        22..=66 => EntityTeleport22,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=344 => _332,
