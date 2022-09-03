@@ -1,5 +1,4 @@
 use core::slice;
-use std::io::Write;
 use std::pin::Pin;
 use std::task::Poll;
 use std::{fmt::Display, io};
@@ -20,6 +19,9 @@ use futures_lite::{ready, FutureExt};
 /// The maximum packet length, 8 MiB
 const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;
 
+// This could be changed to be user configureable
+const DECRYPTION_BUF_SIZE: usize = 1024 * 32;
+
 #[inline]
 fn verify_len(len: u32) -> std::io::Result<()> {
     if len > MAX_PACKET_LENGTH {
@@ -32,12 +34,6 @@ fn verify_len(len: u32) -> std::io::Result<()> {
     } else {
         Ok(())
     }
-}
-
-fn decrypt_in_place(decryptor: &mut Decryptor<Aes128>, data: &mut [u8]) {
-    let (chunks, rest) = InOutBuf::from(data).into_chunks();
-    assert!(rest.is_empty());
-    decryptor.decrypt_blocks_inout_mut(chunks);
 }
 
 struct Decryption {
@@ -56,8 +52,8 @@ pub struct ReadHalf<R> {
     pub(super) compression: Option<Vec<u8>>,
     readbuf: Vec<u8>,
     reader: BufReader<R>,
-    #[cfg(feature = "blocking")]
-    blocking: Option<u32>,
+    //#[cfg(feature = "blocking")]
+    //blocking: Option<u32>,
 }
 
 impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
@@ -73,9 +69,10 @@ impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
                 // If task is None, that means we haven't spawned the task yet, so we spawn it.
                 if decryption.task.is_none() {
                     // Clear the decryption buffer.
-                    decryption.buf.clear();
-                    decryption.buf.reserve(1024 * 8); // reserve 8 KiB
-                    decryption.buf.resize(1024 * 8, 0);
+                    //decryption.buf.clear();
+                    decryption.buf.fill(0);
+                    
+                    //decryption.buf.resize(1024 * 8, 0);
 
                     // Read the data to the decryption buffer.
                     let n = ready!(Pin::new(&mut this.reader).poll_read(cx, &mut decryption.buf))?;
@@ -147,7 +144,7 @@ impl<R> ReadHalf<R> {
             None => None,
             Some(decryptor) => Some(
                 Decryption {
-                    buf: Vec::with_capacity(INITIAL_BUF_SIZE),
+                    buf: Vec::with_capacity(DECRYPTION_BUF_SIZE),
                     offset: 0,
                     decryptor,
                     task: None
@@ -159,8 +156,8 @@ impl<R> ReadHalf<R> {
             compression,
             readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader,
-            #[cfg(feature = "blocking")]
-            blocking: None,
+            //#[cfg(feature = "blocking")]
+            //blocking: None,
         }
     }
 
@@ -177,12 +174,12 @@ impl<R> ReadHalf<R> {
         Ok(())
     }
 
-    #[cfg(feature = "blocking")]
+    //#[cfg(feature = "blocking")]
     /// sets the threshold which determines if to offload
     /// packet decryption using cfb8/aes128 to the threadpool
-    pub fn set_blocking_threshold(&mut self, threshold: Option<u32>) {
-        self.blocking = threshold;
-    }
+    //pub fn set_blocking_threshold(&mut self, threshold: Option<u32>) {
+    //    self.blocking = threshold;
+    //}
 
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.readbuf.clear();
@@ -193,89 +190,17 @@ impl<R> ReadHalf<R> {
         }
     }
 }
-/*
+
+
 impl<R> ReadHalf<R>
 where
     R: AsyncRead + Unpin,
 {
     pub async fn read_raw_packet(&mut self) -> io::Result<RawPacket<'_>> {
-        let mut data = if let Some(decryptor) = &mut self.decryptor {
-            // entire packet is encrypted
-
-            // read encrypted packet length
-
-            let len = read_encrypted_varint_async(&mut self.reader, decryptor.0).await?;
-
-            verify_len(len)?;
-
-            // reserve enough space
-
-            self.readbuf.reserve(len as usize);
-
-            // get the ref
-
-            // @rob9315 Please add a safety comment here
-            #[allow(clippy::undocumented_unsafe_blocks)]
-            let readslice =
-                unsafe { slice::from_raw_parts_mut(self.readbuf.as_mut_ptr(), len as usize) };
-
-            // read into the slice
-
-            self.reader.read_exact(readslice).await?;
-
-            // decrypt read data
-
-            #[cfg(feature = "blocking")]
-            match self.blocking {
-                Some(threshold) if len > threshold => {
-                    let mut xchanged_buf = vec![];
-
-                    // exchange workbuf with replacement buf
-
-                    std::mem::swap::<Vec<_>>(&mut self.readbuf, &mut xchanged_buf);
-
-                    // run encryption on threadpool
-
-                    let mut cloned_decryptor = decryptor.clone();
-
-                    let slice_start = readslice.as_mut_ptr() as usize;
-                    let (cloned_decryptor, mut xchanged_buf) = blocking::unblock(move || {
-                        // SAFETY: This is save because the buffer it is pointing to is owned by this closure.
-                        let xchangedbuf_slice = unsafe {
-                            slice::from_raw_parts_mut(slice_start as *mut u8, len as usize)
-                        };
-
-                        decrypt_in_place(&mut cloned_decryptor, xchangedbuf_slice);
-                        (cloned_decryptor, xchanged_buf)
-                    })
-                    .await;
-
-                    // swap the workbuf back into place, delete the temporary replacement
-
-                    std::mem::swap::<Vec<_>>(&mut self.readbuf, &mut xchanged_buf);
-                    drop(xchanged_buf);
-
-                    // update the encryptor
-
-                    *decryptor = cloned_decryptor
-                }
-                _ => {
-                    decrypt_in_place(decryptor, readslice);
-                }
-            }
-
-            #[cfg(not(feature = "blocking"))]
-            decrypt_in_place(decryptor, readslice);
-
-            // data at readslice is now not encrypted anymore
-
-            &*readslice
-        } else {
-            // packet is not encrypted
-
+        let mut data =  {
             // read packet length
 
-            let len = read_varint_async(&mut self.reader).await?;
+            let len = read_varint(self).await?;
 
             verify_len(len)?;
 
@@ -310,7 +235,7 @@ where
 
             // read the uncompressed data length
 
-            let data_len = read_varint(&mut data)?;
+            let data_len = read_varint(&mut data).await?;
 
             if data_len != 0 {
                 // compression was used
@@ -338,7 +263,7 @@ where
 
             // read packet id from data
 
-            let id = read_varint(&mut data)? as i32;
+            let id = read_varint(&mut data).await? as i32;
 
             Ok(RawPacket { id, data })
         } else {
@@ -346,14 +271,14 @@ where
 
             // read packet id from data
 
-            let id = read_varint(&mut data)? as i32;
+            let id = read_varint(&mut data).await? as i32;
 
             Ok(RawPacket { id, data })
         }
     }
 }
 
-async fn read_varint_async<R>(reader: &mut R) -> io::Result<u32>
+async fn read_varint<R>(reader: &mut R) -> io::Result<u32>
 where
     R: AsyncRead + Unpin,
 {
@@ -368,36 +293,3 @@ where
     }
     Ok(val)
 }
-
-async fn read_encrypted_varint_async<R>(
-    reader: &mut R,
-    decryptor: &mut Decryptor<Aes128>,
-) -> io::Result<u32>
-where
-    R: AsyncRead + Unpin,
-{
-    let mut val = 0;
-    let mut cur_val = [0];
-    for i in 0..5 {
-        reader.read_exact(&mut cur_val).await?;
-        decrypt_in_place(decryptor, &mut cur_val);
-        val += ((cur_val[0] & 0x7f) as u32) << (i * 7);
-        if (cur_val[0] & 0x80) == 0x00 {
-            break;
-        }
-    }
-    Ok(val)
-}
-fn read_varint(reader: &mut &[u8]) -> io::Result<u32> {
-    let mut val = 0;
-    let mut cur_val = [0];
-    for i in 0..5 {
-        std::io::Read::read_exact(reader, &mut cur_val)?;
-        val += ((cur_val[0] & 0x7f) as u32) << (i * 7);
-        if (cur_val[0] & 0x80) == 0x00 {
-            break;
-        }
-    }
-    Ok(val)
-}
-*/

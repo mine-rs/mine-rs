@@ -50,7 +50,7 @@ impl<R, W> Connection<R, W> {
     /// sets the threshold which determines if to offload packet
     /// encryption and decryption using cfb8/aes128 to the threadpool
     pub fn set_blocking_threshold(&mut self, threshold: Option<u32>) {
-        self.read_half.set_blocking_threshold(threshold);
+        //self.read_half.set_blocking_threshold(threshold);
         self.write_half.set_blocking_threshold(threshold);
     }
 
