@@ -28,13 +28,13 @@ pub struct EncryptionResponse19<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct Success0<'a> {
-    #[stringuuid]
-    pub uuid: Uuid,
+    pub uuid: StringUuid,
     pub username: Cow<'a, str>,
 }
 
 #[derive(ToStatic)]
 pub struct Success5<'a> {
+    // stringuuid
     pub uuid: Option<Uuid>,
     pub username: Cow<'a, str>,
 }

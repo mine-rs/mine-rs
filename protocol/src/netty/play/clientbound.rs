@@ -421,17 +421,13 @@ pub struct Animation0 {
 pub struct SpawnPlayer0<'a> {
     #[varint]
     pub entity_id: i32,
-    #[stringuuid]
-    pub player_uuid: Uuid,
+    pub player_uuid: StringUuid,
     pub name: Cow<'a, str>,
     #[fixed(5, i32)]
-    /// Player X as a Fixed-Point number
     pub x: f64,
     #[fixed(5, i32)]
-    /// Player Y as a Fixed-Point number
     pub y: f64,
     #[fixed(5, i32)]
-    /// Player Z as a Fixed-Point number
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -442,173 +438,18 @@ pub struct SpawnPlayer0<'a> {
     pub metadata: EntityMetadata,
 }
 
-#[derive(ToStatic)]
+#[derive(Encoding, ToStatic)]
 pub struct SpawnPlayer5<'a> {
-    // varint
-    pub entity_id: i32,
-    pub player_uuid: Option<Uuid>,
-    pub name: Cow<'a, str>,
-    pub properties: Vec<PlayerProperty<'a>>,
-    // fixed(5, i32)
-    pub x: f64,
-    // fixed(5, i32)
-    pub y: f64,
-    // fixed(5, i32)
-    pub z: f64,
-    pub yaw: Angle,
-    pub pitch: Angle,
-    /// The item the player is currently holding. Note that this should be 0
-    /// for "no item", unlike -1 used in other packets. A negative value
-    /// crashes clients.
-    pub current_item: u16,
-    pub metadata: EntityMetadata,
-}
-impl<'dec, 'a> Decode<'dec> for SpawnPlayer5<'a>
-where
-    'dec: 'a,
-{
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let entity_id = Var::decode(cursor)?.into_inner();
-        let uuid = <&str>::decode(cursor)?;
-
-        Ok(Self {
-            entity_id,
-            player_uuid: if !uuid.is_empty() {
-                Some(Uuid::from_str(uuid)?)
-            } else {
-                None
-            },
-            properties: Vec::decode(cursor)?,
-            name: Decode::decode(cursor)?,
-            x: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
-            y: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
-            z: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
-            yaw: Decode::decode(cursor)?,
-            pitch: Decode::decode(cursor)?,
-            current_item: Decode::decode(cursor)?,
-            metadata: Decode::decode(cursor)?,
-        })
-    }
-}
-impl<'a> Encode for SpawnPlayer5<'a> {
-    fn encode(&self, cursor: &mut impl ::std::io::Write) -> encode::Result<()> {
-        let Self {
-            entity_id,
-            player_uuid,
-            name,
-            properties,
-            x,
-            y,
-            z,
-            yaw,
-            pitch,
-            current_item,
-            metadata,
-        } = self;
-        Encode::encode(&Var::from(*entity_id), cursor)?;
-        if let Some(player_uuid) = player_uuid {
-            Encode::encode(&StringUuid::from(*player_uuid), cursor)?;
-        } else {
-            "".encode(cursor)?;
-        }
-        name.encode(cursor)?;
-        properties.encode(cursor)?;
-        Fixed::<5, i32, _>::from(x).encode(cursor)?;
-        Fixed::<5, i32, _>::from(y).encode(cursor)?;
-        Fixed::<5, i32, _>::from(z).encode(cursor)?;
-        yaw.encode(cursor)?;
-        pitch.encode(cursor)?;
-        current_item.encode(cursor)?;
-        metadata.encode(cursor)?;
-        Ok(())
-    }
-}
-
-#[derive(ToStatic)]
-pub struct SpawnPlayer7<'a> {
-    // varint
-    pub entity_id: i32,
-    pub player_uuid: Uuid,
-    pub name: Cow<'a, str>,
-    pub properties: Vec<PlayerProperty<'a>>,
-    // fixed(5, i32)
-    pub x: f64,
-    // fixed(5, i32)
-    pub y: f64,
-    // fixed(5, i32)
-    pub z: f64,
-    pub yaw: Angle,
-    pub pitch: Angle,
-    /// The item the player is currently holding. Note that this should be 0
-    /// for "no item", unlike -1 used in other packets. A negative value
-    /// crashes clients.
-    pub current_item: u16,
-    pub metadata: EntityMetadata,
-}
-impl<'dec, 'a> Decode<'dec> for SpawnPlayer7<'a>
-where
-    'dec: 'a,
-{
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        Ok(Self {
-            entity_id: Var::decode(cursor)?.into_inner(),
-            player_uuid: StringUuid::decode(cursor)?.into_inner(),
-            properties: Vec::decode(cursor)?,
-            name: Decode::decode(cursor)?,
-            x: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
-            y: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
-            z: Fixed::<5, i32, _>::decode(cursor)?.into_inner(),
-            yaw: Decode::decode(cursor)?,
-            pitch: Decode::decode(cursor)?,
-            current_item: Decode::decode(cursor)?,
-            metadata: Decode::decode(cursor)?,
-        })
-    }
-}
-impl<'a> Encode for SpawnPlayer7<'a> {
-    fn encode(&self, cursor: &mut impl ::std::io::Write) -> encode::Result<()> {
-        let Self {
-            entity_id,
-            player_uuid,
-            name,
-            properties,
-            x,
-            y,
-            z,
-            yaw,
-            pitch,
-            current_item,
-            metadata,
-        } = self;
-        Encode::encode(&Var::from(*entity_id), cursor)?;
-        Encode::encode(&StringUuid::from(*player_uuid), cursor)?;
-        name.encode(cursor)?;
-        properties.encode(cursor)?;
-        Fixed::<5, i32, _>::from(x).encode(cursor)?;
-        Fixed::<5, i32, _>::from(y).encode(cursor)?;
-        Fixed::<5, i32, _>::from(z).encode(cursor)?;
-        yaw.encode(cursor)?;
-        pitch.encode(cursor)?;
-        current_item.encode(cursor)?;
-        metadata.encode(cursor)?;
-        Ok(())
-    }
-}
-
-#[derive(Encoding, ToStatic)]
-pub struct SpawnPlayer19<'a> {
     #[varint]
     pub entity_id: i32,
-    pub player_uuid: Uuid,
+    pub player_uuid: StringUuid,
     pub name: Cow<'a, str>,
+    pub properties: Vec<PlayerProperty<'a>>,
     #[fixed(5, i32)]
-    /// Player X as a Fixed-Point number
     pub x: f64,
     #[fixed(5, i32)]
-    /// Player Y as a Fixed-Point number
     pub y: f64,
     #[fixed(5, i32)]
-    /// Player Z as a Fixed-Point number
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -620,19 +461,35 @@ pub struct SpawnPlayer19<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct SpawnPlayer49<'a> {
+pub struct SpawnPlayer19 {
     #[varint]
     pub entity_id: i32,
     pub player_uuid: Uuid,
-    pub name: Cow<'a, str>,
     #[fixed(5, i32)]
-    /// Player X as a Fixed-Point number
     pub x: f64,
     #[fixed(5, i32)]
-    /// Player Y as a Fixed-Point number
     pub y: f64,
     #[fixed(5, i32)]
-    /// Player Z as a Fixed-Point number
+    pub z: f64,
+    pub yaw: Angle,
+    pub pitch: Angle,
+    /// The item the player is currently holding. Note that this should be 0
+    /// for "no item", unlike -1 used in other packets. A negative value
+    /// crashes clients.
+    pub current_item: u16,
+    pub metadata: EntityMetadata,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct SpawnPlayer49 {
+    #[varint]
+    pub entity_id: i32,
+    pub player_uuid: Uuid,
+    #[fixed(5, i32)]
+    pub x: f64,
+    #[fixed(5, i32)]
+    pub y: f64,
+    #[fixed(5, i32)]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
