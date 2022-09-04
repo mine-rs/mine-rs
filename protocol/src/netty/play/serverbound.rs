@@ -772,6 +772,29 @@ pub struct PluginMessage29<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+// https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
+pub struct PluginMessage32<'a> {
+    pub channel: Cow<'a, str>,
+    #[rest]
+    pub data: Cow<'a, [u8]>,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct Spectate17 {
     pub target_player: Uuid,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct ResourcePackStatus32<'a> {
+    pub hash: Cow<'a, str>,
+    pub result: ResourcePackStatusResult32,
+}
+
+#[derive(Encoding, ToStatic)]
+#[varint]
+pub enum ResourcePackStatusResult32 {
+    SuccessfullyLoaded = 0,
+    Declined,
+    FailedDownload,
+    Accepted,
 }

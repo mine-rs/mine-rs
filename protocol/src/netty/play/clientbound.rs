@@ -11,6 +11,12 @@ pub struct KeepAlive0 {
     pub id: i32,
 }
 
+#[derive(Encoding, ToStatic)]
+pub struct KeepAlive32 {
+    #[varint]
+    pub id: i32,
+}
+
 #[derive(ToStatic)]
 pub struct JoinGame0 {
     pub entity_id: i32,
@@ -2771,6 +2777,14 @@ pub struct PluginMessage29<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+// https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
+pub struct PluginMessage32<'a> {
+    pub channel: Cow<'a, str>,
+    #[rest]
+    pub data: Cow<'a, [u8]>,
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct Disconnect0<'a> {
     // chatcomponent, at least starting pv13
     pub reason: Cow<'a, str>,
@@ -2924,6 +2938,51 @@ pub enum WorldBorder17 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub enum WorldBorder32 {
+    #[case(0)]
+    SetSize {
+        radius: f64,
+    },
+    LerpSize {
+        old_radius: f64,
+        new_radius: f64,
+        /// number of real-time ticks/seconds (?) until New Radius is reached.
+        /// From experiments, it appears that Notchian server does not sync
+        /// world border speed to game ticks, so it gets out of sync with
+        /// server lag
+        #[varint]
+        speed: i64,
+    },
+    SetCenter {
+        x: f64,
+        z: f64,
+    },
+    SetWarningTime {
+        #[varint]
+        warning_time: i32,
+    },
+    SetWarningBlocks {
+        #[varint]
+        warning_blocks: i32,
+    },
+    Initialize {
+        x: f64,
+        z: f64,
+        old_radius: f64,
+        new_radius: f64,
+        #[varint]
+        speed: i64,
+        /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984.
+        #[varint]
+        portal_tp_boundary: i32,
+        #[varint]
+        warning_time: i32,
+        #[varint]
+        warning_blocks: i32,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum Title18<'a> {
     #[case(0)]
@@ -2953,4 +3012,15 @@ pub struct SetCompression27 {
 pub struct PlayerListHeaderAndFooter28<'a> {
     pub header: Cow<'a, str>,
     pub footer: Cow<'a, str>,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct ResourcePackSend32<'a> {
+    pub url: Cow<'a, str>,
+    /// A 40 character hexadecimal and lowercase SHA-1 hash of the resource
+    /// pack file. (must be lower case in order to work)
+    /// If it's not a 40 character hexadecimal string, the client will not use
+    /// it for hash verification and likely waste bandwidth — but it will still
+    /// treat it as a unique id
+    pub hash: Cow<'a, str>,
 }
