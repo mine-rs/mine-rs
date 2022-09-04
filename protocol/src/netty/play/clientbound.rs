@@ -243,7 +243,27 @@ pub struct EntityEquipment7 {
 #[derive(Encoding, ToStatic)]
 #[from(u16)]
 pub enum EquipmentSlot0 {
-    Held = 0,
+    Hand = 0,
+    Boots,
+    Leggings,
+    Chestplate,
+    Helmet,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct EntityEquipment49 {
+    #[varint]
+    pub entity_id: i32,
+    pub slot: EquipmentSlot49,
+    // todo! slot data
+    // item: Slot,
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum EquipmentSlot49 {
+    Hand = 0,
+    Offhand,
     Boots,
     Leggings,
     Chestplate,
@@ -596,6 +616,26 @@ pub struct SpawnPlayer19<'a> {
     /// for "no item", unlike -1 used in other packets. A negative value
     /// crashes clients.
     pub current_item: u16,
+    pub metadata: EntityMetadata,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct SpawnPlayer49<'a> {
+    #[varint]
+    pub entity_id: i32,
+    pub player_uuid: Uuid,
+    pub name: Cow<'a, str>,
+    #[fixed(5, i32)]
+    /// Player X as a Fixed-Point number
+    pub x: f64,
+    #[fixed(5, i32)]
+    /// Player Y as a Fixed-Point number
+    pub y: f64,
+    #[fixed(5, i32)]
+    /// Player Z as a Fixed-Point number
+    pub z: f64,
+    pub yaw: Angle,
+    pub pitch: Angle,
     pub metadata: EntityMetadata,
 }
 
