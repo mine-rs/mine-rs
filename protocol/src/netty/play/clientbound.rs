@@ -2223,6 +2223,16 @@ pub enum PlayerListItem19<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
+pub enum PlayerListItem28<'a> {
+    #[case(0)]
+    AddPlayers(Vec<PlayerListAddPlayer28<'a>>),
+    UpdateGamemode(Vec<PlayerListUpdateGamemode17>),
+    UpdateLatency(Vec<PlayerListUpdateLatency17>),
+    UpdateDisplayName(Vec<PlayerListUpdateDisplayName28>),
+    RemovePlayers(Vec<Uuid>),
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct PlayerListAddPlayer19<'a> {
     pub uuid: Uuid,
     pub name: Cow<'a, str>,
@@ -2230,6 +2240,100 @@ pub struct PlayerListAddPlayer19<'a> {
     pub gamemode: GameMode17,
     #[varint]
     pub ping: i32,
+}
+
+#[derive(ToStatic)]
+pub struct PlayerListAddPlayer28<'a> {
+    pub uuid: Uuid,
+    pub name: Cow<'a, str>,
+    pub properties: Vec<PlayerProperty19<'a>>,
+    pub gamemode: GameMode17,
+    // varint
+    pub ping: i32,
+    // todo! chat
+    pub display_name: Option<Cow<'a, str>>,
+}
+
+impl<'dec, 'a> Decode<'dec> for PlayerListAddPlayer28<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let uuid = Decode::decode(cursor)?;
+        let name = Decode::decode(cursor)?;
+        let properties = Decode::decode(cursor)?;
+        let gamemode = Decode::decode(cursor)?;
+        let ping = <Var<_> as Decode>::decode(cursor)?.into_inner();
+        let display_name = if bool::decode(cursor)? {
+            Some(Decode::decode(cursor)?)
+        } else {
+            None
+        };
+        Ok(Self {
+            uuid,
+            name,
+            properties,
+            gamemode,
+            ping,
+            display_name,
+        })
+    }
+}
+impl<'a> Encode for PlayerListAddPlayer28<'a> {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
+        let Self {
+            uuid,
+            name,
+            properties,
+            gamemode,
+            ping,
+            display_name,
+        } = self;
+        Encode::encode(uuid, writer)?;
+        Encode::encode(name, writer)?;
+        Encode::encode(properties, writer)?;
+        Encode::encode(gamemode, writer)?;
+        Encode::encode(&Var::<i32>::from(*ping), writer)?;
+        if let Some(display_name) = &display_name {
+            true.encode(writer)?;
+            Encode::encode(display_name, writer)?;
+        } else {
+            false.encode(writer)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(ToStatic)]
+pub struct PlayerListUpdateDisplayName28 {
+    pub uuid: Uuid,
+    // todo! default option impl?
+    pub display_name: Option<Uuid>,
+}
+
+impl<'dec> Decode<'dec> for PlayerListUpdateDisplayName28 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let uuid = Decode::decode(cursor)?;
+        let display_name = if bool::decode(cursor)? {
+            Some(Decode::decode(cursor)?)
+        } else {
+            None
+        };
+        Ok(Self { uuid, display_name })
+    }
+}
+impl Encode for PlayerListUpdateDisplayName28 {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
+        let Self { uuid, display_name } = self;
+        Encode::encode(uuid, writer)?;
+        if let Some(display_name) = &display_name {
+            true.encode(writer)?;
+            Encode::encode(display_name, writer)?;
+        } else {
+            false.encode(writer)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(ToStatic)]
@@ -2754,4 +2858,10 @@ pub enum Title18<'a> {
 pub struct SetCompression27 {
     #[varint]
     pub threshold: i32,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct PlayerListHeaderAndFooter28<'a> {
+    pub header: Cow<'a, str>,
+    pub footer: Cow<'a, str>,
 }
