@@ -1,4 +1,3 @@
-use std::pin::Pin;
 use std::{io, num::NonZeroU32};
 
 use super::INITIAL_BUF_SIZE;
@@ -45,21 +44,16 @@ pub struct WriteHalf<W> {
     /// used for serializing packets, only exists when `protocol` is enabled
     workbuf2: Vec<u8>,
     writer: Writer<W>,
-    #[cfg(feature = "blocking")]
-    blocking: Option<u32>,
 }
 
 struct Writer<W> {
-    writer: BufWriter<W>,
-    encryptor: Option<Encryptor<Aes128>>
+    pub(crate) writer: BufWriter<W>,
+    pub(crate) encryptor: Option<Encryptor<Aes128>>,
 }
 
 impl<W: AsyncWrite + Unpin> Writer<W> {
     pub fn new(writer: BufWriter<W>, encryptor: Option<Encryptor<Aes128>>) -> Self {
-        Self {
-            writer,
-            encryptor
-        }
+        Self { writer, encryptor }
     }
 }
 
@@ -68,15 +62,15 @@ impl<W: AsyncWrite + Unpin> Writer<W> {
     pub async fn write_all(&mut self, buf: &mut [u8]) -> io::Result<()> {
         match self.encryptor.as_mut() {
             None => {
-              self.writer.write_all(buf).await?;
-            },
+                self.writer.write_all(buf).await?;
+            }
             Some(encryptor) => {
                 {
                     let (chunks, rest) = InOutBuf::from(&mut buf[..]).into_chunks();
                     debug_assert!(rest.is_empty());
                     encryptor.encrypt_blocks_inout_mut(chunks);
                 }
-                self.writer.write_all(&buf[..]).await?;
+                self.writer.write_all(buf).await?;
             }
         }
         Ok(())
@@ -89,7 +83,6 @@ impl<W: AsyncWrite + Unpin> Writer<W> {
         Ok(())
     }
 }
-
 
 impl<W> WriteHalf<W>
 where
@@ -116,16 +109,7 @@ where
             #[cfg(feature = "encoding")]
             workbuf2: Vec::with_capacity(INITIAL_BUF_SIZE),
             writer: Writer::new(writer, encryptor),
-            #[cfg(feature = "blocking")]
-            blocking: None,
         }
-    }
-
-    #[cfg(feature = "blocking")]
-    /// sets the threshold which determines if to offload
-    /// packet encryption using cfb8/aes128 to the threadpool
-    pub fn set_blocking_threshold(&mut self, threshold: Option<u32>) {
-        self.blocking = threshold;
     }
 
     #[inline]
@@ -133,60 +117,51 @@ where
         self.writer.enable_encryption(key)
     }
 
-    
-    /*
-    // todo! refactor write_raw_packet and write_packet so there is less code duplication
     pub async fn write_raw_packet(&mut self, id: i32, data: &[u8]) -> io::Result<()> {
         self.workbuf.clear();
 
-        if let Some((threshold, compression_level)) = self.compression.get_options() {
+        let mut id_buf = [0u8; 6];
+        let id_slice = {
+            let [_, id_buf @ ..] = &mut id_buf;
+            varint_slice(id as u32, id_buf)
+        };
+
+        let id_slice = if let Some((threshold, compression_level)) = self.compression.get_options()
+        {
             // there is compression, packet format as follows:
             //
             // Length              | VarInt          | how many bytes follow
             // Uncompressed Length | VarInt          | 0 if below threshold, otherwise the uncompressed length
             // Data                | (VarInt, &[u8]) | packet id and data, zlib-compressed
 
-            let mut id_buf = [0u8; 6];
-            let id_varint = {
-                let [_, id_buf @ ..] = &mut id_buf;
-                write_varint(id as u32, id_buf)
-            };
+            let uncompressed_length = id_slice.len() as u32 + data.len() as u32;
 
-            let uncompressed_len = id_varint.len() as u32 + data.len() as u32;
-
-            if uncompressed_len > threshold {
+            if uncompressed_length > threshold {
                 // more than threshold
 
-                // compress to workvec
+                // compress to workbuf
 
                 let mut zlib = Compress::new(compression_level, true);
-                zlib.compress_vec(id_varint, &mut self.workbuf, flate2::FlushCompress::None)?;
+                zlib.compress_vec(id_slice, &mut self.workbuf, flate2::FlushCompress::None)?;
                 zlib.compress_vec(data, &mut self.workbuf, flate2::FlushCompress::Finish)?;
 
                 // write uncompressed len to buffer
 
-                let mut uncompressed_len_varbuf = [0u8; 5];
-                let uncompressed_len_varint =
-                    write_varint(uncompressed_len, &mut uncompressed_len_varbuf);
+                let mut uncompressed_length_buf = [0u8; 5];
+                let uncompressed_length_slice =
+                    varint_slice(uncompressed_length, &mut uncompressed_length_buf);
 
-                // write compressed len to buffer
+                let length = uncompressed_length_slice.len() as u32 + self.workbuf.len() as u32;
 
-                let compressed_len =
-                    uncompressed_len_varint.len() as u32 + self.workbuf.len() as u32;
+                let mut length_buf = [0u8; 5];
+                self.writer
+                    .write_all(varint_slice(length, &mut length_buf))
+                    .await?;
 
-                let mut compressed_len_varbuf = [0u8; 5];
-                let compressed_len_varint =
-                    write_varint(compressed_len, &mut compressed_len_varbuf);
+                self.writer.write_all(uncompressed_length_slice).await?;
 
-                // encrypt data
-
-                // write data to stream
-
-                self.writer.write_all(compressed_len_varint).await?;
-                self.writer.write_all(uncompressed_len_varint).await?;
-                let mut buf = std::mem::take(&mut self.workbuf);
-                self.writer.write_all(&mut buf).await?;
-                self.workbuf = buf;
+                self.writer.write_all(&mut self.workbuf).await?;
+                return Ok(());
             } else {
                 // less than threshold
 
@@ -194,41 +169,8 @@ where
                 // this serves as a marker to tell the other party that we aren't using
                 // compression as the data size is smaller than the threshold
 
-                let _0_plus_varint = {
-                    let varint_len = id_varint.len();
-                    &id_buf[0..varint_len + 1]
-                };
-
-                let packet_len = _0_plus_varint.len() + data.len();
-
-                if let Some(encryptor) = &mut self.encryptor {
-                    // there is encryption
-
-                    // write packet length into workbuf
-
-                    let mut packet_length = [0; 5];
-                    let packet_length_varint = write_varint(packet_len as u32, &mut packet_length);
-                    self.writer.write_all(packet_length_varint);
-
-                    // write data with the Encryptor to workbuf
-
-                    encrypt_into_vec(encryptor, _0_plus_varint, &mut self.workbuf);
-
-                    // then write the data to the writer
-
-                    self.writer.write_all(&mut self.workbuf).await?;
-                } else {
-                    // there is no encryption
-
-                    // write packet length
-
-                    write_varint_async(packet_len as u32, &mut self.writer).await?;
-
-                    // write normal packet but with 0 after varint
-
-                    self.writer.write_all(_0_plus_varint).await?;
-                    self.writer.write_all(data).await?;
-                }
+                let varint_len = id_slice.len();
+                &mut id_buf[0..varint_len + 1]
             }
         } else {
             // there is no compression, packet format as follows:
@@ -237,36 +179,31 @@ where
             // Id     | VarInt | which packet this is
             // Data   | &[u8]  | the data the packet carries
 
-            let packet_len = varint_len(id as u32) + data.len() as u32;
+            id_slice
+        };
 
-            if let Some(encryptor) = &mut self.encryptor {
-                // there is encryption
+        // id slice is now either just the packet id or the id prefixed with 0
+        // depending on if compression is enabled or not
 
-                // write packet length into workbuf
+        // compute actual packet length
 
-                let mut packet_length = [0; 5];
-                let packet_length_varint = write_varint(packet_len as u32, &mut packet_length);
-                encrypt_into_vec(encryptor, packet_length_varint, &mut self.workbuf);
+        let length = id_slice.len() as u32 + data.len() as u32;
 
-                // write data with the Encryptor to workbuf
+        let mut length_buf = [0; 5];
 
-                let mut id_buf = [0u8; 5];
-                let id = write_varint(id as u32, &mut id_buf);
-                encrypt_into_vec(encryptor, id, &mut self.workbuf);
+        self.writer
+            .write_all(varint_slice(length, &mut length_buf))
+            .await?;
 
+        self.writer.write_all(id_slice).await?;
 
-                // then write it to the writer
+        // only copy to workbuf if encryption is enabled
 
-                self.writer.write_all(&self.workbuf).await?;
-            } else {
-                // there is no encryption
-
-                // just write a normal packet
-
-                write_varint_async(packet_len, &mut self.writer).await?;
-                write_varint_async(id as u32, &mut self.writer).await?;
-                self.writer.write_all(data).await?;
-            }
+        if self.writer.encryptor.is_some() {
+            std::io::Write::write_all(&mut self.workbuf, data)?;
+            self.writer.write_all(&mut self.workbuf[..]).await?;
+        } else {
+            self.writer.writer.write_all(data).await?;
         }
 
         Ok(())
@@ -506,29 +443,10 @@ where
         Ok(())
     }
     */
-*/
+    // */
 }
 
-fn varint_len(num: u32) -> u32 {
-    ((i32::BITS - num.leading_ones()) * 8 + 6) / 7
-}
-async fn write_varint_async<W>(mut num: u32, writer: &mut W) -> io::Result<()>
-where
-    W: AsyncWrite + Unpin,
-{
-    loop {
-        let next_val = num >> 7;
-        if next_val == 0 {
-            writer.write_all(&[num as u8]).await?;
-            break;
-        }
-        writer.write_all(&[num as u8 | 0x80]).await?;
-        num = next_val;
-    }
-    Ok(())
-}
-
-fn write_varint(mut num: u32, buf: &mut [u8; 5]) -> &mut [u8] {
+fn varint_slice(mut num: u32, buf: &mut [u8; 5]) -> &mut [u8] {
     #[allow(clippy::needless_range_loop)]
     for i in 0..5 {
         let next_val = num >> 7;
@@ -561,7 +479,7 @@ mod varint {
     fn write() {
         for (num, res) in TESTS {
             let mut buf = [0u8; 5];
-            let varbuf = write_varint(*num as u32, &mut buf);
+            let varbuf = varint_slice(*num as u32, &mut buf);
             assert_eq!(*res, varbuf)
         }
     }
