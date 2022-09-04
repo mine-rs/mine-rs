@@ -36,6 +36,26 @@ pub struct UseEntity7 {
 }
 
 #[derive(Encoding, ToStatic)]
+pub struct UseEntity33 {
+    #[varint]
+    pub target_id: i32,
+    pub kind: UseEntityKind33,
+}
+
+#[derive(Encoding, ToStatic)]
+#[varint]
+pub enum UseEntityKind33 {
+    #[case(0)]
+    Interact,
+    Attack,
+    InteractAt {
+        x: f32,
+        y: f32,
+        z: f32,
+    },
+}
+
+#[derive(Encoding, ToStatic)]
 pub struct Player0 {
     pub on_ground: bool,
 }

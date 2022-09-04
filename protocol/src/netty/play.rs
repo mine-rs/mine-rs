@@ -3013,7 +3013,7 @@ parsing_tree! {
         // changed to using varint, range of values
         // makes u8 compatible though
         19..=32 => UseEntity7,
-        // 33..=48 => _33,
+        33..=48 => UseEntity33,
         // 49..=66 => _49,
         // 67..=79 => _67,
         // 80..=317 => _80,
