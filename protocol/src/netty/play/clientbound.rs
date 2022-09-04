@@ -114,6 +114,64 @@ impl Encode for JoinGame1<'_> {
     }
 }
 
+#[derive(ToStatic)]
+pub struct JoinGame29<'a> {
+    pub entity_id: i32,
+    pub hardcore: bool,
+    pub gamemode: GameMode0,
+    pub dimension: Dimension0,
+    pub difficulty: super::Difficulty0,
+    pub max_players: u8,
+    /// "default", "flat", "largeBiomes", "amplified", "default_1_1"
+    pub level_type: Cow<'a, str>,
+    pub reduced_debug_info: bool,
+}
+
+impl<'dec, 'a> Decode<'dec> for JoinGame29<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let entity_id = i32::decode(cursor)?;
+        let bitfield = u8::decode(cursor)?;
+        let hardcore = bitfield & 0x08 != 0;
+        let gamemode = match bitfield & 0b11 {
+            0 => GameMode0::Survival,
+            1 => GameMode0::Adventure,
+            2 => GameMode0::Creative,
+            _ => return Err(decode::Error::InvalidId),
+        };
+        Ok(Self {
+            entity_id,
+            hardcore,
+            gamemode,
+            dimension: Dimension0::decode(cursor)?,
+            difficulty: Difficulty0::decode(cursor)?,
+            max_players: u8::decode(cursor)?,
+            level_type: Cow::decode(cursor)?,
+            reduced_debug_info: bool::decode(cursor)?,
+        })
+    }
+}
+
+impl Encode for JoinGame29<'_> {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> Result<(), encode::Error> {
+        self.entity_id.encode(writer)?;
+        (match self.gamemode {
+            GameMode0::Survival => 0,
+            GameMode0::Creative => 1,
+            GameMode0::Adventure => 2,
+        } & ((self.hardcore as u8) << 3))
+            .encode(writer)?;
+        self.dimension.encode(writer)?;
+        self.difficulty.encode(writer)?;
+        self.max_players.encode(writer)?;
+        self.level_type.encode(writer)?;
+        self.reduced_debug_info.encode(writer)?;
+        Ok(())
+    }
+}
+
 #[derive(Encoding, ToStatic, Clone, Copy)]
 #[from(u8)]
 pub enum GameMode0 {
@@ -1721,6 +1779,29 @@ pub struct Particle17<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
+#[derive(Encoding, ToStatic)]
+pub struct Particle29<'a> {
+    // todo! specific strings into enum
+    pub name: Cow<'a, str>,
+    /// If true, particle distance increases from 256 to 65536
+    pub long_distance: bool,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    /// This is added to the X position after being multiplied by random.nextGaussian()
+    pub offset_x: f32,
+    /// This is added to the Y position after being multiplied by random.nextGaussian()
+    pub offset_y: f32,
+    /// This is added to the Z position after being multiplied by random.nextGaussian()
+    pub offset_z: f32,
+    pub speed: f32,
+    pub number: i32,
+    // todo! read exact number of varints using enum of possible names
+    // https://wiki.vg/index.php?title=Protocol&oldid=7368#Particle_2
+    #[rest]
+    pub data: Cow<'a, [u8]>,
+}
+
 // #[derive(Encoding, ToStatic)]
 // struct ChangeGameState0 {
 //     reason: GameStateChangeReason,
@@ -2677,6 +2758,14 @@ pub enum NameTagVisibility11 {
 #[derive(Encoding, ToStatic)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
+    pub channel: Cow<'a, str>,
+    #[counted(u16)]
+    pub data: Cow<'a, [u8]>,
+}
+
+#[derive(Encoding, ToStatic)]
+// https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
+pub struct PluginMessage29<'a> {
     pub channel: Cow<'a, str>,
     pub data: Cow<'a, [u8]>,
 }

@@ -1,7 +1,7 @@
 use crate::*;
 
 use crate::netty::Position;
-use attrs::Var;
+use attrs::*;
 use std::borrow::Cow;
 use uuid::Uuid;
 
@@ -759,6 +759,14 @@ pub enum ClientStatus0 {
 #[derive(Encoding, ToStatic)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
+    pub channel: Cow<'a, str>,
+    #[counted(u16)]
+    pub data: Cow<'a, [u8]>,
+}
+
+#[derive(Encoding, ToStatic)]
+// https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
+pub struct PluginMessage29<'a> {
     pub channel: Cow<'a, str>,
     pub data: Cow<'a, [u8]>,
 }
