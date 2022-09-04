@@ -3350,7 +3350,8 @@ parsing_tree! {
         6..=20 => UpdateSign6<'a>,
         // chatcomponent
         21..=46 => UpdateSign6<'a>,
-        // 47 => _47,
+        // no real changes
+        47 => UpdateSign6<'a>,
         // 48 => _48,
         // 49..=66 => _49,
         // 67..=76 => _67,
