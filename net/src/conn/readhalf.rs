@@ -10,17 +10,13 @@ use aes::{
     cipher::{inout::InOutBuf, BlockDecryptMut, InvalidLength, KeyIvInit},
     Aes128,
 };
-use blocking::{unblock, Task};
 use cfb8::Decryptor;
 use flate2::Decompress;
 use futures_lite::{io::BufReader, AsyncRead, AsyncReadExt};
-use futures_lite::{ready, FutureExt};
+use futures_lite::ready;
 
 /// The maximum packet length, 8 MiB
 const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;
-
-// This could be changed to be user configureable
-const DECRYPTION_BUF_SIZE: usize = 1024 * 32;
 
 #[inline]
 fn verify_len(len: u32) -> std::io::Result<()> {
@@ -36,19 +32,13 @@ fn verify_len(len: u32) -> std::io::Result<()> {
     }
 }
 
-struct Decryption {
-    pub decryptor: Decryptor<Aes128>,
-    pub task: Option<Task<(Decryptor<Aes128>, Vec<u8>, usize)>>,
-    pub offset: usize,
-    pub buf: Vec<u8>, 
-}
 
 // const AVG_PACKET_THRESHOLD: usize = 65536;
 
 /// The reading half of a connection.
 /// Returned from `Connection::split()`
 pub struct ReadHalf<R> {
-    decryption: Option<Decryption>,
+    decryptor: Option<Decryptor<Aes128>>,
     pub(super) compression: Option<Vec<u8>>,
     readbuf: Vec<u8>,
     reader: BufReader<R>,
@@ -57,6 +47,27 @@ pub struct ReadHalf<R> {
 }
 
 impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &mut [u8],
+    ) -> std::task::Poll<io::Result<usize>> {
+        let this = self.get_mut();
+        match &mut this.decryptor {
+            None => Pin::new(&mut this.reader).poll_read(cx, buf),
+            Some(decryptor) => {
+                let n = ready!(Pin::new(&mut this.reader).poll_read(cx, buf))?;
+                let (chunks, _rest) = InOutBuf::from(buf).into_chunks();
+                decryptor.decrypt_blocks_inout_mut(chunks);
+                Poll::Ready(Ok(n))
+            }
+        }
+}
+    /*
+    this is really complicated
+    all for using unblock
+    fuck unblock
+    we ain't doing this
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -123,6 +134,7 @@ impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
             }
         }
     }
+    */
 }
 
 #[derive(Debug)]
@@ -140,19 +152,8 @@ impl<R> ReadHalf<R> {
         compression: Option<Vec<u8>>,
         reader: BufReader<R>,
     ) -> Self {
-        let decryptor = match  decryptor {
-            None => None,
-            Some(decryptor) => Some(
-                Decryption {
-                    buf: Vec::with_capacity(DECRYPTION_BUF_SIZE),
-                    offset: 0,
-                    decryptor,
-                    task: None
-                }
-            )
-        };
         Self {
-            decryption: decryptor,
+            decryptor,
             compression,
             readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader,
@@ -162,15 +163,7 @@ impl<R> ReadHalf<R> {
     }
 
     pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
-        self.decryption = Some(
-            Decryption {
-                decryptor: Decryptor::new_from_slices(key, key)?,
-                buf: Vec::with_capacity(INITIAL_BUF_SIZE),
-                offset: 0,
-                task: None,
-            }
-        );
-
+        self.decryptor = Some(Decryptor::new_from_slices(key, key)?);
         Ok(())
     }
 

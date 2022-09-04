@@ -23,8 +23,6 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
             write_half: WriteHalf::new(None, Compression::new(), BufWriter::new(writer)),
         }
     }
-}
-impl<R, W> Connection<R, W> {
     pub fn split(self) -> (ReadHalf<R>, WriteHalf<W>) {
         (self.read_half, self.write_half)
     }

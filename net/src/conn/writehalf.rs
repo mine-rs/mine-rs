@@ -1,3 +1,4 @@
+use std::pin::Pin;
 use std::{io, num::NonZeroU32};
 
 use super::INITIAL_BUF_SIZE;
@@ -35,49 +36,69 @@ impl Compression {
     }
 }
 
-fn encrypt_in_place(encryptor: &mut Encryptor<Aes128>, data: &mut [u8]) {
-    let (chunks, rest) = InOutBuf::from(data).into_chunks();
-    debug_assert!(rest.is_empty());
-    encryptor.encrypt_blocks_inout_mut(chunks);
-}
-fn encrypt_into_vec(encryptor: &mut Encryptor<Aes128>, data: &[u8], vec: &mut Vec<u8>) {
-    // ensure enough space is available
-
-    vec.reserve(data.len());
-
-    // @rob9315 please add a safety comment here
-    #[allow(clippy::undocumented_unsafe_blocks)]
-    let (chunks, rest) =
-        unsafe { InOutBuf::from_raw(data.as_ptr(), vec.as_mut_ptr(), data.len()) }.into_chunks();
-    debug_assert!(rest.is_empty());
-    encryptor.encrypt_blocks_inout_mut(chunks);
-
-    // @rob9315 please add a safety comment here
-    #[allow(clippy::undocumented_unsafe_blocks)]
-    unsafe {
-        vec.set_len(vec.len() + data.len())
-    };
-}
-
 /// The writing half of a connection.
 /// Returned from `Connection::split()`
 pub struct WriteHalf<W> {
-    encryptor: Option<Encryptor<Aes128>>,
     pub(super) compression: Compression,
     workbuf: Vec<u8>,
     #[cfg(feature = "encoding")]
     /// used for serializing packets, only exists when `protocol` is enabled
     workbuf2: Vec<u8>,
-    writer: BufWriter<W>,
+    writer: Writer<W>,
     #[cfg(feature = "blocking")]
     blocking: Option<u32>,
 }
 
-impl<W> WriteHalf<W> {
+struct Writer<W> {
+    writer: BufWriter<W>,
+    encryptor: Option<Encryptor<Aes128>>
+}
+
+impl<W: AsyncWrite + Unpin> Writer<W> {
+    pub fn new(writer: BufWriter<W>, encryptor: Option<Encryptor<Aes128>>) -> Self {
+        Self {
+            writer,
+            encryptor
+        }
+    }
+}
+
+impl<W: AsyncWrite + Unpin> Writer<W> {
+    #[inline]
+    pub async fn write_all(&mut self, buf: &mut [u8]) -> io::Result<()> {
+        match self.encryptor.as_mut() {
+            None => {
+              self.writer.write_all(buf).await?;
+            },
+            Some(encryptor) => {
+                {
+                    let (chunks, rest) = InOutBuf::from(&mut buf[..]).into_chunks();
+                    debug_assert!(rest.is_empty());
+                    encryptor.encrypt_blocks_inout_mut(chunks);
+                }
+                self.writer.write_all(&buf[..]).await?;
+            }
+        }
+        Ok(())
+    }
+
+    #[inline]
+    pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
+        self.encryptor = Some(Encryptor::new_from_slices(key, key)?);
+
+        Ok(())
+    }
+}
+
+
+impl<W> WriteHalf<W>
+where
+    W: AsyncWrite + Unpin,
+{
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.workbuf.clear();
         self.workbuf.shrink_to(min_capacity);
-        #[cfg(feature = "packets")]
+        #[cfg(feature = "encoding")]
         {
             self.workbuf2.clear();
             self.workbuf2.shrink_to(min_capacity);
@@ -90,12 +111,11 @@ impl<W> WriteHalf<W> {
         writer: BufWriter<W>,
     ) -> Self {
         Self {
-            encryptor,
             compression,
             workbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             #[cfg(feature = "encoding")]
             workbuf2: Vec::with_capacity(INITIAL_BUF_SIZE),
-            writer,
+            writer: Writer::new(writer, encryptor),
             #[cfg(feature = "blocking")]
             blocking: None,
         }
@@ -108,69 +128,13 @@ impl<W> WriteHalf<W> {
         self.blocking = threshold;
     }
 
+    #[inline]
     pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
-        self.encryptor = Some(Encryptor::new_from_slices(key, key)?);
-
-        Ok(())
+        self.writer.enable_encryption(key)
     }
-}
 
-macro_rules! offload_encrypt {
-    ($encryptor:ident, &mut $self:ident.$data:ident, $len:ident, self.$threshold:ident;
-        { $($blocking:tt)* }
-        $(; $($prewrite:tt)*)?) => {
-        #[cfg(feature = "blocking")]
-        // blocking feature enabled, if threshold set and compressed_len
-        // above threshold, offload the encryption to a threadpool
-        match $self.$threshold {
-            Some(threshold) if $len > threshold => {
-                // get a replacement buffer if this async task fails
-                // this should be allocationless as the vec is empty
-
-                let mut xchanged_buf = vec![];
-
-                // exchange workbuf with replacement buf
-
-                std::mem::swap::<Vec<_>>(&mut $self.$data, &mut xchanged_buf);
-
-                // run encryption on threadpool
-
-                let mut cloned_encryptor = $encryptor.clone();
-
-                $(xchanged_buf $($prewrite)*;)?
-
-                let (cloned_encryptor, mut xchanged_buf) = blocking::unblock(move || {
-                    encrypt_in_place(&mut cloned_encryptor, &mut xchanged_buf);
-                    (cloned_encryptor, xchanged_buf)
-                })
-                .await;
-
-                // swap the workbuf back into place, delete the temporary replacement
-
-                std::mem::swap::<Vec<_>>(&mut $self.$data, &mut xchanged_buf);
-                drop(xchanged_buf);
-
-                // update the encryptor
-
-                *$encryptor = cloned_encryptor
-            },
-            _ => {
-                // encrypt the data in place on this thread
-                $($blocking)*
-            }
-        };
-
-        #[cfg(not(feature = "blocking"))]
-        // blocking feature disabled
-        // encrypt the data in place on this thread as normal
-        $($blocking)*
-    };
-}
-
-impl<W> WriteHalf<W>
-where
-    W: AsyncWrite + Unpin,
-{
+    
+    /*
     // todo! refactor write_raw_packet and write_packet so there is less code duplication
     pub async fn write_raw_packet(&mut self, id: i32, data: &[u8]) -> io::Result<()> {
         self.workbuf.clear();
@@ -216,22 +180,13 @@ where
 
                 // encrypt data
 
-                if let Some(encryptor) = &mut self.encryptor {
-                    // encrypt in order
-                    encrypt_in_place(encryptor, compressed_len_varint);
-                    encrypt_in_place(encryptor, uncompressed_len_varint);
-
-                    offload_encrypt! {
-                        encryptor, &mut self.workbuf, compressed_len, self.blocking;
-                        {encrypt_in_place(encryptor, &mut self.workbuf)}
-                    }
-                }
-
                 // write data to stream
 
                 self.writer.write_all(compressed_len_varint).await?;
                 self.writer.write_all(uncompressed_len_varint).await?;
-                self.writer.write_all(&self.workbuf).await?;
+                let mut buf = std::mem::take(&mut self.workbuf);
+                self.writer.write_all(&mut buf).await?;
+                self.workbuf = buf;
             } else {
                 // less than threshold
 
@@ -253,21 +208,15 @@ where
 
                     let mut packet_length = [0; 5];
                     let packet_length_varint = write_varint(packet_len as u32, &mut packet_length);
-                    encrypt_into_vec(encryptor, packet_length_varint, &mut self.workbuf);
+                    self.writer.write_all(packet_length_varint);
 
                     // write data with the Encryptor to workbuf
 
                     encrypt_into_vec(encryptor, _0_plus_varint, &mut self.workbuf);
 
-                    offload_encrypt! {
-                        encryptor, &mut self.workbuf, uncompressed_len, self.blocking;
-                        {encrypt_into_vec(encryptor, data, &mut self.workbuf)};
-                        .write_all(data).await?
-                    }
-
                     // then write the data to the writer
 
-                    self.writer.write_all(&self.workbuf).await?;
+                    self.writer.write_all(&mut self.workbuf).await?;
                 } else {
                     // there is no encryption
 
@@ -305,13 +254,6 @@ where
                 let id = write_varint(id as u32, &mut id_buf);
                 encrypt_into_vec(encryptor, id, &mut self.workbuf);
 
-                let uncompressed_len = data.len() as u32;
-
-                offload_encrypt! {
-                    encryptor, &mut self.workbuf, uncompressed_len, self.blocking;
-                    {encrypt_into_vec(encryptor, data, &mut self.workbuf)};
-                    .write_all(data).await?
-                }
 
                 // then write it to the writer
 
@@ -330,6 +272,7 @@ where
         Ok(())
     }
 
+    /*
     // This will hopefully replace write_packet
     #[cfg(feature = "encoding")]
     pub async fn write_packet_no_duplication<P>(
@@ -562,6 +505,8 @@ where
 
         Ok(())
     }
+    */
+*/
 }
 
 fn varint_len(num: u32) -> u32 {
