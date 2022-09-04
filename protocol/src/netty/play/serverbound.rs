@@ -704,6 +704,46 @@ pub struct TabComplete0<'a> {
     pub text: Cow<'a, str>,
 }
 
+#[derive(ToStatic)]
+pub struct TabComplete37<'a> {
+    pub text: Cow<'a, str>,
+    pub targeted_block: Option<Position>,
+}
+
+impl<'dec, 'a> Decode<'dec> for TabComplete37<'a>
+where
+    'dec: 'a,
+{
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let text = Decode::decode(cursor)?;
+        let targeted_block = if bool::decode(cursor)? {
+            Some(Decode::decode(cursor)?)
+        } else {
+            None
+        };
+        Ok(Self {
+            text,
+            targeted_block,
+        })
+    }
+}
+impl<'a> Encode for TabComplete37<'a> {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
+        let Self {
+            text,
+            targeted_block,
+        } = self;
+        Encode::encode(text, writer)?;
+        if let Some(targeted_block) = &targeted_block {
+            true.encode(writer)?;
+            Encode::encode(targeted_block, writer)?;
+        } else {
+            false.encode(writer)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Encoding, ToStatic)]
 pub struct ClientSettings0<'a> {
     pub locale: Cow<'a, str>,
