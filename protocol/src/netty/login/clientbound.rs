@@ -68,3 +68,9 @@ impl<'a> Encode for Success5<'a> {
         Ok(())
     }
 }
+
+#[derive(Encoding, ToStatic)]
+pub struct SetCompression27 {
+    #[varint]
+    pub threshold: i32,
+}

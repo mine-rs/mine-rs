@@ -1250,6 +1250,20 @@ pub struct ChunkData23<'a> {
     pub compressed_data: Cow<'a, [u8]>,
 }
 
+#[derive(Encoding, ToStatic)]
+// todo! make this nice to interact with
+pub struct ChunkData27<'a> {
+    pub chunk_x: i32,
+    pub chunk_y: i32,
+    /// This is True if the packet represents all sections in this vertical
+    /// column, where the primary bit map specifies exactly which sections are
+    /// included, and which are air
+    pub continuous: bool,
+    /// Bitmask with 1 for every 16x16x16 section which data follows in the compressed data.
+    pub primary_bitmap: u16,
+    pub compressed_data: Cow<'a, [u8]>,
+}
+
 #[derive(ToStatic)]
 pub struct MultiBlockChange0 {
     // varint
@@ -1566,6 +1580,17 @@ pub struct ChunkMeta23 {
     pub chunk_x: i32,
     pub chunk_z: i32,
     pub primary_bitmap: u16,
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct MapChunkBulk27<'a> {
+    /// Whether or not the chunk data contains a light nibble array. This is
+    /// true in the main world, false in the end + nether
+    pub skylight_sent: bool,
+    #[counted(u32)]
+    pub column_metas: Vec<ChunkMeta23>,
+    #[rest]
+    pub data: Cow<'a, [u8]>,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -2723,4 +2748,10 @@ pub enum Title18<'a> {
         /// ticks
         fade_out: i32,
     },
+}
+
+#[derive(Encoding, ToStatic)]
+pub struct SetCompression27 {
+    #[varint]
+    pub threshold: i32,
 }
