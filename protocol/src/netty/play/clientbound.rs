@@ -3024,3 +3024,14 @@ pub struct ResourcePackSend32<'a> {
     /// treat it as a unique id
     pub hash: Cow<'a, str>,
 }
+
+#[derive(Encoding, ToStatic)]
+pub struct SetCoolDown48 {
+    /// it's not clear if this field is cooldown
+    /// or item id
+    ///
+    /// if it's cooldown, that's in ticks
+    /// item id would be well... the item id
+    #[varint]
+    pub cooldown: i32,
+}

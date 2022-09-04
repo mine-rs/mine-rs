@@ -2204,8 +2204,9 @@ parsing_tree! {
         // 1073741920 => _1073741920,
     },
     0x4a => {
-        // 48 => _48,
-        // 49..=59 => _49,
+        48 => SetCoolDown48,
+        // SetCoolDown was immediately removed again in the next version
+        // 49..=59
         // 60..=66 => _60,
         // 67..=76 => _67,
         // 77..=79 => _77,
@@ -3352,7 +3353,8 @@ parsing_tree! {
         21..=46 => UpdateSign6<'a>,
         // no real changes
         47 => UpdateSign6<'a>,
-        // 48 => _48,
+        // revert whatever was changed before
+        48 => UpdateSign6<'a>,
         // 49..=66 => _49,
         // 67..=76 => _67,
         // 77..=79 => _77,
