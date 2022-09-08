@@ -12,8 +12,8 @@ use aes::{
 };
 use cfb8::Decryptor;
 use flate2::Decompress;
-use futures_lite::{io::BufReader, AsyncRead, AsyncReadExt};
 use futures_lite::ready;
+use futures_lite::{io::BufReader, AsyncRead, AsyncReadExt};
 
 /// The maximum packet length, 8 MiB
 const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;
@@ -31,7 +31,6 @@ fn verify_len(len: u32) -> std::io::Result<()> {
         Ok(())
     }
 }
-
 
 // const AVG_PACKET_THRESHOLD: usize = 65536;
 
@@ -62,7 +61,7 @@ impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
                 Poll::Ready(Ok(n))
             }
         }
-}
+    }
     /*
     this is really complicated
     all for using unblock
@@ -82,12 +81,12 @@ impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
                     // Clear the decryption buffer.
                     //decryption.buf.clear();
                     decryption.buf.fill(0);
-                    
+
                     //decryption.buf.resize(1024 * 8, 0);
 
                     // Read the data to the decryption buffer.
                     let n = ready!(Pin::new(&mut this.reader).poll_read(cx, &mut decryption.buf))?;
-                    
+
                     // We use std::mem::take because we can't pass the decryption buf directly.
                     let mut owned_decryption_buf = std::mem::take(&mut decryption.buf);
                     // We use clone because we can't pass the decryptor directly.
@@ -106,7 +105,7 @@ impl<R: AsyncRead + Unpin> AsyncRead for ReadHalf<R> {
                 #[allow(clippy::unwrap_used)]
                 let task = decryption.task.as_mut().unwrap();
 
-                
+
                 let (decryptor, decryption_buf, n) = ready!(task.poll(cx));
                 let len = buf.len();
 
@@ -184,13 +183,12 @@ impl<R> ReadHalf<R> {
     }
 }
 
-
 impl<R> ReadHalf<R>
 where
     R: AsyncRead + Unpin,
 {
     pub async fn read_raw_packet(&mut self) -> io::Result<RawPacket<'_>> {
-        let mut data =  {
+        let mut data = {
             // read packet length
 
             let len = read_varint(self).await?;
