@@ -475,55 +475,61 @@ impl DeviceCode {
 
     async fn auth_ms(&self, client: &impl HttpClient) -> Result<Option<MsAuth>, Error> {
         match &self.inner {
-            Some(inner) => loop {
-                std::thread::sleep(std::time::Duration::from_secs(inner.interval + 1));
-                let body = format!(
-                    "grant_type={}&client_id={}&device_code={}",
-                    "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code",
-                    &self.cid as &str,
-                    &inner.device_code
-                )
-                .into_bytes();
-                let code_resp = client
-                    .execute_request(
-                        http::request::Builder::new()
-                            .method(http::Method::POST)
-                            .header("content-type", "application/x-www-form-urlencoded")
-                            .header("content-length", body.len())
-                            .uri("https://login.microsoftonline.com/consumers/oauth2/v2.0/token")
-                            .body(body)?,
+            Some(inner) => {
+                let mut interval = async_timer::interval(std::time::Duration::from_secs(inner.interval+1));
+                loop {
+                    interval.wait().await;
+                    let body = format!(
+                        "grant_type={}&client_id={}&device_code={}",
+                        "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code",
+                        &self.cid as &str,
+                        &inner.device_code
                     )
-                    .await?;
-                //let code_resp = client
-                //    .post("https://login.microsoftonline.com/consumers/oauth2/v2.0/token")
-                //    .form(&[
-                //        ("client_id", &self.cid as &str),
-                //        ("scope", "XboxLive.signin offline_access"),
-                //        ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
-                //        ("device_code", &inner.device_code),
-                //    ])
-                //    .send()
-                //    .await?;
-                match code_resp.status() {
-                    StatusCode::BAD_REQUEST => {
-                        let ms_auth_error: MsAuthError =
-                            serde_json::from_slice(code_resp.into_body().as_ref())?;
-                        match &ms_auth_error.error as &str {
-                            "authorization_pending" => continue,
-                            _ => return Err(ms_auth_error.into()),
+                    .into_bytes();
+                    let code_resp = client
+                        .execute_request(
+                            http::request::Builder::new()
+                                .method(http::Method::POST)
+                                .header("content-type", "application/x-www-form-urlencoded")
+                                .header("content-length", body.len())
+                                .uri(
+                                    "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
+                                )
+                                .body(body)?,
+                        )
+                        .await?;
+                    //let code_resp = client
+                    //    .post("https://login.microsoftonline.com/consumers/oauth2/v2.0/token")
+                    //    .form(&[
+                    //        ("client_id", &self.cid as &str),
+                    //        ("scope", "XboxLive.signin offline_access"),
+                    //        ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
+                    //        ("device_code", &inner.device_code),
+                    //    ])
+                    //    .send()
+                    //    .await?;
+                    match code_resp.status() {
+                        StatusCode::BAD_REQUEST => {
+                            let ms_auth_error: MsAuthError =
+                                serde_json::from_slice(code_resp.into_body().as_ref())?;
+                            match &ms_auth_error.error as &str {
+                                "authorization_pending" => continue,
+                                _ => return Err(ms_auth_error.into()),
+                            }
+                        }
+                        StatusCode::OK => {
+                            let mut ms_auth: MsAuth =
+                                serde_json::from_slice(code_resp.into_body().as_ref())?;
+                            ms_auth.expires_after =
+                                ms_auth.expires_in + chrono::Utc::now().timestamp();
+                            return Ok(Some(ms_auth));
+                        }
+                        _ => {
+                            code_resp.error_for_status()?;
                         }
                     }
-                    StatusCode::OK => {
-                        let mut ms_auth: MsAuth =
-                            serde_json::from_slice(code_resp.into_body().as_ref())?;
-                        ms_auth.expires_after = ms_auth.expires_in + chrono::Utc::now().timestamp();
-                        return Ok(Some(ms_auth));
-                    }
-                    _ => {
-                        code_resp.error_for_status()?;
-                    }
                 }
-            },
+            }
             None => Ok(None),
         }
     }
