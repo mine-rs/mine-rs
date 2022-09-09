@@ -2,6 +2,7 @@
 // which is licensed under MIT or Apache 2.0.
 // We are using the MIT license.
 
+//TODO: Verify that we're not panicing in the cryptography code, this would cause UB.
 //TODO: Replace the channels with atomics?
 #![forbid(clippy::undocumented_unsafe_blocks)]
 #![deny(clippy::unwrap_used)]
@@ -11,7 +12,7 @@ use std::collections::VecDeque;
 use std::option_env;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Condvar;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard};
 use std::thread::{self, available_parallelism};
 use std::time::Duration;
 
@@ -58,7 +59,7 @@ pub enum Task {
 
 #[derive(Debug)]
 pub struct EncryptionTask {
-    pub data: Arc<Vec<u8>>,
+    pub data: Vec<u8>,
     pub encryption: *mut Encryption,
     // The sender will tell the caller that the encryption has finished and it's safe to use the raw pointer again
     pub send: Sender<()>,
@@ -160,8 +161,9 @@ unsafe fn decrypt(task: DecryptionTask) {
     (*decryption).buf.resize(len, 0);
 
     // SAFETY: We can use unwrap_unchecked here, because we know the supplied buffer is the same length as the data.
+    // for now it's unwrap tho, just in case I messed it up, after testing this will be reverted to unwrap_unchecked
     let (chunks, rest) = InOutBuf::new(&(*decryption).data, &mut (*decryption).buf[buf_len..len])
-        .unwrap_unchecked()
+        .unwrap()
         .into_chunks();
 
     debug_assert!(rest.is_empty());
@@ -188,8 +190,9 @@ unsafe fn encrypt(task: EncryptionTask) {
 
     #[allow(clippy::unwrap_used)]
     // SAFETY: We can use unwrap_unchecked here, because we know the supplied buffer is the same length as the data.
+    // for now it's unwrap tho, just in case I messed it up, after testing this will be reverted to unwrap_unchecked
     let (chunks, rest) = InOutBuf::new(&data, &mut (*encryption).buf[buf_len..len])
-        .unwrap_unchecked()
+        .unwrap()
         .into_chunks();
 
     debug_assert!(rest.is_empty());
@@ -204,9 +207,9 @@ unsafe fn encrypt(task: EncryptionTask) {
     }
 }
 
-//TODO: rename this function
-pub unsafe fn unblock(
-    task: Task
-) {
+/// Offloads encryption to another thread
+/// #Safety:
+/// This is safe as long as you don't use the raw pointer until the message has been sent.
+pub unsafe fn crypt(task: Task) {
     THREAD_POOL.schedule(task);
 }

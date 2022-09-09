@@ -1,8 +1,9 @@
+mod readhalf;
+mod writehalf;
+
 use aes::cipher::InvalidLength;
 use futures_lite::io::{AsyncRead, AsyncWrite};
 use futures_lite::io::{BufReader, BufWriter};
-mod readhalf;
-mod writehalf;
 pub use readhalf::ReadHalf;
 use writehalf::Compression;
 pub use writehalf::WriteHalf;
@@ -20,7 +21,7 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
     pub fn new(reader: R, writer: W) -> Self {
         Connection {
             read_half: ReadHalf::new(None, None, BufReader::new(reader)),
-            write_half: WriteHalf::new(None, Compression::new(), BufWriter::new(writer)),
+            write_half: WriteHalf::new(None, Compression::new(), writer),
         }
     }
     pub fn split(self) -> (ReadHalf<R>, WriteHalf<W>) {

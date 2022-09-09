@@ -6,7 +6,10 @@ use aes::cipher::{inout::InOutBuf, BlockEncryptMut, InvalidLength, KeyIvInit};
 use aes::Aes128;
 use cfb8::Encryptor;
 use flate2::Compress;
+use futures_channel::oneshot;
 use futures_lite::{io::BufWriter, AsyncWrite, AsyncWriteExt};
+use miners_net_encryption::{crypt, Encryption, EncryptionTask, Task};
+
 
 /// compression threshold + 1 for memory layout optimization
 pub(super) struct Compression(Option<(NonZeroU32, flate2::Compression)>);
@@ -47,38 +50,105 @@ pub struct WriteHalf<W> {
 }
 
 struct Writer<W> {
-    pub(crate) writer: BufWriter<W>,
-    pub(crate) encryptor: Option<Encryptor<Aes128>>,
+    pub(crate) writer: W,
+    pub buf: Vec<u8>,
+    pub(crate) encryption: Option<(*mut Encryption, bool)>,
+}
+
+impl<W> Drop for Writer<W> {
+    fn drop(&mut self) {
+        if let Some((encryption, busy)) = self.encryption {
+            if !busy {
+                // SAFETY: The busy variable is only false when writer is the sole owner of encryption
+                unsafe { encryption.drop_in_place() }
+            } // else the threadpool will realise the writer has been dropped and drop the pointer
+        }
+    }
 }
 
 impl<W: AsyncWrite + Unpin> Writer<W> {
-    pub fn new(writer: BufWriter<W>, encryptor: Option<Encryptor<Aes128>>) -> Self {
-        Self { writer, encryptor }
+    // TODO: Remove the encryptor parameter
+    pub fn new(writer: W, _encryptor: Option<Encryptor<Aes128>>) -> Self {
+        Self {
+            writer,
+            buf: Vec::with_capacity(INITIAL_BUF_SIZE),
+            encryption: None,
+        }
     }
 }
 
 impl<W: AsyncWrite + Unpin> Writer<W> {
     #[inline]
-    pub async fn write_all(&mut self, buf: &mut [u8]) -> io::Result<()> {
-        match self.encryptor.as_mut() {
-            None => {
-                self.writer.write_all(buf).await?;
-            }
-            Some(encryptor) => {
-                {
-                    let (chunks, rest) = InOutBuf::from(&mut buf[..]).into_chunks();
-                    debug_assert!(rest.is_empty());
-                    encryptor.encrypt_blocks_inout_mut(chunks);
-                }
-                self.writer.write_all(buf).await?;
+    pub async fn write_all(&mut self, buf: &mut Vec<u8>) -> io::Result<()> {
+        let owned_buf = std::mem::take(buf);
+
+        match self.encryption.as_mut() {
+            None => self.buf.write_all(buf).await,
+            Some((encryption, busy)) => {
+                if !*busy {
+                    let encryption = *encryption;
+                    
+                    // SAFETY: this is fine because we know the threadpool isn't using the raw pointer atm.
+                    unsafe {
+                        // We swap the buffer
+                        std::mem::swap(&mut(*encryption).buf, &mut self.buf);
+                    }
+
+                    let (send, recv) = oneshot::channel();
+                    let task = EncryptionTask {
+                        data: owned_buf,
+                        send,
+                        encryption,
+                    };
+                    // SAFETY: This is fine because we only return after calling .recv and we have a boolean keeping track of if we own the encryptor or not
+                    // We can also use unwrap_unchecked because we know we call .send before dropping the sender but we're using expect here
+                    unsafe {
+                        *busy = true;
+                        crypt(Task::Encrypt(task));
+                        recv.await
+                            .expect("encryption task was terminated externally");
+                        
+                        // We swap the buffer back
+                        std::mem::swap(&mut(*encryption).buf, &mut self.buf);
+                        *busy = false;
+
+                    }
+                } else {
+                    return Err(io::Error::new(
+                        io::ErrorKind::Interrupted,
+                        "you haven't awaited previous write calls properly",
+                    ));
+                };
+                Ok(())
             }
         }
+    }
+
+    #[inline]
+    pub async fn flush(&mut self) -> io::Result<()> {
+        if let Some((_, busy)) = self.encryption {
+            if busy {
+                return Err(
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        "you haven't awaited previous write calls properly"
+                    )
+                )
+            }
+        }
+        self.writer.write_all(&self.buf).await?;
+        self.buf.clear();
         Ok(())
     }
 
     #[inline]
     pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
-        self.encryptor = Some(Encryptor::new_from_slices(key, key)?);
+        let encryption = Box::new(Encryption {
+            encryptor: Encryptor::new_from_slices(key, key)?,
+            buf: Vec::new(),
+        });
+
+        self.encryption = Some((Box::into_raw(encryption), false));
 
         Ok(())
     }
@@ -101,7 +171,7 @@ where
     pub(super) fn new(
         encryptor: Option<Encryptor<Aes128>>,
         compression: Compression,
-        writer: BufWriter<W>,
+        writer: W,
     ) -> Self {
         Self {
             compression,
@@ -154,12 +224,13 @@ where
                 let length = uncompressed_length_slice.len() as u32 + self.workbuf.len() as u32;
 
                 let mut length_buf = [0u8; 5];
+                /*
                 self.writer
                     .write_all(varint_slice(length, &mut length_buf))
                     .await?;
-
+                
                 self.writer.write_all(uncompressed_length_slice).await?;
-
+                */
                 self.writer.write_all(&mut self.workbuf).await?;
                 return Ok(());
             } else {
@@ -190,18 +261,19 @@ where
         let length = id_slice.len() as u32 + data.len() as u32;
 
         let mut length_buf = [0; 5];
-
+        /*/
         self.writer
             .write_all(varint_slice(length, &mut length_buf))
             .await?;
 
         self.writer.write_all(id_slice).await?;
 
+        */
         // only copy to workbuf if encryption is enabled
 
-        if self.writer.encryptor.is_some() {
+        if self.writer.encryption.is_some() {
             std::io::Write::write_all(&mut self.workbuf, data)?;
-            self.writer.write_all(&mut self.workbuf[..]).await?;
+            self.writer.write_all(&mut self.workbuf).await?;
         } else {
             self.writer.writer.write_all(data).await?;
         }
@@ -458,6 +530,18 @@ fn varint_slice(mut num: u32, buf: &mut [u8; 5]) -> &mut [u8] {
         num = next_val;
     }
     &mut buf[..]
+}
+
+fn varint_vec(mut num: u32, vec: &mut Vec<u8>) {
+    for _ in 0..5 {
+        let next_val = num >> 7;
+        if next_val == 0 {
+            vec.push(num as u8);
+            break;
+        }
+        vec.push(num as u8 | 0x80);
+        num = next_val;
+    }
 }
 
 #[cfg(test)]
