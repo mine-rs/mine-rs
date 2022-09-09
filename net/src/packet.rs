@@ -5,7 +5,7 @@
 
 pub struct RawPacket<'a> {
     pub id: i32,
-    pub data: &'a [u8],
+    pub data: &'a Vec<u8>,
 }
 
 /*
