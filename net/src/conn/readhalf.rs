@@ -4,7 +4,7 @@ use std::task::Poll;
 use std::{fmt::Display, io};
 
 use crate::encoding::EncodedData;
-use crate::helpers::encrypt;
+use crate::helpers::{encrypt, AsyncCancelled};
 use crate::DEFAULT_UNBLOCK_THRESHOLD;
 
 use super::INITIAL_BUF_SIZE;
@@ -47,7 +47,7 @@ pub struct ReadHalf<R> {
 
 pub struct Reader<R> {
     reader: R,
-    decryptor: Option<cfb8::Encryptor<aes::Aes128>>,
+    decryptor: Option<Option<Box<cfb8::Encryptor<aes::Aes128>>>>,
     #[cfg(feature = "workpool")]
     unblock_threshold: u32,
 }
@@ -62,28 +62,26 @@ where
         let slice = unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr(), len as usize) };
         self.reader.read_exact(slice).await?;
         if let Some(decryptor) = &mut self.decryptor {
+            let mut decryptor = decryptor.take().ok_or(AsyncCancelled)?;
             #[cfg(feature = "workpool")]
-            if len > self.unblock_threshold {
+            let decryptor = if len > self.unblock_threshold {
                 let taken_buf = std::mem::take(buf);
-                let decryptor_clone = decryptor.clone();
                 // SAFETY: this is safe as we are specifying a length that was just written
-                let (taken_buf, decryptor_clone) = unsafe {
-                    crate::workpool::request_partial_encryption(
-                        taken_buf,
-                        len as usize,
-                        decryptor_clone,
-                    )
-                    .await
-                    .await
-                    .unwrap()
+                let (taken_buf, mutated_decryptor) = unsafe {
+                    crate::workpool::request_partial_encryption(taken_buf, len as usize, decryptor)
+                        .await
+                        .await
+                        .unwrap()
                 };
                 *buf = taken_buf;
-                *decryptor = decryptor_clone;
+                mutated_decryptor
             } else {
-                encrypt(slice, decryptor);
-            }
+                encrypt(slice, &mut decryptor);
+                decryptor
+            };
             #[cfg(not(feature = "workpool"))]
-            encrypt(slice, decryptor);
+            encrypt(slice, &mut decryptor);
+            self.decryptor = Some(Some(decryptor));
         }
         Ok(())
     }
@@ -99,8 +97,10 @@ impl<R: AsyncRead + Unpin> AsyncRead for Reader<R> {
         match &mut this.decryptor {
             None => Pin::new(&mut this.reader).poll_read(cx, buf),
             Some(decryptor) => {
+                let mut decryptor = decryptor.take().ok_or(AsyncCancelled)?;
                 let n = ready!(Pin::new(&mut this.reader).poll_read(cx, buf))?;
-                encrypt(buf, decryptor);
+                encrypt(buf, &mut decryptor);
+                this.decryptor = Some(Some(decryptor));
                 Poll::Ready(Ok(n))
             }
         }
@@ -189,13 +189,13 @@ impl Display for PacketLengthTooLarge {
 }
 
 impl<R> ReadHalf<R> {
-    pub(super) fn new(decryptor: Option<cfb8::Encryptor<aes::Aes128>>, reader: R) -> Self {
+    pub(super) fn new(reader: R) -> Self {
         Self {
             compression: None,
             readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader: Reader {
                 reader,
-                decryptor,
+                decryptor: None,
                 #[cfg(feature = "workpool")]
                 unblock_threshold: DEFAULT_UNBLOCK_THRESHOLD,
             },
@@ -203,7 +203,7 @@ impl<R> ReadHalf<R> {
     }
 
     pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
-        self.reader.decryptor = Some(cfb8::Encryptor::new_from_slices(key, key)?);
+        self.reader.decryptor = Some(Some(cfb8::Encryptor::new_from_slices(key, key)?.into()));
         Ok(())
     }
 

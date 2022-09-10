@@ -19,13 +19,13 @@ pub struct Connection<R, W> {
 impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
     pub fn new(reader: R, writer: W) -> Connection<BufReader<R>, BufWriter<W>> {
         Connection {
-            read_half: ReadHalf::new(None, BufReader::new(reader)),
+            read_half: ReadHalf::new(BufReader::new(reader)),
             write_half: WriteHalf::new(BufWriter::new(writer)),
         }
     }
     pub fn unbuffered(reader: R, writer: W) -> Self {
         Connection {
-            read_half: ReadHalf::new(None, reader),
+            read_half: ReadHalf::new(reader),
             write_half: WriteHalf::new(writer),
         }
     }

@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub struct Writer<W> {
-    encryptor: Option<cfb8::Encryptor<aes::Aes128>>,
+    encryptor: Option<Option<Box<cfb8::Encryptor<aes::Aes128>>>>,
     inner: W,
     #[cfg(feature = "workpool")]
     unblock_threshold: u32,
@@ -28,8 +28,8 @@ impl<W> Writer<W> {
     pub fn set_unblock_threshold(&mut self, threshold: u32) {
         self.unblock_threshold = threshold;
     }
-    pub fn enable_encryption(&mut self, encryptor: cfb8::Encryptor<aes::Aes128>) {
-        self.encryptor = Some(encryptor);
+    pub fn enable_encryption(&mut self, encryptor: impl Into<Box<cfb8::Encryptor<aes::Aes128>>>) {
+        self.encryptor = Some(Some(encryptor.into()));
     }
 }
 
@@ -41,30 +41,34 @@ where
         let mut var_buf = [0u8; 5];
         let var_slice = varint_slice(int, &mut var_buf);
         if let Some(encryptor) = &mut self.encryptor {
-            encrypt(var_slice, encryptor)
+            let mut encryptor = encryptor.take().ok_or(crate::helpers::AsyncCancelled)?;
+            encrypt(var_slice, &mut encryptor);
+            self.encryptor = Some(Some(encryptor))
         }
         self.inner.write_all(&*var_slice).await
     }
     pub async fn write<'packed>(&mut self, mut data: PackedData<'packed>) -> io::Result<()> {
         if let Some(encryptor) = &mut self.encryptor {
+            let mut encryptor = encryptor.take().ok_or(crate::helpers::AsyncCancelled)?;
             #[cfg(feature = "workpool")]
-            if data.len() >= self.unblock_threshold {
+            let encryptor = if data.len() >= self.unblock_threshold {
                 let taken_buf = std::mem::take(data.0);
                 let encryptor_clone = encryptor.clone();
 
-                let (taken_buf, encryptor_clone) =
+                let (taken_buf, mutated_encryptor) =
                     crate::workpool::request_encryption(taken_buf, encryptor_clone)
                         .await
                         .await
                         .expect("encryption task was terminated?");
-
-                *encryptor = encryptor_clone;
                 *data.0 = taken_buf;
+                mutated_encryptor
             } else {
-                encrypt(data.get_mut(), encryptor)
-            }
+                encrypt(data.get_mut(), &mut encryptor);
+                encryptor
+            };
             #[cfg(not(feature = "workpool"))]
-            encrypt(data.get_mut(), encryptor)
+            encrypt(data.get_mut(), &mut encryptor);
+            self.encryptor = Some(Some(encryptor));
         }
         self.write_varint(data.len()).await?;
         self.inner.write_all(data.get()).await?;

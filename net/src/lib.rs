@@ -1,5 +1,4 @@
 #![deny(clippy::undocumented_unsafe_blocks)]
-// pub mod compression;
 pub mod conn;
 pub mod encoding;
 pub mod packing;
@@ -65,6 +64,20 @@ pub(crate) mod helpers {
                 let varbuf = varint_slice(*num as u32, &mut buf);
                 assert_eq!(*res, varbuf)
             }
+        }
+    }
+
+    #[derive(Debug)]
+    pub(crate) struct AsyncCancelled;
+    impl std::fmt::Display for AsyncCancelled {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("async cancelled")
+        }
+    }
+    impl std::error::Error for AsyncCancelled {}
+    impl From<AsyncCancelled> for std::io::Error {
+        fn from(_: AsyncCancelled) -> Self {
+            std::io::Error::new(std::io::ErrorKind::Other, AsyncCancelled)
         }
     }
 }

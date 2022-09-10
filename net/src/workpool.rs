@@ -5,11 +5,11 @@ use parking_lot::Mutex;
 
 use crate::helpers::encrypt;
 
-type Job = (Vec<u8>, usize, cfb8::Encryptor<aes::Aes128>);
+type Job = (Vec<u8>, usize, Box<cfb8::Encryptor<aes::Aes128>>);
 
 #[allow(clippy::type_complexity)]
 static ENCRYPTION_WORKQUEUE: once_cell::sync::Lazy<
-    Mutex<VecDeque<(Job, Sender<(Vec<u8>, cfb8::Encryptor<aes::Aes128>)>)>>,
+    Mutex<VecDeque<(Job, Sender<(Vec<u8>, Box<cfb8::Encryptor<aes::Aes128>>)>)>>,
 > = once_cell::sync::Lazy::new(|| Mutex::new(VecDeque::new()));
 static ENCRYPTION_MAX_THREADCOUNT: once_cell::sync::Lazy<usize> =
     once_cell::sync::Lazy::new(|| {
@@ -27,8 +27,8 @@ static WORKTHREADS_CONDVAR: parking_lot::Condvar = parking_lot::Condvar::new();
 
 pub async fn request_encryption(
     buf: Vec<u8>,
-    enc: cfb8::Encryptor<aes::Aes128>,
-) -> futures_channel::oneshot::Receiver<(Vec<u8>, cfb8::Encryptor<aes::Aes128>)> {
+    enc: Box<cfb8::Encryptor<aes::Aes128>>,
+) -> futures_channel::oneshot::Receiver<(Vec<u8>, Box<cfb8::Encryptor<aes::Aes128>>)> {
     let len_from_end = buf.len();
     // SAFETY: len_from_end is valid for sure as it is exactly the
     // buffers length
@@ -41,8 +41,8 @@ pub async fn request_encryption(
 pub(crate) async unsafe fn request_partial_encryption(
     buf: Vec<u8>,
     len_from_end: usize,
-    enc: cfb8::Encryptor<aes::Aes128>,
-) -> futures_channel::oneshot::Receiver<(Vec<u8>, cfb8::Encryptor<aes::Aes128>)> {
+    enc: Box<cfb8::Encryptor<aes::Aes128>>,
+) -> futures_channel::oneshot::Receiver<(Vec<u8>, Box<cfb8::Encryptor<aes::Aes128>>)> {
     let (send, recv) = futures_channel::oneshot::channel();
 
     let mut lock = ENCRYPTION_WORKQUEUE.lock();
