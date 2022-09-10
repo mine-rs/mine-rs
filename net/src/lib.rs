@@ -4,7 +4,6 @@ pub mod encoding;
 pub mod packing;
 #[cfg(feature = "workpool")]
 pub(crate) mod workpool;
-pub mod writer;
 
 #[cfg(feature = "workpool")]
 const DEFAULT_UNBLOCK_THRESHOLD: u32 = 4096;
