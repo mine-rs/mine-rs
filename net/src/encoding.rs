@@ -1,6 +1,9 @@
 use miners_encoding::{encode, Encode};
 
-use crate::{helpers::varint_vec, packing::{PackedData, Compression, Compressor}};
+use crate::{
+    helpers::varint_vec,
+    packing::{Compression, Compressor, PackedData},
+};
 
 /// Holds a mutable reference to a buffer with the following layout
 ///

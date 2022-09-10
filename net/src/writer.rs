@@ -2,7 +2,11 @@ use std::io;
 
 use futures_lite::{AsyncWrite, AsyncWriteExt};
 
-use crate::{helpers::{varint_slice, encrypt}, packing::PackedData, DEFAULT_UNBLOCK_THRESHOLD};
+use crate::{
+    helpers::{encrypt, varint_slice},
+    packing::PackedData,
+    DEFAULT_UNBLOCK_THRESHOLD,
+};
 
 pub struct Writer<W> {
     encryptor: Option<cfb8::Encryptor<aes::Aes128>>,

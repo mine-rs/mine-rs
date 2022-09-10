@@ -36,7 +36,7 @@ pub async fn request_encryption(
 }
 
 /// # Safety
-/// 
+///
 /// this is safe as long as len_from_end is not longer than buf.len()
 pub(crate) async unsafe fn request_partial_encryption(
     buf: Vec<u8>,

@@ -261,7 +261,8 @@ where
                     &reader.get_ref()[reader.get_ref().len()..],
                     compression_buf,
                     flate2::FlushDecompress::Finish,
-                ).ok();
+                )
+                .ok();
 
                 // todo! enable this when reusing decompress
                 // zlib.reset(true);
