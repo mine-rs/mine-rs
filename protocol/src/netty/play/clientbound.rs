@@ -3,7 +3,6 @@ use crate::*;
 use attrs::*;
 
 use std::borrow::Cow;
-use std::str::FromStr;
 use uuid::Uuid;
 
 #[derive(Encoding, ToStatic)]
