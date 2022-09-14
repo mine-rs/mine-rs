@@ -1,4 +1,3 @@
-use core::slice;
 use std::pin::Pin;
 use std::task::Poll;
 use std::{fmt::Display, io};
@@ -57,10 +56,10 @@ where
     R: AsyncRead + Unpin,
 {
     async fn read(&mut self, buf: &mut Vec<u8>, len: u32) -> io::Result<()> {
-        buf.reserve(len as usize);
-        // SAFETY: this is safe because the additional length is forcefully allocated in the above line
-        let slice = unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr(), len as usize) };
-        self.reader.read_exact(slice).await?;
+        // todo! replace with readbuf or similar api once that is stabilized
+        buf.resize(buf.len() + len as usize, 0);
+        let slice_start = buf.len() - len as usize;
+        self.reader.read_exact(&mut buf[slice_start..]).await?;
         if let Some(decryptor) = &mut self.decryptor {
             let mut decryptor = decryptor.take().ok_or(AsyncCancelled)?;
             #[cfg(feature = "workpool")]
@@ -76,11 +75,11 @@ where
                 *buf = taken_buf;
                 mutated_decryptor
             } else {
-                encrypt(slice, &mut decryptor);
+                encrypt(&mut buf[slice_start..], &mut decryptor);
                 decryptor
             };
             #[cfg(not(feature = "workpool"))]
-            encrypt(slice, &mut decryptor);
+            encrypt(&mut buf[slice_start..], &mut decryptor);
             self.decryptor = Some(Some(decryptor));
         }
         Ok(())
