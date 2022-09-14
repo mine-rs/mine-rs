@@ -1,9 +1,10 @@
-use miners_encoding::{encode, Encode};
-
-use crate::{
-    helpers::varint_vec,
-    packing::{Compression, Compressor, PackedData},
+#[cfg(feature = "encoding")]
+use {
+    crate::helpers::varint_vec,
+    miners_encoding::{encode, Encode},
 };
+
+use crate::packing::{Compression, Compressor, PackedData};
 
 /// Holds a mutable reference to a buffer with the following layout
 ///
@@ -75,6 +76,7 @@ impl<'encoded> EncodedData<'encoded> {
 
 #[derive(Default)]
 pub struct Encoder {
+    #[cfg_attr(not(feature = "encoding"), allow(unused))]
     encodebuf: Vec<u8>,
 }
 impl From<Vec<u8>> for Encoder {
@@ -88,6 +90,7 @@ impl Encoder {
     }
 }
 impl Encoder {
+    #[cfg(feature = "encoding")]
     pub fn encode(&mut self, id: i32, data: impl Encode) -> encode::Result<EncodedData> {
         self.encodebuf.clear();
         self.encodebuf.push(0);

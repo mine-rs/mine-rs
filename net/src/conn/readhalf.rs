@@ -4,6 +4,7 @@ use std::{fmt::Display, io};
 
 use crate::encoding::EncodedData;
 use crate::helpers::{encrypt, AsyncCancelled};
+#[cfg(feature = "workpool")]
 use crate::DEFAULT_UNBLOCK_THRESHOLD;
 
 use super::INITIAL_BUF_SIZE;
