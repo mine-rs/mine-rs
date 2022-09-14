@@ -1,6 +1,8 @@
-use crate::{encoding::EncodedData, packing::Compression, writer::Writer};
+mod writer;
+use crate::{encoding::EncodedData, packing::Compression};
 use futures_lite::AsyncWrite;
 use std::io;
+use writer::Writer;
 
 pub struct WriteHalf<W> {
     writer: Writer<W>,
