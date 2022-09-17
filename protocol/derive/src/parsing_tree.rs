@@ -76,8 +76,8 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
 
             pv_match_body.extend(quote!(
                 #ver_pat => {
-                    replace! {
-                        #prefix #packet ;
+                    $crate::replace! {
+                        $#prefix #packet ;
                         #($($t)*)
                     }
                 }
@@ -95,17 +95,18 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
     let mut custom_body: TS = TS::new();
 
     for (ident, packet) in &all_packets {
-        packets_body.extend(quote!(#ident(#prefix #packet),));
-        custom_body.extend(quote!(#prefix #packet));
+        packets_body.extend(quote!(#ident($#prefix #packet),));
+        custom_body.extend(quote!($#prefix #packet));
     }
 
     let custom = x.custom;
 
     ret.extend(quote!(
         #[allow(unused)]
+        #[macro_export]
         macro_rules! #custom {
             ($($t:tt)*) => {
-                replace!{
+                $crate::replace!{
                     #custom_body ;
                     $($t)*
                 }
@@ -116,6 +117,7 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
     let tree = x.tree;
 
     ret.extend(quote! {
+        #[macro_export]
         macro_rules! #tree {
             ($id:ident, $pv:ident, {$($t:tt)*}, {$($e:tt)*}) => {
                 match $id {

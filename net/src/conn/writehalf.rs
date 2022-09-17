@@ -40,4 +40,7 @@ where
         let packed = encoded.split_pack(self.compression.as_mut(), &mut self.compress_buf);
         self.writer.write(packed).await
     }
+    pub async fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush().await
+    }
 }

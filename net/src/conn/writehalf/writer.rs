@@ -75,4 +75,7 @@ where
         self.inner.write_all(data.get()).await?;
         Ok(())
     }
+    pub async fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush().await   
+    }
 }

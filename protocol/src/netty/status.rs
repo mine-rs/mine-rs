@@ -4,7 +4,7 @@ pub mod clientbound;
 pub mod serverbound;
 
 parsing_tree! {
-    status_cb_custom status_cb_tree clientbound::;
+    status_cb_custom status_cb_tree crate::netty::status::clientbound::;
     0x00 => {
         0..=760 => Response0::<'a>,
     },
@@ -14,7 +14,7 @@ parsing_tree! {
 }
 status_cb_custom! {
     pub enum CbStatus<'a> {
-        #(#PacketName(#PacketType),)
+        #(#PacketName(#PacketTypeLt),)
     }
 }
 impl<'a> CbStatus<'a> {
@@ -22,14 +22,14 @@ impl<'a> CbStatus<'a> {
         let mut cursor = std::io::Cursor::new(data);
         status_cb_tree! {
             id, pv,
-            {<#PacketType as Decode>::decode(&mut cursor).map(CbStatus::#PacketName)},
+            {<#PacketTypeLt as Decode>::decode(&mut cursor).map(CbStatus::#PacketName)},
             {Err(decode::Error::InvalidId)}
         }
     }
 }
 
 parsing_tree! {
-    status_sb_custom status_sb_tree serverbound::;
+    status_sb_custom status_sb_tree crate::netty::status::serverbound::;
     0x00 => {
         0..=760 => Request0,
     },
@@ -39,7 +39,7 @@ parsing_tree! {
 }
 status_sb_custom! {
     pub enum SbStatus {
-        #(#PacketName(#PacketType),)
+        #(#PacketName(#PacketTypeLt),)
     }
 }
 impl SbStatus {
@@ -47,7 +47,7 @@ impl SbStatus {
         let mut cursor = std::io::Cursor::new(data);
         status_sb_tree! {
             id, pv,
-            {<#PacketType as Decode>::decode(&mut cursor).map(SbStatus::#PacketName)},
+            {<#PacketTypeLt as Decode>::decode(&mut cursor).map(SbStatus::#PacketName)},
             {Err(decode::Error::InvalidId)}
         }
     }

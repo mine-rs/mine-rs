@@ -28,7 +28,7 @@ pub enum Difficulty0 {
 }
 
 parsing_tree! {
-    play_cb_custom play_cb_tree clientbound::;
+    play_cb_custom play_cb_tree crate::netty::play::clientbound::;
     0x00 => {
         0..=31 => KeepAlive0,
         32..=66 => KeepAlive32,
@@ -2965,7 +2965,7 @@ parsing_tree! {
 
 play_cb_custom! {
     pub enum CbPlay<'a> {
-        #(#PacketName(#PacketType),)
+        #(#PacketName(#PacketTypeLt),)
     }
     impl ToStatic for CbPlay<'_> {
         type Static = CbPlay<'static>;
@@ -2986,14 +2986,14 @@ impl<'a> CbPlay<'a> {
         let mut cursor = std::io::Cursor::new(data);
         play_cb_tree! {
             id, pv,
-            {<#PacketType as Decode>::decode(&mut cursor).map(CbPlay::#PacketName)},
+            {<#PacketTypeLt as Decode>::decode(&mut cursor).map(CbPlay::#PacketName)},
             {Err(decode::Error::InvalidId)}
         }
     }
 }
 
 parsing_tree! {
-    play_sb_custom play_sb_tree serverbound::;
+    play_sb_custom play_sb_tree crate::netty::play::serverbound::;
     0x00 => {
         0..=6 => KeepAlive0,
         7..=66 => KeepAlive7,
@@ -3914,7 +3914,7 @@ parsing_tree! {
 }
 play_sb_custom! {
     pub enum SbPlay<'a> {
-        #(#PacketName(#PacketType),)
+        #(#PacketName(#PacketTypeLt),)
     }
 }
 impl<'a> SbPlay<'a> {
@@ -3922,7 +3922,7 @@ impl<'a> SbPlay<'a> {
         let mut cursor = std::io::Cursor::new(data);
         play_sb_tree! {
             id, pv,
-            {<#PacketType as Decode>::decode(&mut cursor).map(SbPlay::#PacketName)},
+            {<#PacketTypeLt as Decode>::decode(&mut cursor).map(SbPlay::#PacketName)},
             {Err(decode::Error::InvalidId)}
         }
     }

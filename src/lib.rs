@@ -12,3 +12,5 @@ pub use miners_net as net;
 pub use miners_packet as packet;
 #[cfg(feature = "protocol")]
 pub use miners_protocol as protocol;
+#[cfg(feature = "encoding")]
+pub use miners_encoding as encoding;

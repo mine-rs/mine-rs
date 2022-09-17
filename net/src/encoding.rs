@@ -4,6 +4,8 @@ use {
     miners_encoding::{encode, Encode},
 };
 
+use miners_encoding::{decode, Decode};
+
 use crate::packing::{Compression, Compressor, PackedData};
 
 /// Holds a mutable reference to a buffer with the following layout
@@ -42,6 +44,22 @@ impl<'encoded> EncodedData<'encoded> {
     /// data, else a panic might occur, for example when the vector is empty
     pub unsafe fn from_raw(raw: &mut Vec<u8>) -> EncodedData {
         EncodedData(raw)
+    }
+    pub fn to_packet(&self) -> decode::Result<(i32, &[u8])> {
+        let mut cursor = std::io::Cursor::new(&self.0[1..]);
+
+        let id = miners_encoding::attrs::Var::decode(&mut cursor)?.into_inner();
+        let pos = cursor.position() as usize;
+
+        Ok((id, &self.0[pos + 1..]))
+    }
+    pub fn into_packet(self) -> decode::Result<(i32, &'encoded [u8])> {
+        let mut cursor = std::io::Cursor::new(&self.0[1..]);
+
+        let id = miners_encoding::attrs::Var::decode(&mut cursor)?.into_inner();
+        let pos = cursor.position() as usize;
+
+        Ok((id, &self.0[pos + 1..]))
     }
 }
 impl<'encoded> EncodedData<'encoded> {

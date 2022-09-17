@@ -3,15 +3,24 @@ use quote::ToTokens;
 use syn::{Token, TypePath};
 
 pub struct ReplaceInput {
-    pub types: Vec<TypePath>,
+    pub types: Vec<(Option<Token![$]>, TypePath)>,
     pub rest: TokenStream,
 }
 
 impl syn::parse::Parse for ReplaceInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut types = vec![];
+        let mut dollar = None;
         while !input.lookahead1().peek(Token![;]) {
-            types.push(input.parse()?);
+            if dollar.is_none() && input.peek(Token![$]) {
+                dollar = Some(input.parse()?);
+                continue;
+            }
+            types.push((dollar, input.parse()?));
+            dollar = None;
+        }
+        if dollar.is_some() {
+            panic!("no lone `$` allowed")
         }
         let _: Token![;] = input.parse()?;
         let rest = input.parse()?;
@@ -22,7 +31,7 @@ impl syn::parse::Parse for ReplaceInput {
 pub fn match_group(
     mut iter: impl Iterator<Item = TokenTree>,
     ts: &mut TokenStream,
-    packets: &Vec<TypePath>,
+    packets: &Vec<(Option<Token![$]>, TypePath)>,
 ) {
     while let Some(t) = iter.next() {
         match t {
@@ -50,6 +59,7 @@ pub fn match_group(
 pub enum X {
     ReplaceWithPacket(Ident, Case),
     ReplaceWithPath,
+    ReplaceWithPathWithLifetimes,
     Group(Delimiter, Vec<X>),
     Keep(TokenTree),
 }
@@ -90,6 +100,7 @@ fn tttox(mut iter: impl Iterator<Item = TokenTree>, output: &mut Vec<X>) {
                     output.push(X::ReplaceWithPacket(id, Case::SCREAMING_SNAKE_CASE))
                 }
                 Some(TokenTree::Ident(id)) if id == "PacketType" => output.push(X::ReplaceWithPath),
+                Some(TokenTree::Ident(id)) if id == "PacketTypeLt" => output.push(X::ReplaceWithPathWithLifetimes),
                 Some(TokenTree::Group(g)) => {
                     let mut x = vec![];
                     tttox(g.stream().into_iter(), &mut x);
@@ -114,12 +125,12 @@ fn tttox(mut iter: impl Iterator<Item = TokenTree>, output: &mut Vec<X>) {
 fn replace_group(
     g: impl Iterator<Item = TokenTree>,
     output: &mut TokenStream,
-    packets: &Vec<TypePath>,
+    packets: &Vec<(Option<Token![$]>, TypePath)>
 ) {
     let mut innerout = vec![];
     tttox(g, &mut innerout);
-    for packet in packets {
-        fn replace(x: &X, packet: &TypePath, ts: &mut TokenStream) {
+    for (dollar, packet) in packets {
+        fn replace(x: &X, dollar: Option<&Token![$]>, packet: &TypePath, ts: &mut TokenStream) {
             match x {
                 X::ReplaceWithPacket(id, case) => {
                     let ident_name = packet
@@ -132,12 +143,25 @@ fn replace_group(
                     case.ident(ident_name.as_str(), id.span()).to_tokens(ts);
                 }
                 X::ReplaceWithPath => {
+                    if let Some(dollar) = dollar {
+                        dollar.to_tokens(ts);
+                    }
+                    let mut packet = packet.clone();
+                    for segm in packet.path.segments.iter_mut() {
+                        segm.arguments = syn::PathArguments::None;
+                    }
+                    packet.path.to_tokens(ts);
+                }
+                X::ReplaceWithPathWithLifetimes => {
+                    if let Some(dollar) = dollar {
+                        dollar.to_tokens(ts);
+                    }
                     packet.path.to_tokens(ts);
                 }
                 X::Group(delim, innerer) => {
                     let mut g = TokenStream::new();
                     for x in innerer {
-                        replace(x, packet, &mut g);
+                        replace(x, dollar, packet, &mut g);
                     }
                     Group::new(*delim, g).to_tokens(ts);
                 }
@@ -145,7 +169,7 @@ fn replace_group(
             }
         }
         for x in &innerout {
-            replace(x, packet, output)
+            replace(x, dollar.as_ref(), packet, output)
         }
     }
 }
