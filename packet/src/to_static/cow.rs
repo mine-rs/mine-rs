@@ -8,7 +8,7 @@ where
 {
     type Static = Cow<'static, T>;
     fn to_static(&self) -> Self::Static {
-        Self::Static::Owned(self.to_owned().into_owned())
+        Self::Static::Owned(self.clone().into_owned())
     }
     fn into_static(self) -> Self::Static {
         Self::Static::Owned(self.into_owned())

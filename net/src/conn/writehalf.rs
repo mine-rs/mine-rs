@@ -1,4 +1,4 @@
-mod writer;
+pub mod writer;
 use crate::{encoding::EncodedData, packing::Compression};
 use futures_lite::AsyncWrite;
 use std::io;

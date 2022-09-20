@@ -19,7 +19,7 @@ impl StringUuid {
 impl<'dec> Decode<'dec> for StringUuid {
     fn decode(cursor: &mut Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let string = <&str>::decode(cursor)?;
-        if string.len() != 0 {
+        if !string.is_empty() {
             Ok(StringUuid(Some(uuid::Uuid::parse_str(string)?)))
         } else {
             Ok(StringUuid(None))
