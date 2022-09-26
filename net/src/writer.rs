@@ -76,6 +76,6 @@ where
         Ok(())
     }
     pub async fn flush(&mut self) -> io::Result<()> {
-        self.inner.flush().await   
+        self.inner.flush().await
     }
 }

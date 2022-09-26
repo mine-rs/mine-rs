@@ -5,6 +5,4 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "A library for the chat type in minecraft"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]

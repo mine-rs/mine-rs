@@ -16,6 +16,18 @@ status_cb_custom! {
     pub enum CbStatus<'a> {
         #(#PacketName(#PacketTypeLt),)
     }
+    impl<'a> Packet for CbStatus<'a> {
+        fn id_for_version(&self, version: i32) -> Option<i32> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
+        }
+        fn encode_for_version(
+            &self,
+            version: i32,
+            writer: &mut impl std::io::Write,
+        ) -> Option<encode::Result<()>> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}
+        }
+    }
 }
 impl<'a> CbStatus<'a> {
     pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
@@ -40,6 +52,18 @@ parsing_tree! {
 status_sb_custom! {
     pub enum SbStatus {
         #(#PacketName(#PacketTypeLt),)
+    }
+    impl Packet for SbStatus {
+        fn id_for_version(&self, version: i32) -> Option<i32> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
+        }
+        fn encode_for_version(
+            &self,
+            version: i32,
+            writer: &mut impl std::io::Write,
+        ) -> Option<encode::Result<()>> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}
+        }
     }
 }
 impl SbStatus {

@@ -13,11 +13,6 @@ use aes::cipher::{InvalidLength, KeyIvInit};
 use futures_lite::ready;
 use futures_lite::{AsyncRead, AsyncReadExt};
 
-pub struct RawPacket<'encoded> {
-    id: i32,
-    data: EncodedData<'encoded>,
-}
-
 /// The maximum packet length, 8 MiB
 const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;
 

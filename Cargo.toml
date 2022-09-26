@@ -29,6 +29,8 @@ members = [
   "protocol",
   "protocol/derive",
   "net",
+  "nbt",
   "auth",
   "chat",
+  "to_static",
 ]

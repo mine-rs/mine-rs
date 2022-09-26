@@ -26,6 +26,8 @@ pub enum Error {
     UnexpectedEndOfSlice,
     #[error("invalid id")]
     InvalidId,
+    #[error("{0}")]
+    Custom(&'static str),
 }
 
 impl From<Infallible> for Error {

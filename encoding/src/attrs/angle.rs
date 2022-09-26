@@ -2,6 +2,17 @@ use crate::*;
 
 pub struct Angle(pub(crate) u8);
 
+#[cfg(feature = "to_static")]
+impl miners_to_static::ToStatic for Angle {
+    type Static = Angle;
+    fn to_static(&self) -> Self::Static {
+        Self::Static::from(*self.as_ref())
+    }
+    fn into_static(self) -> Self::Static {
+        self
+    }
+}
+
 impl From<u8> for Angle {
     fn from(angle: u8) -> Self {
         Angle(angle)

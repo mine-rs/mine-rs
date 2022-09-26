@@ -1,12 +1,12 @@
 mod bool;
+mod btreemap;
 mod cow;
 mod num;
 mod option;
 mod string;
+#[cfg(feature = "uuid")]
 mod uuid;
 mod vec;
-
-mod encoding;
 
 pub trait ToStatic {
     type Static: 'static;

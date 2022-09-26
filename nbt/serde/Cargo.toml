@@ -1,13 +1,15 @@
 [package]
-name = "miners-nbt"
+name = "miners-nbt-serde"
 version = "0.0.0-beta.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
+thiserror = "1.0.36"
 miners-encoding = { version = "0.0.0-beta.0", path = "../encoding" }
+serde = "1.0.145"
 miners-to-static = { version = "0.0.0-beta.0", path = "../to_static", optional = true }
 
 [features]
-default = ["to_static"]
-to_static = ["dep:miners-to-static"]
+default = ["value"]
+value = ["dep:miners-nbt"]

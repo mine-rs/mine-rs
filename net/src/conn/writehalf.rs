@@ -1,8 +1,8 @@
-pub mod writer;
-use crate::{encoding::EncodedData, packing::Compression};
+#[cfg(feature = "packet")]
+use crate::encoding::Encoder;
+use crate::{encoding::EncodedData, packing::Compression, writer::Writer};
 use futures_lite::AsyncWrite;
 use std::io;
-use writer::Writer;
 
 pub struct WriteHalf<W> {
     writer: Writer<W>,
@@ -42,5 +42,35 @@ where
     }
     pub async fn flush(&mut self) -> io::Result<()> {
         self.writer.flush().await
+    }
+}
+
+#[cfg(feature = "packet")]
+impl<W> WriteHalf<W>
+where
+    W: AsyncWrite + Unpin,
+{
+    pub async fn write_packet<P>(
+        &mut self,
+        version: i32,
+        packet: P,
+        encoder: &mut Encoder,
+    ) -> miners_encoding::encode::Result<()>
+    where
+        P: miners_packet::Packet,
+    {
+        if let Some(res) = encoder.encode_packet(version, packet) {
+            match res {
+                Ok(encoded) => Ok(self.write(encoded).await?),
+                Err(e) => Err(e),
+            }
+        } else {
+            #[cfg(debug_assertions)]
+            eprintln!(
+                "tried to write packet of type {0} in mismatching protocol version {version}",
+                std::any::type_name::<P>(),
+            );
+            Ok(())
+        }
     }
 }

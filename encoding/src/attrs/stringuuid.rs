@@ -16,6 +16,17 @@ impl StringUuid {
     }
 }
 
+#[cfg(feature = "to_static")]
+impl miners_to_static::ToStatic for StringUuid {
+    type Static = StringUuid;
+    fn to_static(&self) -> Self::Static {
+        self.clone()
+    }
+    fn into_static(self) -> Self::Static {
+        self
+    }
+}
+
 impl<'dec> Decode<'dec> for StringUuid {
     fn decode(cursor: &mut Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let string = <&str>::decode(cursor)?;

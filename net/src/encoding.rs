@@ -1,10 +1,8 @@
 #[cfg(feature = "encoding")]
 use {
     crate::helpers::varint_vec,
-    miners_encoding::{encode, Encode},
+    miners_encoding::{decode, encode, Decode, Encode},
 };
-
-use miners_encoding::{decode, Decode};
 
 use crate::packing::{Compression, Compressor, PackedData};
 
@@ -45,6 +43,7 @@ impl<'encoded> EncodedData<'encoded> {
     pub unsafe fn from_raw(raw: &mut Vec<u8>) -> EncodedData {
         EncodedData(raw)
     }
+    #[cfg(feature = "encoding")]
     pub fn to_packet(&self) -> decode::Result<(i32, &[u8])> {
         let mut cursor = std::io::Cursor::new(&self.0[1..]);
 
@@ -53,6 +52,7 @@ impl<'encoded> EncodedData<'encoded> {
 
         Ok((id, &self.0[pos + 1..]))
     }
+    #[cfg(feature = "encoding")]
     pub fn into_packet(self) -> decode::Result<(i32, &'encoded [u8])> {
         let mut cursor = std::io::Cursor::new(&self.0[1..]);
 
@@ -115,5 +115,22 @@ impl Encoder {
         varint_vec(id as u32, &mut self.encodebuf);
         data.encode(&mut self.encodebuf)?;
         Ok(EncodedData(&mut self.encodebuf))
+    }
+    #[cfg(feature = "packet")]
+    pub fn encode_packet<P>(
+        &mut self,
+        version: i32,
+        packet: P,
+    ) -> Option<encode::Result<EncodedData>>
+    where
+        P: miners_packet::Packet,
+    {
+        self.encodebuf.clear();
+        self.encodebuf.push(0);
+        match packet.encode_for_version(version, &mut self.encodebuf) {
+            Some(Ok(())) => Some(Ok(EncodedData(&mut self.encodebuf))),
+            Some(Err(e)) => Some(Err(e)),
+            None => None,
+        }
     }
 }

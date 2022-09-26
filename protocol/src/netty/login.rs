@@ -40,6 +40,18 @@ login_cb_custom! {
     pub enum CbLogin<'a> {
         #(#PacketName(#PacketTypeLt),)
     }
+    impl<'a> Packet for CbLogin<'a> {
+        fn id_for_version(&self, version: i32) -> Option<i32> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
+        }
+        fn encode_for_version(
+            &self,
+            version: i32,
+            writer: &mut impl std::io::Write,
+        ) -> Option<encode::Result<()>> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}
+        }
+    }
 }
 impl<'a> CbLogin<'a> {
     pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
@@ -82,6 +94,18 @@ parsing_tree! {
 login_sb_custom! {
     pub enum SbLogin<'a> {
         #(#PacketName(#PacketTypeLt),)
+    }
+    impl<'a> Packet for SbLogin<'a> {
+        fn id_for_version(&self, version: i32) -> Option<i32> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
+        }
+        fn encode_for_version(
+            &self,
+            version: i32,
+            writer: &mut impl std::io::Write,
+        ) -> Option<encode::Result<()>> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}
+        }
     }
 }
 impl<'a> SbLogin<'a> {

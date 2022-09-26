@@ -156,10 +156,8 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
                 })
             });
         let mut generics = quote! {};
-        let mut where_clause = quote! {};
         for lts in ltsiter {
-            quote! {, #lts}.to_tokens(&mut generics);
-            quote! {'dec: #lts,}.to_tokens(&mut where_clause);
+            quote! {#lts,}.to_tokens(&mut generics);
         }
         let mut match_body = quote! {};
         for (id, lo, hi) in mappings {
@@ -170,12 +168,19 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
         }
         quote! {_ => None}.to_tokens(&mut match_body);
         quote! {
-            impl<'dec #generics> Packet<'dec> for #prefix #path
-            where #where_clause {
-                fn id_for_version(version: i32) -> Option<i32> {
+            impl<#generics> Packet for #prefix #path {
+                fn id_for_version(&self, version: i32) -> Option<i32> {
                     match version {
                         #match_body
                     }
+                }
+                fn encode_for_version(&self, version: i32, writer: &mut impl ::std::io::Write)
+                -> Option<::miners_encoding::encode::Result<()>> {
+                    let id = match version { #match_body }?;
+                    if let Err(e) = ::miners_encoding::Encode::encode(&::miners_encoding::attrs::Var::from(id), writer) {
+                        return Some(Err(e))
+                    }
+                    Some(::miners_encoding::Encode::encode(self, writer))
                 }
             }
         }

@@ -2967,17 +2967,16 @@ play_cb_custom! {
     pub enum CbPlay<'a> {
         #(#PacketName(#PacketTypeLt),)
     }
-    impl ToStatic for CbPlay<'_> {
-        type Static = CbPlay<'static>;
-        fn to_static(&self) -> Self::Static {
-            match self {
-                #(CbPlay::#PacketName(#packet_name) => Self::Static::#PacketName(ToStatic::to_static(#packet_name)),)
-            }
+    impl<'a> Packet for CbPlay<'a> {
+        fn id_for_version(&self, version: i32) -> Option<i32> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
         }
-        fn into_static(self) -> Self::Static {
-            match self {
-                #(CbPlay::#PacketName(#packet_name) => Self::Static::#PacketName(ToStatic::into_static(#packet_name)),)
-            }
+        fn encode_for_version(
+            &self,
+            version: i32,
+            writer: &mut impl std::io::Write,
+        ) -> Option<encode::Result<()>> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}
         }
     }
 }
@@ -3915,6 +3914,18 @@ parsing_tree! {
 play_sb_custom! {
     pub enum SbPlay<'a> {
         #(#PacketName(#PacketTypeLt),)
+    }
+    impl<'a> Packet for SbPlay<'a> {
+        fn id_for_version(&self, version: i32) -> Option<i32> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
+        }
+        fn encode_for_version(
+            &self,
+            version: i32,
+            writer: &mut impl std::io::Write,
+        ) -> Option<encode::Result<()>> {
+            match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}
+        }
     }
 }
 impl<'a> SbPlay<'a> {

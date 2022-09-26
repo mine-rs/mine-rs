@@ -5,19 +5,19 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "A library for low level minecraft networking"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 cfb8 = "0.8.1"
 aes = "0.8.1"
 flate2 = "1.0.24"
 miners-encoding = { version = "0.0.0-beta.0", optional = true, path = "../encoding" }
+miners-packet = { version = "0.0.0-beta.0", optional = true, path = "../packet" }
 futures-lite = "1.12.0"
 once_cell = { version = "1.14.0", optional = true }
 parking_lot = { version = "0.12.1", optional = true }
 futures-channel = { version = "0.3.24", optional = true }
 
 [features]
-default = ["encoding", "workpool"]
+default = ["encoding", "packet", "workpool"]
+packet = ["encoding", "dep:miners-packet"]
 encoding = ["dep:miners-encoding"]
 workpool = ["dep:once_cell", "dep:parking_lot", "dep:futures-channel"]

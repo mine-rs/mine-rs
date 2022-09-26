@@ -100,7 +100,9 @@ fn tttox(mut iter: impl Iterator<Item = TokenTree>, output: &mut Vec<X>) {
                     output.push(X::ReplaceWithPacket(id, Case::SCREAMING_SNAKE_CASE))
                 }
                 Some(TokenTree::Ident(id)) if id == "PacketType" => output.push(X::ReplaceWithPath),
-                Some(TokenTree::Ident(id)) if id == "PacketTypeLt" => output.push(X::ReplaceWithPathWithLifetimes),
+                Some(TokenTree::Ident(id)) if id == "PacketTypeLt" => {
+                    output.push(X::ReplaceWithPathWithLifetimes)
+                }
                 Some(TokenTree::Group(g)) => {
                     let mut x = vec![];
                     tttox(g.stream().into_iter(), &mut x);
@@ -125,7 +127,7 @@ fn tttox(mut iter: impl Iterator<Item = TokenTree>, output: &mut Vec<X>) {
 fn replace_group(
     g: impl Iterator<Item = TokenTree>,
     output: &mut TokenStream,
-    packets: &Vec<(Option<Token![$]>, TypePath)>
+    packets: &Vec<(Option<Token![$]>, TypePath)>,
 ) {
     let mut innerout = vec![];
     tttox(g, &mut innerout);
