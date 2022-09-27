@@ -27,9 +27,69 @@ impl<'a> ToStatic for Compound<'a> {
 impl<'a> Encode for Compound<'a> {
     fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         for (name, value) in self.0.iter() {
-            u16::try_from(name.as_bytes().len())?.encode(writer)?;
-            writer.write_all(name.as_bytes())?;
-            value.encode(writer)?;
+            let key = Mutf8::from(name);
+            match value {
+                Value::Byte(byte) => {
+                    NbtTag::Byte.encode(writer)?;
+                    key.encode(writer)?;
+                    byte.encode(writer)?;
+                }
+                Value::Short(short) => {
+                    NbtTag::Short.encode(writer)?;
+                    key.encode(writer)?;
+                    short.encode(writer)?;
+                }
+                Value::Int(int) => {
+                    NbtTag::Int.encode(writer)?;
+                    key.encode(writer)?;
+                    int.encode(writer)?;
+                }
+                Value::Long(long) => {
+                    NbtTag::Long.encode(writer)?;
+                    key.encode(writer)?;
+                    long.encode(writer)?;
+                }
+                Value::Float(float) => {
+                    NbtTag::Float.encode(writer)?;
+                    key.encode(writer)?;
+                    float.encode(writer)?;
+                }
+                Value::Double(double) => {
+                    NbtTag::Double.encode(writer)?;
+                    key.encode(writer)?;
+                    double.encode(writer)?;
+                }
+                Value::ByteArray(bytearray) => {
+                    NbtTag::ByteArray.encode(writer)?;
+                    key.encode(writer)?;
+                    <&Counted<_, i32>>::from(bytearray).encode(writer)?;
+                }
+                Value::String(string) => {
+                    NbtTag::String.encode(writer)?;
+                    key.encode(writer)?;
+                    Mutf8::from(string).encode(writer)?;
+                }
+                Value::List(list) => {
+                    NbtTag::List.encode(writer)?;
+                    key.encode(writer)?;
+                    list.encode(writer)?;
+                },
+                Value::Compound(compound) => {
+                    NbtTag::Compound.encode(writer)?;
+                    key.encode(writer)?;
+                    compound.encode(writer)?;
+                },
+                Value::IntArray(intarray) => {
+                    NbtTag::IntArray.encode(writer)?;
+                    key.encode(writer)?;
+                    <&Counted<_, i32>>::from(intarray).encode(writer)?;
+                },
+                Value::LongArray(longarray) => {
+                    NbtTag::LongArray.encode(writer)?;
+                    key.encode(writer)?;
+                    <&Counted<_, i32>>::from(longarray).encode(writer)?;
+                },
+            }
         }
         NbtTag::End.encode(writer)
     }

@@ -15,6 +15,53 @@ pub enum Value<'a> {
     IntArray(Vec<i32>),
     LongArray(Vec<i64>),
 }
+macro_rules! from {
+    ($($case:ident $ufrom:ident $ifrom:ident;)+) => {$(
+        impl<'a> From<$ifrom> for Value<'a> {
+            fn from(val: $ifrom) -> Self {
+                Value::$case(val)
+            }
+        }
+        impl<'a> From<$ufrom> for Value<'a> {
+            fn from(val: $ufrom) -> Self {
+                Value::$case(val as $ifrom)
+            }
+        }
+    )+};
+    ($($case:ident $from:ty;)+) => {$(
+        impl<'a> From<$from> for Value<'a> {
+            fn from(val: $from) -> Self {
+                Value::$case(val)
+            }
+        }
+    )+}
+}
+from!{
+    Byte u8 i8;
+    Short u16 i16;
+    Int u32 i32;
+    Long u64 i64;
+}
+from!{
+    Float f32;
+    Double f64;
+    ByteArray Cow<'a, [u8]>;
+    String Cow<'a, str>;
+    List List<'a>;
+    Compound Compound<'a>;
+    IntArray Vec<i32>;
+    LongArray Vec<i64>;
+}
+impl<'a> From<&'a str> for Value<'a> {
+    fn from(val: &'a str) -> Self {
+        Value::String(val.into())
+    }
+}
+impl<'a> From<String> for Value<'a> {
+    fn from(val: String) -> Self {
+        Value::String(val.into())
+    }
+}
 
 #[cfg(feature = "to_static")]
 impl<'a> ToStatic for Value<'a> {
@@ -49,61 +96,6 @@ impl<'a> ToStatic for Value<'a> {
             Self::Compound(compound) => Value::Compound(compound.into_static()),
             Self::IntArray(intarray) => Value::IntArray(intarray.into_static()),
             Self::LongArray(longarray) => Value::LongArray(longarray.into_static()),
-        }
-    }
-}
-
-impl<'a> Encode for Value<'a> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
-        match self {
-            Self::Byte(byte) => {
-                NbtTag::Byte.encode(writer)?;
-                byte.encode(writer)
-            }
-            Self::Short(short) => {
-                NbtTag::Short.encode(writer)?;
-                short.encode(writer)
-            }
-            Self::Int(int) => {
-                NbtTag::Int.encode(writer)?;
-                int.encode(writer)
-            }
-            Self::Long(long) => {
-                NbtTag::Long.encode(writer)?;
-                long.encode(writer)
-            }
-            Self::Float(float) => {
-                NbtTag::Float.encode(writer)?;
-                float.encode(writer)
-            }
-            Self::Double(double) => {
-                NbtTag::Double.encode(writer)?;
-                double.encode(writer)
-            }
-            Self::ByteArray(bytearray) => {
-                NbtTag::ByteArray.encode(writer)?;
-                <&Counted<_, i32>>::from(bytearray).encode(writer)
-            }
-            Self::String(string) => {
-                NbtTag::String.encode(writer)?;
-                Mutf8::from(string).encode(writer)
-            }
-            Self::List(list) => {
-                NbtTag::List.encode(writer)?;
-                list.encode(writer)
-            }
-            Self::Compound(compound) => {
-                NbtTag::Compound.encode(writer)?;
-                compound.encode(writer)
-            }
-            Self::IntArray(intarray) => {
-                NbtTag::IntArray.encode(writer)?;
-                <&Counted<_, i32>>::from(intarray).encode(writer)
-            }
-            Self::LongArray(longarray) => {
-                NbtTag::LongArray.encode(writer)?;
-                <&Counted<_, i32>>::from(longarray).encode(writer)
-            }
         }
     }
 }
