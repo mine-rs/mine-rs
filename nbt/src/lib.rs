@@ -2,6 +2,7 @@ pub mod compound;
 pub mod list;
 pub mod tag;
 pub mod value;
+pub mod macros;
 
 pub use compound::Compound;
 pub use list::List;
