@@ -1,5 +1,6 @@
 use crate::*;
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value<'a> {
     Byte(i8),
     Short(i16),

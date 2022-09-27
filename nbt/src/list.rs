@@ -1,5 +1,6 @@
 use crate::*;
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum List<'a> {
     Byte(Cow<'a, [i8]>),
     Short(Vec<i16>),

@@ -1,5 +1,6 @@
 use miners_encoding::{decode, Decode, Encode};
 
+#[derive(Debug)]
 pub enum NbtTag {
     End = 0,
     Byte = 1,

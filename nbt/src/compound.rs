@@ -1,11 +1,11 @@
 use crate::*;
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone, PartialEq)]
 #[repr(transparent)]
 pub struct Compound<'a>(BTreeMap<Cow<'a, str>, Value<'a>>);
 
 impl<'a> Compound<'a> {
-    pub fn new(map: BTreeMap<Cow<'a, str>, Value<'a>>) -> Self {
+    pub const fn new(map: BTreeMap<Cow<'a, str>, Value<'a>>) -> Self {
         Compound(map)
     }
     pub fn into_map(self) -> BTreeMap<Cow<'a, str>, Value<'a>> {
@@ -41,12 +41,16 @@ where
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let mut this = BTreeMap::default();
         loop {
-            let tag = match NbtTag::decode(cursor)? {
-                NbtTag::End => break Ok(Compound(this)),
-                tag => tag,
+            let tag = match NbtTag::decode(cursor) {
+                Ok(NbtTag::End) => break Ok(Compound(this)),
+                Err(decode::Error::Io(e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                    break Ok(Compound(this))
+                }
+                Err(e) => return Err(e),
+                Ok(tag) => tag,
             };
-            let key = Cow::Borrowed(&<&Counted<str, u16>>::decode(cursor)?.inner);
             use std::collections::btree_map::Entry;
+            let key = Mutf8::decode(cursor)?.0;
             let entry = match this.entry(key) {
                 Entry::Occupied(_) => {
                     return Err(decode::Error::Custom("duplicate key in compound"))
@@ -61,12 +65,18 @@ where
                 NbtTag::Long => Value::Long(i64::decode(cursor)?),
                 NbtTag::Float => Value::Float(f32::decode(cursor)?),
                 NbtTag::Double => Value::Double(f64::decode(cursor)?),
-                NbtTag::ByteArray => Value::ByteArray(Cow::decode(cursor)?),
+                NbtTag::ByteArray => {
+                    Value::ByteArray(<Counted<Cow<[u8]>, i32>>::decode(cursor)?.inner)
+                }
                 NbtTag::String => Value::String(Mutf8::decode(cursor)?.0),
                 NbtTag::List => Value::List(List::decode(cursor)?),
                 NbtTag::Compound => Value::Compound(Compound::decode(cursor)?),
-                NbtTag::IntArray => Value::IntArray(Vec::decode(cursor)?),
-                NbtTag::LongArray => Value::LongArray(Vec::decode(cursor)?),
+                NbtTag::IntArray => {
+                    Value::IntArray(<Counted<Vec<i32>, i32>>::decode(cursor)?.inner)
+                }
+                NbtTag::LongArray => {
+                    Value::LongArray(<Counted<Vec<i64>, i32>>::decode(cursor)?.inner)
+                }
             };
             entry.insert(value);
         }
