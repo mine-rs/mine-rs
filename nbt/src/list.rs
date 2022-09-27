@@ -1,10 +1,4 @@
-use std::borrow::Cow;
-
-use miners_encoding::{attrs::Counted, decode, Decode, Encode};
-#[cfg(feature = "to_static")]
-use miners_to_static::ToStatic;
-
-use crate::{compound::Compound, tag::NbtTag};
+use crate::*;
 
 pub enum List<'a> {
     Byte(Cow<'a, [i8]>),
@@ -101,7 +95,7 @@ impl<'a> Encode for List<'a> {
                 NbtTag::String.encode(writer)?;
                 i32::try_from(strings.len())?.encode(writer)?;
                 for string in strings {
-                    <&Counted<_, i32>>::from(string).encode(writer)?;
+                    Mutf8::from(string).encode(writer)?;
                 }
                 Ok(())
             }
@@ -161,7 +155,14 @@ where
             NbtTag::Float => List::Float(<Counted<_, i32>>::decode(cursor)?.inner),
             NbtTag::Double => List::Double(<Counted<_, i32>>::decode(cursor)?.inner),
             NbtTag::ByteArray => List::ByteArray(<Counted<_, i32>>::decode(cursor)?.inner),
-            NbtTag::String => List::String(<Counted<_, i32>>::decode(cursor)?.inner),
+            NbtTag::String => List::String({
+                let len = usize::try_from(i32::decode(cursor)?)?;
+                let mut v = Vec::with_capacity(len);
+                for _ in 0..len {
+                    v.push(Mutf8::decode(cursor)?.0)
+                }
+                v
+            }),
             NbtTag::List => List::List(<Counted<_, i32>>::decode(cursor)?.inner),
             NbtTag::Compound => List::Compound(<Counted<_, i32>>::decode(cursor)?.inner),
             NbtTag::IntArray => List::IntArray(<Counted<_, i32>>::decode(cursor)?.inner),

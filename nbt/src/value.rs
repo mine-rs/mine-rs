@@ -1,10 +1,4 @@
-use std::borrow::Cow;
-
-use miners_encoding::{attrs::Counted, Encode};
-#[cfg(feature = "to_static")]
-use miners_to_static::ToStatic;
-
-use crate::{compound::Compound, list::List, tag::NbtTag};
+use crate::*;
 
 pub enum Value<'a> {
     Byte(i8),
@@ -91,7 +85,7 @@ impl<'a> Encode for Value<'a> {
             }
             Self::String(string) => {
                 NbtTag::String.encode(writer)?;
-                <&Counted<_, u16>>::from(string).encode(writer)
+                Mutf8::from(string).encode(writer)
             }
             Self::List(list) => {
                 NbtTag::List.encode(writer)?;

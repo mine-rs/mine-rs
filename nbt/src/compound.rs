@@ -62,7 +62,7 @@ where
                 NbtTag::Float => Value::Float(f32::decode(cursor)?),
                 NbtTag::Double => Value::Double(f64::decode(cursor)?),
                 NbtTag::ByteArray => Value::ByteArray(Cow::decode(cursor)?),
-                NbtTag::String => Value::String(Cow::decode(cursor)?),
+                NbtTag::String => Value::String(Mutf8::decode(cursor)?.0),
                 NbtTag::List => Value::List(List::decode(cursor)?),
                 NbtTag::Compound => Value::Compound(Compound::decode(cursor)?),
                 NbtTag::IntArray => Value::IntArray(Vec::decode(cursor)?),
