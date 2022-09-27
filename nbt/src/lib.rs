@@ -1,8 +1,8 @@
 pub mod compound;
 pub mod list;
+pub mod macros;
 pub mod tag;
 pub mod value;
-pub mod macros;
 
 pub use compound::Compound;
 pub use list::List;
@@ -35,6 +35,7 @@ impl<'a> Encode for Mutf8<'a> {
 impl<'a> Mutf8<'a> {
     #[allow(clippy::ptr_arg)]
     fn from<'string>(string: &'string Cow<'a, str>) -> &'string Mutf8<'a> {
+        // SAFETY: Mutf8 is #[repr(transparent)]
         unsafe { std::mem::transmute(string) }
     }
 }

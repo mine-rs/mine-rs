@@ -36,13 +36,13 @@ macro_rules! from {
         }
     )+}
 }
-from!{
+from! {
     Byte u8 i8;
     Short u16 i16;
     Int u32 i32;
     Long u64 i64;
 }
-from!{
+from! {
     Float f32;
     Double f64;
     ByteArray Cow<'a, [u8]>;

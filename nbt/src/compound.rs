@@ -73,22 +73,22 @@ impl<'a> Encode for Compound<'a> {
                     NbtTag::List.encode(writer)?;
                     key.encode(writer)?;
                     list.encode(writer)?;
-                },
+                }
                 Value::Compound(compound) => {
                     NbtTag::Compound.encode(writer)?;
                     key.encode(writer)?;
                     compound.encode(writer)?;
-                },
+                }
                 Value::IntArray(intarray) => {
                     NbtTag::IntArray.encode(writer)?;
                     key.encode(writer)?;
                     <&Counted<_, i32>>::from(intarray).encode(writer)?;
-                },
+                }
                 Value::LongArray(longarray) => {
                     NbtTag::LongArray.encode(writer)?;
                     key.encode(writer)?;
                     <&Counted<_, i32>>::from(longarray).encode(writer)?;
-                },
+                }
             }
         }
         NbtTag::End.encode(writer)

@@ -14,7 +14,7 @@ impl<T> From<T> for Rest<T> {
 impl<T: ?Sized> From<&T> for &Rest<T> {
     fn from(inner: &T) -> Self {
         // SAFETY: This is ok because Counted is #[repr(transparent)]
-        unsafe { &*(inner as *const T as *const Rest<T>) }
+        unsafe { std::mem::transmute(inner) }
     }
 }
 

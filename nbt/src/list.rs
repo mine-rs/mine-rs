@@ -6,8 +6,8 @@ pub enum List<'a> {
     Short(Vec<i16>),
     Int(Vec<i32>),
     Long(Vec<i64>),
-    Float(Vec<f32>),
-    Double(Vec<f64>),
+    Float(Cow<'a, [f32]>),
+    Double(Cow<'a, [f64]>),
     ByteArray(Vec<Cow<'a, [u8]>>),
     String(Vec<Cow<'a, str>>),
     List(Vec<List<'a>>),
@@ -61,8 +61,11 @@ impl<'a> Encode for List<'a> {
         match self {
             Self::Byte(bytes) => {
                 NbtTag::Byte.encode(writer)?;
-                <&Counted<_, i32>>::from(unsafe { &*(&bytes[..] as *const [i8] as *const [u8]) })
-                    .encode(writer)
+                <&Counted<[u8], i32>>::from(unsafe {
+                    let (data, len) = (bytes.as_ptr(), bytes.len());
+                    std::slice::from_raw_parts(data as *const u8, len)
+                })
+                .encode(writer)
             }
             Self::Short(shorts) => {
                 NbtTag::Short.encode(writer)?;
@@ -147,7 +150,8 @@ where
             NbtTag::Byte => {
                 let bytes = &<&Counted<[u8], i32>>::decode(cursor)?.inner;
                 List::Byte(Cow::Borrowed(unsafe {
-                    &*(bytes as *const [u8] as *const [i8])
+                    let (data, len) = (bytes.as_ptr(), bytes.len());
+                    std::slice::from_raw_parts(data as *const i8, len)
                 }))
             }
             NbtTag::Short => List::Short(<Counted<_, i32>>::decode(cursor)?.inner),
@@ -170,4 +174,109 @@ where
             NbtTag::LongArray => List::LongArray(<Counted<_, i32>>::decode(cursor)?.inner),
         })
     }
+}
+
+macro_rules! from {
+    ($($case:ident $ufrom:ident $ifrom:ident;)+) => {$(
+        impl<'a> From<&[$ifrom]> for List<'a> {
+            fn from(val: &[$ifrom]) -> Self {
+                List::$case(val.to_vec())
+            }
+        }
+        impl<'a> From<&[$ufrom]> for List<'a> {
+            fn from(val: &[$ufrom]) -> Self {
+                List::$case({
+                    let (data, length) = (val.as_ptr(), val.len());
+                    unsafe { std::slice::from_raw_parts(data as *const $ifrom, length) }
+                }.to_vec())
+            }
+        }
+        impl<'a> From<Vec<$ifrom>> for List<'a> {
+            fn from(val: Vec<$ifrom>) -> Self {
+                List::$case(val)
+            }
+        }
+        impl<'a> From<Vec<$ufrom>> for List<'a> {
+            fn from(val: Vec<$ufrom>) -> Self {
+                List::$case({
+                    // todo! replace this with into_raw_parts when available
+                    let mut val = core::mem::ManuallyDrop::new(val);
+                    let (ptr, length, capacity) = (val.as_mut_ptr(), val.len(), val.capacity());
+                    unsafe { Vec::from_raw_parts(ptr as *mut $ifrom, length, capacity) }
+                })
+            }
+        }
+    )+};
+    (@Vec $($case:ident $from:ty;)+) => {$(
+        impl<'a> From<&[$from]> for List<'a> {
+            fn from(val: &[$from]) -> Self {
+                List::$case(val.to_vec())
+            }
+        }
+        impl<'a> From<Vec<$from>> for List<'a> {
+            fn from(val: Vec<$from>) -> Self {
+                List::$case(val)
+            }
+        }
+    )+};
+    ($($case:ident Cow<'a, [$from:ty]>;)+) => {$(
+        impl<'a> From<&'a [$from]> for List<'a> {
+            fn from(val: &'a [$from]) -> Self {
+                List::$case(Cow::Borrowed(val))
+            }
+        }
+        impl<'a> From<Cow<'a, [$from]>> for List<'a> {
+            fn from(val: Cow<'a, [$from]>) -> Self {
+                List::$case(val)
+            }
+        }
+    )+}
+}
+impl<'a> From<&'a [u8]> for List<'a> {
+    fn from(val: &'a [u8]) -> Self {
+        Cow::Borrowed(val).into()
+    }
+}
+impl<'a> From<Cow<'a, [u8]>> for List<'a> {
+    fn from(val: Cow<'a, [u8]>) -> Self {
+        List::Byte(match val {
+            Cow::Borrowed(bytes) => {
+                let (data, len) = (bytes.as_ptr(), bytes.len());
+                Cow::Borrowed(unsafe { std::slice::from_raw_parts(data as *const i8, len) })
+            }
+            Cow::Owned(vec) => {
+                // todo! replace this with into_raw_parts when available
+                let mut vec = core::mem::ManuallyDrop::new(vec);
+                let (ptr, length, capacity) = (vec.as_mut_ptr(), vec.len(), vec.capacity());
+                Cow::Owned(unsafe { Vec::from_raw_parts(ptr as *mut i8, length, capacity) })
+            }
+        })
+    }
+}
+impl<'a> From<&'a [i8]> for List<'a> {
+    fn from(val: &'a [i8]) -> Self {
+        Cow::Borrowed(val).into()
+    }
+}
+impl<'a> From<Cow<'a, [i8]>> for List<'a> {
+    fn from(val: Cow<'a, [i8]>) -> Self {
+        List::Byte(val)
+    }
+}
+from! {
+    Short u16 i16;
+    Int u32 i32;
+    Long u64 i64;
+}
+from! {
+    Float Cow<'a, [f32]>;
+    Double Cow<'a, [f64]>;
+}
+from! {@Vec
+    ByteArray Cow<'a, [u8]>;
+    String Cow<'a, str>;
+    List List<'a>;
+    Compound Compound<'a>;
+    IntArray Vec<i32>;
+    LongArray Vec<i64>;
 }

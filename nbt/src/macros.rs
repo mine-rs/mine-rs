@@ -9,8 +9,8 @@ macro_rules! nbt {
         })
     };
     (@value $ident:ident) => { $ident };
-    (@value $lit:literal) => { $lit.into() };
-    (@value $other:tt) => { nbt!($other).into() };
+    (@value $lit:literal) => { $crate::Value::from($lit) };
+    (@value $other:tt) => { $crate::Value::from(nbt!($other)) };
     ([L; $($lit:literal),* $(,)?]) => { nbt!([Long; $($lit),*]) };
     ([Long; $($lit:literal),* $(,)?]) => {
         $crate::Value::LongArray(vec![$($lit),*])
@@ -19,4 +19,10 @@ macro_rules! nbt {
     ([Int; $($lit:literal),* $(,)?]) => {
         $crate::Value::IntArray(vec![$($lit),*])
     };
+    ([$($lit:literal),* $(,)?]) => {
+        $crate::List::from(&[$($lit),*][..])
+    };
+    ([$($t:tt),* $(,)?]) => {
+        $crate::List::from(&[$(nbt!($t)),*][..])
+    }
 }
