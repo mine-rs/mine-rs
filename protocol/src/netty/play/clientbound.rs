@@ -1,3 +1,7 @@
+/// Entity metadata
+mod emd;
+pub use emd::*;
+
 use crate::netty::Position;
 use crate::*;
 use attrs::*;
