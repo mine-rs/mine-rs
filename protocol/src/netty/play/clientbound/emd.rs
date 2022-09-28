@@ -1,3 +1,5 @@
+// TODO: Implement a new BtreeMap type that uses a u8 for the key: 5 bits for the index and 3 bits for the type and unions for the values
+// this is definitely not necessary and should be pretty low on the todo list
 use std::io::Read;
 use std::collections::BTreeMap;
 
