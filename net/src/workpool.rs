@@ -1,4 +1,7 @@
-use std::{collections::VecDeque, sync::atomic::AtomicUsize};
+use std::{
+    collections::VecDeque,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 use futures_channel::oneshot::Sender;
 use parking_lot::Mutex;
@@ -62,19 +65,27 @@ pub(crate) async unsafe fn request_partial_encryption(
 }
 
 fn spawn_workthread() {
-    std::thread::spawn(|| loop {
-        let mut mutex = ENCRYPTION_WORKQUEUE.lock();
-        if mutex.is_empty() {
-            WORKTHREADS_CONDVAR.wait(&mut mutex);
-        }
-        if let Some(((mut buf, len_from_end, mut enc), send)) = mutex.pop_front() {
-            drop(mutex);
-            let start = buf.len() - len_from_end;
-            encrypt(&mut buf[start..], &mut enc);
-            if send.send((buf, enc)).is_err() {
-                eprintln!("async cancellation in encryption workthread");
+    static ID: AtomicUsize = AtomicUsize::new(0);
+    std::thread::Builder::new()
+        .name(format!(
+            "miners-encryption-{}",
+            ID.fetch_add(1, Ordering::Relaxed)
+        ))
+        .stack_size(8192) // This can probably be even less but if we get a stackoverflow this line is probably to blame
+        .spawn(|| loop {
+            let mut mutex = ENCRYPTION_WORKQUEUE.lock();
+            if mutex.is_empty() {
+                WORKTHREADS_CONDVAR.wait(&mut mutex);
             }
-        }
-    });
+            if let Some(((mut buf, len_from_end, mut enc), send)) = mutex.pop_front() {
+                drop(mutex);
+                let start = buf.len() - len_from_end;
+                encrypt(&mut buf[start..], &mut enc);
+                if send.send((buf, enc)).is_err() {
+                    eprintln!("async cancellation in encryption workthread");
+                }
+            }
+        })
+        .unwrap();
     ENCRYPTION_THREADCOUNT.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
 }
