@@ -9,6 +9,7 @@ mod str;
 mod string;
 mod uuid;
 mod vec;
+mod option;
 
 pub type Result<T> = std::result::Result<T, Error>;
 

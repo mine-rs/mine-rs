@@ -8,6 +8,7 @@ mod str;
 mod string;
 mod uuid;
 mod vec;
+mod option;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -17,6 +18,8 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error(transparent)]
     IntError(#[from] std::num::TryFromIntError),
+    #[error("{0}")]
+    Custom(&'static str),
     // StringTooLong,
     // InvalidCount,
 }
