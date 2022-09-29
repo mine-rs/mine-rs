@@ -1,8 +1,4 @@
-/// Entity metadata
-mod emd;
-pub use emd::*;
-
-use crate::netty::Position;
+use crate::netty::types::position::Position;
 use crate::*;
 use attrs::*;
 

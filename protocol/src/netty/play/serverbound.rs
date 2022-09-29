@@ -1,6 +1,5 @@
-use crate::*;
+use crate::{*, netty::types::position::Position};
 
-use crate::netty::Position;
 use attrs::*;
 use std::borrow::Cow;
 use uuid::Uuid;
