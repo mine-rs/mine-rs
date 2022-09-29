@@ -12,7 +12,7 @@ pub use value::Value;
 pub(crate) use miners_encoding::{attrs::Counted, decode, Decode, Encode};
 #[cfg(feature = "to_static")]
 pub(crate) use miners_to_static::ToStatic;
-pub(crate) use std::{borrow::Cow, collections::BTreeMap, hint::unreachable_unchecked};
+pub(crate) use std::{borrow::Cow, collections::HashMap, hint::unreachable_unchecked};
 
 #[repr(transparent)]
 pub(crate) struct Mutf8<'a>(Cow<'a, str>);

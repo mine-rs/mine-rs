@@ -3,7 +3,7 @@ macro_rules! nbt {
     ({ $($key:tt : $value:tt),* $(,)? }) => {
         $crate::Compound::new({
             #[allow(unused_mut)]
-            let mut map = ::std::collections::BTreeMap::<::std::borrow::Cow<str>, $crate::Value>::new();
+            let mut map = ::std::collections::HashMap::<::std::borrow::Cow<str>, $crate::Value>::new();
             $(map.insert($key.into(), nbt!(@value $value));)*
             map
         })

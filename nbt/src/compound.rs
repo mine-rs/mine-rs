@@ -2,13 +2,13 @@ use crate::*;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 #[repr(transparent)]
-pub struct Compound<'a>(BTreeMap<Cow<'a, str>, Value<'a>>);
+pub struct Compound<'a>(HashMap<Cow<'a, str>, Value<'a>>);
 
 impl<'a> Compound<'a> {
-    pub const fn new(map: BTreeMap<Cow<'a, str>, Value<'a>>) -> Self {
+    pub const fn new(map: HashMap<Cow<'a, str>, Value<'a>>) -> Self {
         Compound(map)
     }
-    pub fn into_map(self) -> BTreeMap<Cow<'a, str>, Value<'a>> {
+    pub fn into_map(self) -> HashMap<Cow<'a, str>, Value<'a>> {
         self.0
     }
 }
@@ -99,7 +99,7 @@ where
     'dec: 'a,
 {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let mut this = BTreeMap::default();
+        let mut this = HashMap::default();
         loop {
             let tag = match NbtTag::decode(cursor) {
                 Ok(NbtTag::End) => break Ok(Compound(this)),
@@ -109,7 +109,7 @@ where
                 Err(e) => return Err(e),
                 Ok(tag) => tag,
             };
-            use std::collections::btree_map::Entry;
+            use std::collections::hash_map::Entry;
             let key = Mutf8::decode(cursor)?.0;
             let entry = match this.entry(key) {
                 Entry::Occupied(_) => {

@@ -7,6 +7,7 @@ mod string;
 #[cfg(feature = "uuid")]
 mod uuid;
 mod vec;
+mod hashmap;
 
 pub trait ToStatic {
     type Static: 'static;
