@@ -1,5 +1,6 @@
 use miners_nbt::Compound;
 use crate::*;
+use attrs::*;
 
 #[derive(ToStatic, Clone, Debug, PartialEq)]
 pub enum Slot0<'a> {
@@ -141,4 +142,18 @@ impl<'a> Encode for Slot350<'a> {
             }
         }
     }
+}
+
+#[derive(Encoding, ToStatic)]
+#[from(bool)]
+pub enum Slot402<'a> {
+    #[case(false)]
+    Empty,
+    #[case(true)]
+    Item {
+        #[varint]
+        id: i32,
+        count: u8,
+        nbt: Compound<'a>,
+    },
 }

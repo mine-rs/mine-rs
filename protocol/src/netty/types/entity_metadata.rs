@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use uuid::Uuid;
 
 use super::position::Position;
-use super::slot::{Slot0, Slot350};
+use super::slot::*;
 
 const DUPLICATE_METADATA_INDEX: &str = "duplicate index in Metadata";
 
@@ -22,9 +22,11 @@ pub type EntityMetadata69<'a> = EntityMetadata<Value57<'a, Slot0<'a>>>;
 pub type EntityMetadata350<'a> = EntityMetadata<Value57<'a, Slot350<'a>>>;
 // todo! possible changes because of particle from here on
 // pv353 OptChat shifted the ids
-// pub type EntityMetadata353<'a> = EntityMetadata<Value353<'a, Position, Particle>>;
+// pub type EntityMetadata353<'a> = EntityMetadata<Value353<'a, Slot350<'a>, Position, Particle>>;
+// pv402 Slot type changed
+// pub type EntityMetadata402<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position, Particle>>;
 // pv442 Position type changed
-// pub type EntityMetadata442<'a> = EntityMetadata<Value353<'a, Position, Particle>>;
+// pub type EntityMetadata442<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position, Particle>>;
 
 pub struct PackedEntityMetadata<Value> {
     inner: BTreeMap<u8, Value>,
@@ -175,7 +177,7 @@ packed_metadata! {
 
 #[derive(Encoding, ToStatic)]
 #[from(u8)]
-pub enum Value353<'a, Position, Particle> {
+pub enum Value353<'a, Slot, Position, Particle> {
     #[case(0)]
     Byte(i8),
     VarInt(#[varint] i32),
@@ -183,7 +185,7 @@ pub enum Value353<'a, Position, Particle> {
     String(Cow<'a, str>),
     Chat(Chat<'a>),
     OptChat(Option<Chat<'a>>),
-    Slot(Slot350<'a>),
+    Slot(Slot),
     Boolean(bool),
     Rotation(Rotation),
     Position(Position),
