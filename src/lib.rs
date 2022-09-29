@@ -8,10 +8,12 @@ pub use miners_auth as auth;
 pub use miners_chat as chat;
 #[cfg(feature = "net")]
 pub use miners_net as net;
-#[cfg(feature = "packet")]
-pub use miners_packet as packet;
 #[cfg(feature = "protocol")]
 pub use miners_protocol as protocol;
+#[cfg(feature = "packet")]
+pub use miners_packet as packet;
+#[cfg(feature = "nbt")]
+pub use miners_nbt as nbt;
 #[cfg(feature = "encoding")]
 #[doc(alias = "miners_encoding")]
 pub mod encoding {
