@@ -1,4 +1,3 @@
-use proc_macro2::Ident;
 use syn::{parse_quote, punctuated::Punctuated, Generics, Lifetime, WhereClause, Type};
 
 pub fn implgenerics(generics: Generics, traid: &Type, lifetime: Option<Lifetime>) -> Generics {

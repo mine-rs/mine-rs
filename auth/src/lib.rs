@@ -52,7 +52,7 @@ impl HttpClient for reqwest::Client {
         let resp = self.execute(req).await?;
         let status = resp.status();
         let bytes = resp.bytes().await?;
-        let mut http_resp = http::Response::new(bytes.clone());
+        let mut http_resp = http::Response::new(bytes);
         let status2 = http_resp.status_mut();
         *status2 = status;
         Ok(http_resp)
