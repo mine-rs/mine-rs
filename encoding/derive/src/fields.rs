@@ -1,4 +1,4 @@
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::{Ident, TokenStream, Span};
 use quote::{quote_spanned, ToTokens};
 use syn::{spanned::Spanned, Fields, Type};
 
@@ -78,7 +78,7 @@ pub fn fields_codegen((kind, fields): (Naming, Vec<Field>)) -> FieldsCode {
 
         match attrs {
             Attrs::None => {
-                let span = ident.span();
+                let span = ident.span().resolved_at(Span::call_site());
                 quote_spanned! {span=>
                     let #ident = Decode::decode(cursor)?;
                 }
@@ -244,7 +244,7 @@ pub fn bitfield_codegen(
         cumultative_size += size;
 
         let ident =
-            ident.unwrap_or_else(|| Ident::new(&format!("_{i}"), proc_macro2::Span::mixed_site()));
+            ident.unwrap_or_else(|| Ident::new(&format!("_{i}"), proc_macro2::Span::call_site()));
 
         quote! {#ident,}.to_tokens(&mut destructuring);
 

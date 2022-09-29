@@ -182,7 +182,7 @@ pub fn derive_enum(
 
     let decode_generics = implgenerics(
         generics.clone(),
-        &parse_quote!(Decode),
+        &parse_quote!(Decode<'dec>),
         Some(parse_quote!('dec)),
     );
     let decode_where_clause = &decode_generics.where_clause;
@@ -206,8 +206,11 @@ pub fn derive_enum(
     .to_tokens(&mut res);
 
     let encode_generics = implgenerics(generics.clone(), &parse_quote!(Encode), None);
+    let encode_where_clause = &encode_generics.where_clause;
     quote! {
-        impl #encode_generics Encode for #ident #generics {
+        impl #encode_generics Encode for #ident #generics
+        #encode_where_clause
+        {
             fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
                 #allow_unreachable
                 #[allow(unused_must_use)]

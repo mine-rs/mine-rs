@@ -1,5 +1,5 @@
-use proc_macro2::Ident;
-use quote::{quote, ToTokens};
+use proc_macro2::{Ident, Span};
+use quote::{quote, ToTokens, quote_spanned};
 use syn::{parse_macro_input, parse_quote, DeriveInput};
 
 #[proc_macro_derive(ToStatic)]
@@ -12,24 +12,25 @@ pub fn to_static(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let mut to_static_generics = to_static_generics(input.generics);
     let where_clause = to_static_generics.where_clause.take();
 
+    let span = Span::mixed_site();
+
     match input.data {
         syn::Data::Struct(strukt) => {
             let (destructuring, to_static, into_static) = fields(strukt.fields);
-            quote! {
+            quote_spanned! {span=>
                 impl #generics ToStatic for #ident #generics
-                where
-                    #where_clause
+                #where_clause
                 {
                     type Static = #ident #to_static_generics;
                     fn to_static(&self) -> Self::Static {
                         let Self #destructuring = self;
                         #to_static
-                        Self::Static #destructuring
+                        #ident #destructuring
                     }
                     fn into_static(self) -> Self::Static {
                         let Self #destructuring = self;
                         #into_static
-                        Self::Static #destructuring
+                        #ident #destructuring
                     }
                 }
             }
@@ -56,10 +57,9 @@ pub fn to_static(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 }
                 .to_tokens(&mut into_static_match_contents);
             }
-            quote! {
+            quote_spanned! {span=>
                 impl #generics ToStatic for #ident #generics
-                where
-                    #where_clause
+                #where_clause
                 {
                     type Static = #ident #to_static_generics;
                     fn to_static(&self) -> Self::Static {
@@ -90,9 +90,14 @@ fn to_static_generics(mut generics: syn::Generics) -> syn::Generics {
             syn::GenericParam::Lifetime(lt) => {
                 lt.lifetime.ident = Ident::new("static", lt.lifetime.ident.span())
             }
-            syn::GenericParam::Type(ty) => where_clause.predicates.push(parse_quote! {
-                #ty: ToStatic
-            }),
+            syn::GenericParam::Type(ty) => {
+                where_clause.predicates.push(parse_quote! {
+                    #ty: ToStatic<Static = #ty>
+                });
+                where_clause.predicates.push(parse_quote! {
+                    <#ty as ToStatic>::Static: 'static
+                });
+            },
             _ => {}
         }
     }

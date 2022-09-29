@@ -67,7 +67,7 @@ impl Parse for Bits {
 }
 
 pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>> {
-    let span = attr.__span();
+    let span = attr.__span().resolved_at(Span::call_site());
     let tokens = attr.tokens;
     struct UnParen<T>(T);
     impl<T: Parse> Parse for UnParen<T> {
@@ -80,11 +80,11 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
     }
     match attr.path.get_ident() {
         Some(ident) if ident == "varint" => Some(Ok(Attribute {
-            span: ident.span(),
+            span: ident.span().resolved_at(Span::call_site()),
             data: AttributeData::VarInt,
         })),
         Some(ident) if ident == "stringuuid" => Some(Ok(Attribute {
-            span: ident.span(),
+            span: ident.span().resolved_at(Span::call_site()),
             data: AttributeData::StringUuid,
         })),
         Some(ident) if ident == "case" => Some({
@@ -114,7 +114,7 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
             })
         }),
         Some(ident) if ident == "rest" => Some(Ok(Attribute {
-            span: ident.span(),
+            span: ident.span().resolved_at(Span::call_site()),
             data: AttributeData::Rest,
         })),
         Some(ident) if ident == "bitfield" => Some({
@@ -127,7 +127,7 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
         }),
         Some(ident) if ident == "bits" => Some({
             parse2::<UnParen<Bits>>(tokens).map(|a| Attribute {
-                span: ident.span(),
+                span: ident.span().resolved_at(Span::call_site()),
                 data: AttributeData::Bits(a.0 .0),
             })
         }),
