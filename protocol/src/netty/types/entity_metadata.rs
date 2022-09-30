@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-use super::position::Position;
+use super::position::Position0;
 use super::slot::*;
 
 const DUPLICATE_METADATA_INDEX: &str = "duplicate index in Metadata";
@@ -166,8 +166,8 @@ packed_metadata! {
         Slot(Slot) = 5,
         Boolean(bool) = 6,
         Rotation(Rotation) = 7,
-        Position(Position) = 8,
-        OptPosition(Option<Position>) = 9,
+        Position(Position0) = 8,
+        OptPosition(Option<Position0>) = 9,
         Direction(Direction) = 10,
         OptUuid(Option<Uuid>) = 11,
         BlockId(BlockId) = 12,

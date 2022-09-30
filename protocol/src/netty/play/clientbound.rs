@@ -1,5 +1,5 @@
 use crate::netty::types::angle::Angle;
-use crate::netty::types::position::Position;
+use crate::netty::types::position::Position0;
 use crate::*;
 use attrs::*;
 
@@ -400,14 +400,14 @@ pub struct UseBed0 {
 #[derive(Encoding, ToStatic)]
 pub struct UseBed6 {
     pub entity_id: i32,
-    pub location: Position,
+    pub location: Position0,
 }
 
 #[derive(Encoding, ToStatic)]
 pub struct UseBed7 {
     #[varint]
     pub entity_id: i32,
-    pub location: Position,
+    pub location: Position0,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -676,7 +676,7 @@ pub struct SpawnPainting8<'a> {
     // todo! #[max_len(13)]
     /// Name of the painting. Max length 13
     pub title: Cow<'a, str>,
-    pub location: Position,
+    pub location: Position0,
     pub direction: Direction0,
 }
 
@@ -1378,7 +1378,7 @@ pub struct BlockChange0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockChange6 {
-    pub location: Position,
+    pub location: Position0,
     #[varint]
     pub block_type: i32,
     pub block_data: u8,
@@ -1386,7 +1386,7 @@ pub struct BlockChange6 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockChange25 {
-    pub location: Position,
+    pub location: Position0,
     // todo! global palette block id, maybe separate into id and type?
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Block_Change
     #[varint]
@@ -1407,7 +1407,7 @@ pub struct BlockAction0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockAction6 {
-    pub location: Position,
+    pub location: Position0,
     pub action_id: u8,
     pub action_param: u8,
     /// The block type ID for the block, not including metadata/damage value
@@ -1430,7 +1430,7 @@ pub struct BlockBreakAnimation0 {
 pub struct BlockBreakAnimation6 {
     #[varint]
     pub entity_id: i32,
-    pub location: Position,
+    pub location: Position0,
     /// 0-9
     pub destroy_stage: u8,
 }
@@ -1593,7 +1593,7 @@ pub struct Effect0 {
 // todo! see above
 pub struct Effect6 {
     pub effect_id: i32,
-    pub location: Position,
+    pub location: Position0,
     pub effect_data: i32,
     pub disable_rel_volume: bool,
 }
@@ -2062,7 +2062,7 @@ pub struct UpdateSign0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct UpdateSign6<'a> {
-    pub location: Position,
+    pub location: Position0,
     pub line1: Cow<'a, str>,
     pub line2: Cow<'a, str>,
     pub line3: Cow<'a, str>,
@@ -2105,7 +2105,7 @@ pub struct UpdateBlockEntity0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct UpdateBlockEntity6 {
-    pub location: Position,
+    pub location: Position0,
     /// The type of update to perform
     pub action: u8,
     /// varies
