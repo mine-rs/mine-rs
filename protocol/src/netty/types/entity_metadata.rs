@@ -6,10 +6,11 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-use super::position::Position6;
+use super::particle::*;
+use super::position::*;
 use super::slot::*;
 
-const DUPLICATE_METADATA_INDEX: &str = "duplicate index in Metadata";
+const DUPLICATE_METADATA_INDEX: &str = "duplicate index in EntityMetadata";
 
 /// The first EntityMetadata
 pub type EntityMetadata0<'a> = PackedEntityMetadata<Value0<'a>>;
@@ -20,13 +21,39 @@ pub type EntityMetadata57<'a> = PackedEntityMetadata<Value57<'a, Slot0<'a>>>;
 pub type EntityMetadata69<'a> = EntityMetadata<Value57<'a, Slot0<'a>>>;
 /// Slot changed
 pub type EntityMetadata350<'a> = EntityMetadata<Value57<'a, Slot350<'a>>>;
-// todo! possible changes because of particle from here on
-// pv353 OptChat shifted the ids
-// pub type EntityMetadata353<'a> = EntityMetadata<Value353<'a, Slot350<'a>, Position0, Particle>>;
-// pv402 Slot type changed
-// pub type EntityMetadata402<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position0, Particle>>;
-// pv442 Position type changed
-// pub type EntityMetadata442<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle>>;
+/// OptChat shifted the ids
+pub type EntityMetadata353<'a> =
+    EntityMetadata<Value353<'a, Slot350<'a>, Position6, Particle353<'a, Slot350<'a>>>>;
+/// Slot type changed
+pub type EntityMetadata402<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position6, Particle353<'a, Slot402<'a>>>>;
+/// Position type changed
+pub type EntityMetadata442<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle353<'a, Slot402<'a>>>>;
+/// Particles shifted
+pub type EntityMetadata463<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle463<'a, Slot402<'a>>>>;
+/// Particles shifted
+pub type EntityMetadata701<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle701<'a, Slot402<'a>>>>;
+/// Particles shifted
+pub type EntityMetadata706<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle706<'a, Slot402<'a>>>>;
+/// Added Particle information (DustColorTransition, Vibration)
+pub type EntityMetadata755<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle755<'a, Slot402<'a>>>>;
+/// Particles shifted
+pub type EntityMetadataS20<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, ParticleS20<'a, Slot402<'a>>>>;
+/// Particles shifted
+pub type EntityMetadata757<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle757<'a, Slot402<'a>>>>;
+/// Particles shifted
+pub type EntityMetadataS74<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, ParticleS74<'a, Slot402<'a>>>>;
+/// Particles shifted
+pub type EntityMetadata759<'a> =
+    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle759<'a, Slot402<'a>>>>;
 
 pub struct PackedEntityMetadata<Value> {
     inner: BTreeMap<u8, Value>,
@@ -238,6 +265,7 @@ pub struct VillagerData {
 #[derive(Encoding, ToStatic)]
 // #[varint]
 // technically varint but no values greater than u7
+#[from(u8)]
 pub enum Pose {
     Standing = 0,
     FallFlying,
