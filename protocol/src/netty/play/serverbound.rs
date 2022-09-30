@@ -1,4 +1,4 @@
-use crate::{*, netty::types::position::Position};
+use crate::{netty::types::position::Position, *};
 
 use attrs::*;
 use std::borrow::Cow;

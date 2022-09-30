@@ -1,4 +1,4 @@
-use syn::{parse_quote, punctuated::Punctuated, Generics, Lifetime, WhereClause, Type};
+use syn::{parse_quote, punctuated::Punctuated, Generics, Lifetime, Type, WhereClause};
 
 pub fn implgenerics(generics: Generics, traid: &Type, lifetime: Option<Lifetime>) -> Generics {
     let mut where_clause = generics.where_clause.unwrap_or_else(|| WhereClause {
@@ -11,11 +11,9 @@ pub fn implgenerics(generics: Generics, traid: &Type, lifetime: Option<Lifetime>
     }
     for param in generics.params.into_iter() {
         match &param {
-            syn::GenericParam::Type(t) => {
-                where_clause.predicates.push(parse_quote! {
-                    #t: #traid
-                })
-            }
+            syn::GenericParam::Type(t) => where_clause.predicates.push(parse_quote! {
+                #t: #traid
+            }),
             syn::GenericParam::Lifetime(lt) => {
                 if let Some(lifetime) = &lifetime {
                     where_clause.predicates.push(parse_quote! {

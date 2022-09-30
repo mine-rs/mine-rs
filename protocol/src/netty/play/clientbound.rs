@@ -1,3 +1,4 @@
+use crate::netty::types::angle::Angle;
 use crate::netty::types::position::Position;
 use crate::*;
 use attrs::*;

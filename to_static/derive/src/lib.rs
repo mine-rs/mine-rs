@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, Span};
-use quote::{quote, ToTokens, quote_spanned};
+use quote::{quote, quote_spanned, ToTokens};
 use syn::{parse_macro_input, parse_quote, DeriveInput};
 
 #[proc_macro_derive(ToStatic)]
@@ -97,7 +97,7 @@ fn to_static_generics(mut generics: syn::Generics) -> syn::Generics {
                 where_clause.predicates.push(parse_quote! {
                     <#ty as ToStatic>::Static: 'static
                 });
-            },
+            }
             _ => {}
         }
     }

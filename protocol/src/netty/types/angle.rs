@@ -1,12 +1,14 @@
 use crate::*;
+use std::io::{Cursor, Write};
 
+#[derive(Clone, Copy)]
+#[repr(transparent)]
 pub struct Angle(pub(crate) u8);
 
-#[cfg(feature = "to_static")]
-impl miners_to_static::ToStatic for Angle {
+impl ToStatic for Angle {
     type Static = Angle;
     fn to_static(&self) -> Self::Static {
-        Self::Static::from(*self.as_ref())
+        *self
     }
     fn into_static(self) -> Self::Static {
         self

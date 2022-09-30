@@ -3,12 +3,12 @@ use crate::*;
 mod bool;
 mod cow;
 mod num;
+mod option;
 mod slice;
 mod str;
 mod string;
 mod uuid;
 mod vec;
-mod option;
 
 pub type Result<T> = std::result::Result<T, Error>;
 

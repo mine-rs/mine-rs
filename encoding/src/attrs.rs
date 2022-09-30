@@ -1,6 +1,3 @@
-mod angle;
-pub use angle::Angle;
-
 mod counted;
 pub use counted::Counted;
 

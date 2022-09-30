@@ -1,6 +1,6 @@
-use miners_nbt::Compound;
 use crate::*;
 use attrs::*;
+use miners_nbt::Compound;
 
 #[derive(ToStatic, Clone, Debug, PartialEq)]
 pub enum Slot0<'a> {
