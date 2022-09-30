@@ -5,7 +5,7 @@ use crate::*;
 // todo! figure out when position changed, this might be the new version
 // the old one had z and y swapped compared to the current one
 // was changed in pv442
-pub struct Position0 {
+pub struct Position6 {
     #[bits(26)]
     pub x: i32,
     #[bits(12)]
@@ -13,7 +13,7 @@ pub struct Position0 {
     #[bits(26)]
     pub z: i32,
 }
-impl Position0 {
+impl Position6 {
     pub(crate) fn is_0(&self) -> bool {
         self.x == 0 && self.y == 0 && self.z == 0
     }
@@ -43,7 +43,7 @@ fn position0() {
     for (bytes, (x, y, z)) in TESTS.iter().copied() {
         let mut cursor = std::io::Cursor::new(&bytes[..]);
         #[allow(clippy::unwrap_used)]
-        let pos = Position0::decode(&mut cursor).unwrap();
+        let pos = Position6::decode(&mut cursor).unwrap();
         assert_eq!(pos.x, x);
         assert_eq!(pos.y, y);
         assert_eq!(pos.z, z);

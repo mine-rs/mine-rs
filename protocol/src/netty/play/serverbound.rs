@@ -1,4 +1,4 @@
-use crate::{netty::types::position::Position0, *};
+use crate::{netty::types::position::Position6, *};
 
 use attrs::*;
 use std::borrow::Cow;
@@ -222,15 +222,15 @@ impl Encode for PlayerDigging0 {
 #[derive(ToStatic)]
 pub enum PlayerDigging6 {
     Started {
-        location: Position0,
+        location: Position6,
         face: BlockFace0,
     },
     Cancelled {
-        location: Position0,
+        location: Position6,
         face: BlockFace0,
     },
     Finished {
-        location: Position0,
+        location: Position6,
         face: BlockFace0,
     },
     DropItemStack,
@@ -243,31 +243,31 @@ impl<'dec> Decode<'dec> for PlayerDigging6 {
         use PlayerDigging6::*;
         Ok(match action {
             0 => Started {
-                location: Position0::decode(cursor)?,
+                location: Position6::decode(cursor)?,
                 face: BlockFace0::decode(cursor)?,
             },
             1 => Cancelled {
-                location: Position0::decode(cursor)?,
+                location: Position6::decode(cursor)?,
                 face: BlockFace0::decode(cursor)?,
             },
             2 => Finished {
-                location: Position0::decode(cursor)?,
+                location: Position6::decode(cursor)?,
                 face: BlockFace0::decode(cursor)?,
             },
             3 => {
-                if !(Position0::decode(cursor)?.is_0() && u8::decode(cursor)? == 0) {
+                if !(Position6::decode(cursor)?.is_0() && u8::decode(cursor)? == 0) {
                     return Err(decode::Error::InvalidId);
                 }
                 DropItemStack
             }
             4 => {
-                if !(Position0::decode(cursor)?.is_0() && u8::decode(cursor)? == 0) {
+                if !(Position6::decode(cursor)?.is_0() && u8::decode(cursor)? == 0) {
                     return Err(decode::Error::InvalidId);
                 }
                 DropItem
             }
             5 => {
-                if !(Position0::decode(cursor)?.is_0() && u8::decode(cursor)? == 255) {
+                if !(Position6::decode(cursor)?.is_0() && u8::decode(cursor)? == 255) {
                     return Err(decode::Error::InvalidId);
                 }
                 FinishRightClick
@@ -283,9 +283,9 @@ impl Encode for PlayerDigging6 {
             Started { location, face } => (0, location, face as u8),
             Cancelled { location, face } => (1, location, face as u8),
             Finished { location, face } => (2, location, face as u8),
-            DropItemStack => (3, Position0 { x: 0, y: 0, z: 0 }, 0),
-            DropItem => (4, Position0 { x: 0, y: 0, z: 0 }, 0),
-            FinishRightClick => (5, Position0 { x: 0, y: 0, z: 0 }, 255),
+            DropItemStack => (3, Position6 { x: 0, y: 0, z: 0 }, 0),
+            DropItem => (4, Position6 { x: 0, y: 0, z: 0 }, 0),
+            FinishRightClick => (5, Position6 { x: 0, y: 0, z: 0 }, 255),
         };
         action.encode(writer)?;
         location.encode(writer)?;
@@ -334,7 +334,7 @@ pub struct PlayerBlockPlacement0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct PlayerBlockPlacement6 {
-    pub location: Position0,
+    pub location: Position6,
     // todo! WTF (see above)
 }
 
@@ -653,7 +653,7 @@ pub struct UpdateSign0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct UpdateSign6<'a> {
-    pub location: Position0,
+    pub location: Position6,
     pub line1: Cow<'a, str>,
     pub line2: Cow<'a, str>,
     pub line3: Cow<'a, str>,
@@ -703,44 +703,10 @@ pub struct TabComplete0<'a> {
     pub text: Cow<'a, str>,
 }
 
-#[derive(ToStatic)]
+#[derive(Encoding, ToStatic)]
 pub struct TabComplete37<'a> {
     pub text: Cow<'a, str>,
-    pub targeted_block: Option<Position0>,
-}
-
-impl<'dec, 'a> Decode<'dec> for TabComplete37<'a>
-where
-    'dec: 'a,
-{
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let text = Decode::decode(cursor)?;
-        let targeted_block = if bool::decode(cursor)? {
-            Some(Decode::decode(cursor)?)
-        } else {
-            None
-        };
-        Ok(Self {
-            text,
-            targeted_block,
-        })
-    }
-}
-impl<'a> Encode for TabComplete37<'a> {
-    fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
-        let Self {
-            text,
-            targeted_block,
-        } = self;
-        Encode::encode(text, writer)?;
-        if let Some(targeted_block) = &targeted_block {
-            true.encode(writer)?;
-            Encode::encode(targeted_block, writer)?;
-        } else {
-            false.encode(writer)?;
-        }
-        Ok(())
-    }
+    pub targeted_block: Option<Position6>,
 }
 
 #[derive(Encoding, ToStatic)]

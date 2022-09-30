@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-use super::position::Position0;
+use super::position::Position6;
 use super::slot::*;
 
 const DUPLICATE_METADATA_INDEX: &str = "duplicate index in Metadata";
@@ -22,11 +22,11 @@ pub type EntityMetadata69<'a> = EntityMetadata<Value57<'a, Slot0<'a>>>;
 pub type EntityMetadata350<'a> = EntityMetadata<Value57<'a, Slot350<'a>>>;
 // todo! possible changes because of particle from here on
 // pv353 OptChat shifted the ids
-// pub type EntityMetadata353<'a> = EntityMetadata<Value353<'a, Slot350<'a>, Position, Particle>>;
+// pub type EntityMetadata353<'a> = EntityMetadata<Value353<'a, Slot350<'a>, Position0, Particle>>;
 // pv402 Slot type changed
-// pub type EntityMetadata402<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position, Particle>>;
+// pub type EntityMetadata402<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position0, Particle>>;
 // pv442 Position type changed
-// pub type EntityMetadata442<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position, Particle>>;
+// pub type EntityMetadata442<'a> = EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle>>;
 
 pub struct PackedEntityMetadata<Value> {
     inner: BTreeMap<u8, Value>,
@@ -166,8 +166,8 @@ packed_metadata! {
         Slot(Slot) = 5,
         Boolean(bool) = 6,
         Rotation(Rotation) = 7,
-        Position(Position0) = 8,
-        OptPosition(Option<Position0>) = 9,
+        Position(Position6) = 8,
+        OptPosition(Option<Position6>) = 9,
         Direction(Direction) = 10,
         OptUuid(Option<Uuid>) = 11,
         BlockId(BlockId) = 12,

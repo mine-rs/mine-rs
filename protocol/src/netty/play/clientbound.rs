@@ -1,5 +1,5 @@
 use crate::netty::types::angle::Angle;
-use crate::netty::types::position::Position0;
+use crate::netty::types::position::Position6;
 use crate::*;
 use attrs::*;
 
@@ -400,14 +400,14 @@ pub struct UseBed0 {
 #[derive(Encoding, ToStatic)]
 pub struct UseBed6 {
     pub entity_id: i32,
-    pub location: Position0,
+    pub location: Position6,
 }
 
 #[derive(Encoding, ToStatic)]
 pub struct UseBed7 {
     #[varint]
     pub entity_id: i32,
-    pub location: Position0,
+    pub location: Position6,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -676,7 +676,7 @@ pub struct SpawnPainting8<'a> {
     // todo! #[max_len(13)]
     /// Name of the painting. Max length 13
     pub title: Cow<'a, str>,
-    pub location: Position0,
+    pub location: Position6,
     pub direction: Direction0,
 }
 
@@ -1378,7 +1378,7 @@ pub struct BlockChange0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockChange6 {
-    pub location: Position0,
+    pub location: Position6,
     #[varint]
     pub block_type: i32,
     pub block_data: u8,
@@ -1386,7 +1386,7 @@ pub struct BlockChange6 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockChange25 {
-    pub location: Position0,
+    pub location: Position6,
     // todo! global palette block id, maybe separate into id and type?
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Block_Change
     #[varint]
@@ -1407,7 +1407,7 @@ pub struct BlockAction0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockAction6 {
-    pub location: Position0,
+    pub location: Position6,
     pub action_id: u8,
     pub action_param: u8,
     /// The block type ID for the block, not including metadata/damage value
@@ -1430,7 +1430,7 @@ pub struct BlockBreakAnimation0 {
 pub struct BlockBreakAnimation6 {
     #[varint]
     pub entity_id: i32,
-    pub location: Position0,
+    pub location: Position6,
     /// 0-9
     pub destroy_stage: u8,
 }
@@ -1593,7 +1593,7 @@ pub struct Effect0 {
 // todo! see above
 pub struct Effect6 {
     pub effect_id: i32,
-    pub location: Position0,
+    pub location: Position6,
     pub effect_data: i32,
     pub disable_rel_volume: bool,
 }
@@ -2062,7 +2062,7 @@ pub struct UpdateSign0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct UpdateSign6<'a> {
-    pub location: Position0,
+    pub location: Position6,
     pub line1: Cow<'a, str>,
     pub line2: Cow<'a, str>,
     pub line3: Cow<'a, str>,
@@ -2105,7 +2105,7 @@ pub struct UpdateBlockEntity0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct UpdateBlockEntity6 {
-    pub location: Position0,
+    pub location: Position6,
     /// The type of update to perform
     pub action: u8,
     /// varies
@@ -2226,7 +2226,7 @@ pub struct PlayerListAddPlayer19<'a> {
     pub ping: i32,
 }
 
-#[derive(ToStatic)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerListAddPlayer28<'a> {
     pub uuid: Uuid,
     pub name: Cow<'a, str>,
@@ -2238,123 +2238,17 @@ pub struct PlayerListAddPlayer28<'a> {
     pub display_name: Option<Cow<'a, str>>,
 }
 
-impl<'dec, 'a> Decode<'dec> for PlayerListAddPlayer28<'a>
-where
-    'dec: 'a,
-{
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let uuid = Decode::decode(cursor)?;
-        let name = Decode::decode(cursor)?;
-        let properties = Decode::decode(cursor)?;
-        let gamemode = Decode::decode(cursor)?;
-        let ping = <Var<_> as Decode>::decode(cursor)?.into_inner();
-        let display_name = if bool::decode(cursor)? {
-            Some(Decode::decode(cursor)?)
-        } else {
-            None
-        };
-        Ok(Self {
-            uuid,
-            name,
-            properties,
-            gamemode,
-            ping,
-            display_name,
-        })
-    }
-}
-impl<'a> Encode for PlayerListAddPlayer28<'a> {
-    fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
-        let Self {
-            uuid,
-            name,
-            properties,
-            gamemode,
-            ping,
-            display_name,
-        } = self;
-        Encode::encode(uuid, writer)?;
-        Encode::encode(name, writer)?;
-        Encode::encode(properties, writer)?;
-        Encode::encode(gamemode, writer)?;
-        Encode::encode(&Var::<i32>::from(*ping), writer)?;
-        if let Some(display_name) = &display_name {
-            true.encode(writer)?;
-            Encode::encode(display_name, writer)?;
-        } else {
-            false.encode(writer)?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(ToStatic)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerListUpdateDisplayName28 {
     pub uuid: Uuid,
-    // todo! default option impl?
     pub display_name: Option<Uuid>,
 }
 
-impl<'dec> Decode<'dec> for PlayerListUpdateDisplayName28 {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let uuid = Decode::decode(cursor)?;
-        let display_name = if bool::decode(cursor)? {
-            Some(Decode::decode(cursor)?)
-        } else {
-            None
-        };
-        Ok(Self { uuid, display_name })
-    }
-}
-impl Encode for PlayerListUpdateDisplayName28 {
-    fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
-        let Self { uuid, display_name } = self;
-        Encode::encode(uuid, writer)?;
-        if let Some(display_name) = &display_name {
-            true.encode(writer)?;
-            Encode::encode(display_name, writer)?;
-        } else {
-            false.encode(writer)?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(ToStatic)]
+#[derive(Encoding, ToStatic)]
 pub struct PlayerProperty19<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
-    // todo! default Option impl?
     pub signature: Option<Cow<'a, str>>,
-}
-impl<'dec, 'a> Decode<'dec> for PlayerProperty19<'a>
-where
-    'dec: 'a,
-{
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        Ok(Self {
-            name: Cow::decode(cursor)?,
-            value: Cow::decode(cursor)?,
-            signature: if bool::decode(cursor)? {
-                Some(Cow::decode(cursor)?)
-            } else {
-                None
-            },
-        })
-    }
-}
-impl<'a> Encode for PlayerProperty19<'a> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> encode::Result<()> {
-        self.name.encode(writer)?;
-        self.value.encode(writer)?;
-        if let Some(signature) = &self.signature {
-            true.encode(writer)?;
-            signature.encode(writer)?;
-        } else {
-            false.encode(writer)?;
-        };
-        Ok(())
-    }
 }
 
 #[derive(Encoding, ToStatic, Clone, Copy)]
