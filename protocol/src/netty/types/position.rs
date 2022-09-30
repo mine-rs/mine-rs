@@ -20,7 +20,7 @@ impl Position6 {
 }
 
 #[test]
-fn position0() {
+fn position6() {
     #[allow(clippy::unusual_byte_groupings, clippy::type_complexity)]
     const TESTS: &[([u8; 8], (i32, i16, i32))] = &[
         (
