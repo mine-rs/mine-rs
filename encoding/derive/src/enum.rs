@@ -5,7 +5,7 @@ use syn::{parse_quote, spanned::Spanned, DataEnum, Generics, Variant};
 use crate::{
     attribute::{parse_attr, Attribute},
     fields::{fields_codegen, fields_to_codegen_input, FieldsCode},
-    generics::implgenerics,
+    generics::prepare_generics,
 };
 
 pub fn derive_enum(
@@ -142,8 +142,6 @@ pub fn derive_enum(
             parsing,
             destructuring,
             serialization,
-            // to_static,
-            // into_static,
         } = fields_to_codegen_input(fields, &mut res)
             .map(fields_codegen)
             .unwrap_or_default();
@@ -180,36 +178,12 @@ pub fn derive_enum(
         (quote!(), quote!())
     };
 
-    let decode_generics = implgenerics(
-        generics.clone(),
-        &parse_quote!(Decode<'dec>),
-        Some(parse_quote!('dec)),
-    );
-    let decode_where_clause = &decode_generics.where_clause;
-    let decode_id = if varint.is_some() {
-        quote!(<Var<#typ> as Decode>::decode(cursor)?.into_inner())
-    } else {
-        quote!(<#typ as Decode>::decode(cursor)?)
-    };
+    let mut encode_generics = generics.clone();
+    prepare_generics(&mut encode_generics, parse_quote!(Encode), None);
+    let (implgenerics, typegenerics, whereclause) = encode_generics.split_for_impl();
     quote! {
-        impl #decode_generics Decode<'dec> for #ident #generics
-        #decode_where_clause
-        {
-            fn decode(cursor: &mut ::std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-                Ok(match #decode_id {
-                    #decode_match_contents
-                    _ => Err(decode::Error::InvalidId)?
-                })
-            }
-        }
-    }
-    .to_tokens(&mut res);
-
-    let encode_generics = implgenerics(generics.clone(), &parse_quote!(Encode), None);
-    let encode_where_clause = &encode_generics.where_clause;
-    quote! {
-        impl #encode_generics Encode for #ident #generics
-        #encode_where_clause
+        impl #implgenerics Encode for #ident #typegenerics
+        #whereclause
         {
             fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
                 #allow_unreachable
@@ -222,6 +196,36 @@ pub fn derive_enum(
         }
     }
     .to_tokens(&mut res);
+
+    let mut decode_generics = generics;
+    prepare_generics(
+        &mut decode_generics,
+        parse_quote!(Decode<'dec>),
+        Some(parse_quote!('dec)),
+    );
+
+    let (implgenerics, _, whereclause) = decode_generics.split_for_impl();
+
+    let decode_id = if varint.is_some() {
+        quote!(<Var<#typ> as Decode>::decode(cursor)?.into_inner())
+    } else {
+        quote!(<#typ as Decode>::decode(cursor)?)
+    };
+    quote! {
+        impl #implgenerics Decode<'dec> for #ident #typegenerics
+        #whereclause
+        {
+            fn decode(cursor: &mut ::std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+                Ok(match #decode_id {
+                    #decode_match_contents
+                    _ => Err(decode::Error::InvalidId)?
+                })
+            }
+        }
+    }
+    .to_tokens(&mut res);
+
+    // panic!("{:#?}", res);
 
     res
 }

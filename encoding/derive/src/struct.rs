@@ -5,7 +5,7 @@ use syn::{parse_quote, DataStruct, Generics};
 use crate::{
     attribute::{parse_attr, Attribute},
     fields::{bitfield_codegen, fields_codegen, fields_to_codegen_input, FieldsCode},
-    generics::implgenerics,
+    generics::prepare_generics,
 };
 
 pub fn derive_struct(
@@ -69,34 +69,36 @@ pub fn derive_struct(
         .map(fields_codegen)
         .unwrap_or_default();
 
-    let decode_generics = implgenerics(
-        generics.clone(),
-        &parse_quote!(Decode<'dec>),
-        Some(parse_quote!('dec)),
-    );
-    let decode_where_clause = &decode_generics.where_clause;
+    let mut encode_generics = generics.clone();
+    prepare_generics(&mut encode_generics, parse_quote!(Encode), None);
+    let (implgenerics, typegenerics, whereclause) = encode_generics.split_for_impl();
     quote! {
-        impl #decode_generics Decode<'dec> for #ident #generics
-        #decode_where_clause
-        {
-            fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-                #parsing
-                Ok(Self #destructuring)
-            }
-        }
-    }
-    .to_tokens(&mut res);
-
-    let encode_generics = implgenerics(generics.clone(), &parse_quote!(Encode), None);
-    let encode_where_clause = &encode_generics.where_clause;
-    quote! {
-        impl #encode_generics Encode for #ident #generics
-        #encode_where_clause
+        impl #implgenerics Encode for #ident #typegenerics
+        #whereclause
         {
             fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
                 let Self #destructuring = self;
                 #serialization
                 Ok(())
+            }
+        }
+    }
+    .to_tokens(&mut res);
+
+    let mut decode_generics = generics;
+    prepare_generics(
+        &mut decode_generics,
+        parse_quote!(Decode<'dec>),
+        Some(parse_quote!('dec)),
+    );
+    let (implgenerics, _, whereclause) = decode_generics.split_for_impl();
+    quote! {
+        impl #implgenerics Decode<'dec> for #ident #typegenerics
+        #whereclause
+        {
+            fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+                #parsing
+                Ok(Self #destructuring)
             }
         }
     }

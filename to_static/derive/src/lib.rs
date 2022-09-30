@@ -6,11 +6,10 @@ use syn::{parse_macro_input, parse_quote, DeriveInput};
 pub fn to_static(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    let generics = input.generics.clone();
     let ident = input.ident;
 
-    let mut to_static_generics = to_static_generics(input.generics);
-    let where_clause = to_static_generics.where_clause.take();
+    let (generics, the_static) = to_static_generics(input.generics, &ident);
+    let (implgenerics, typegenerics, whereclause) = generics.split_for_impl();
 
     let span = Span::mixed_site();
 
@@ -18,10 +17,10 @@ pub fn to_static(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         syn::Data::Struct(strukt) => {
             let (destructuring, to_static, into_static) = fields(strukt.fields);
             quote_spanned! {span=>
-                impl #generics ToStatic for #ident #generics
-                #where_clause
+                impl #implgenerics ToStatic for #ident #typegenerics
+                #whereclause
                 {
-                    type Static = #ident #to_static_generics;
+                    type Static = #the_static;
                     fn to_static(&self) -> Self::Static {
                         let Self #destructuring = self;
                         #to_static
@@ -58,10 +57,10 @@ pub fn to_static(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 .to_tokens(&mut into_static_match_contents);
             }
             quote_spanned! {span=>
-                impl #generics ToStatic for #ident #generics
-                #where_clause
+                impl #implgenerics ToStatic for #ident #typegenerics
+                #whereclause
                 {
-                    type Static = #ident #to_static_generics;
+                    type Static = #the_static;
                     fn to_static(&self) -> Self::Static {
                         match self {
                             #to_static_match_contents
@@ -76,35 +75,54 @@ pub fn to_static(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             }
             .into()
         }
-        syn::Data::Union(_) => todo!("calling ToStatic on Unions is not supported"),
+        syn::Data::Union(_) => quote_spanned! {span=>
+            impl #implgenerics ToStatic for #ident #typegenerics
+            #whereclause
+            {
+                type Static = #the_static;
+                fn to_static(&self) -> Self::Static {
+                    Self::Static
+                }
+                fn into_static(self) -> Self::Static {
+                    Self::Static
+                }
+            }
+        }
+        .into(),
     }
 }
 
-fn to_static_generics(mut generics: syn::Generics) -> syn::Generics {
-    let mut where_clause = generics.where_clause.unwrap_or_else(|| syn::WhereClause {
-        where_token: Default::default(),
-        predicates: Default::default(),
+fn to_static_generics(mut generics: syn::Generics, ident: &Ident) -> (syn::Generics, syn::Path) {
+    let lifetimes = generics.lifetimes().next().is_some().then(|| {
+        generics.lifetimes().map(|ltdef| syn::Lifetime {
+            apostrophe: ltdef.lifetime.apostrophe,
+            ident: Ident::new("static", Span::mixed_site()),
+        })
     });
-    for item in generics.params.iter_mut() {
-        match item {
-            syn::GenericParam::Lifetime(lt) => {
-                lt.lifetime.ident = Ident::new("static", lt.lifetime.ident.span())
-            }
-            syn::GenericParam::Type(ty) => {
-                where_clause.predicates.push(parse_quote! {
-                    #ty: ToStatic<Static = #ty>
-                });
-                where_clause.predicates.push(parse_quote! {
-                    <#ty as ToStatic>::Static: 'static
-                });
-            }
-            _ => {}
+
+    let type_params = generics
+        .type_params()
+        .next()
+        .is_some()
+        .then(|| generics.type_params().map(|tp| &tp.ident));
+
+    let the_static: syn::Path = if lifetimes.is_some() || type_params.is_some() {
+        let lifetime_iter = lifetimes.into_iter().flatten();
+        let type_param_iter = type_params.into_iter().flatten();
+        parse_quote! {
+            #ident <#(#lifetime_iter,)* #(<#type_param_iter as ToStatic>::Static),*>
         }
+    } else {
+        drop(lifetimes);
+        drop(type_params);
+        parse_quote! {#ident}
+    };
+
+    for typ in generics.type_params_mut() {
+        typ.bounds.push(parse_quote!(ToStatic));
     }
-    syn::Generics {
-        where_clause: Some(where_clause),
-        ..generics
-    }
+
+    (generics, the_static)
 }
 
 fn fields(

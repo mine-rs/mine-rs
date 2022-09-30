@@ -3,6 +3,8 @@ use crate::*;
 pub mod clientbound;
 pub mod serverbound;
 
+use crate::netty::types::entity_metadata::*;
+
 #[derive(Encoding, ToStatic)]
 #[from(u8)]
 pub enum AnimationId0 {
@@ -214,8 +216,9 @@ parsing_tree! {
         6 => SpawnPlayer0<'a>,
         7..=13 => SpawnPlayer5<'a>,
         14..=18 => SpawnPlayer5<'a>,
-        19..=48 => SpawnPlayer19,
-        49..=66 => SpawnPlayer49,
+        19..=48 => SpawnPlayer19<'a>,
+        49..=56 => SpawnPlayer49<PackedEntityMetadata0<'a>>,
+        57..=66 => SpawnPlayer57 => SpawnPlayer49<PackedEntityMetadata57<'a>>,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=498 => _332,
@@ -277,7 +280,7 @@ parsing_tree! {
         // 1073741906..=1073741907 => _1073741906,
     },
     0x0f => {
-        0..=48 => SpawnMob0,
+        0..=48 => SpawnMob0<'a>,
         // 49..=66 => _49,
         // 67..=317 => _67,
         // 318..=331 => _318,
@@ -616,8 +619,9 @@ parsing_tree! {
         // 1073741920 => _1073741920,
     },
     0x1c => {
-        0..=6 => EntityMetadata0,
-        7..=66 => EntityMetadata7,
+        0..=6 => EntityMetadata0<'a>,
+        7..=56 => EntityMetadata7<PackedEntityMetadata0<'a>>,
+        57..=66 => EntityMetadata57 => EntityMetadata7<PackedEntityMetadata57<'a>>,
         // 67..=79 => _67,
         // 80..=317 => _80,
         // 318..=331 => _318,

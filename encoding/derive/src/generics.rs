@@ -1,34 +1,19 @@
-use syn::{parse_quote, punctuated::Punctuated, Generics, Lifetime, Type, WhereClause};
+use syn::{parse_quote, Generics, Lifetime, TypeParamBound};
 
-pub fn implgenerics(generics: Generics, traid: &Type, lifetime: Option<Lifetime>) -> Generics {
-    let mut where_clause = generics.where_clause.unwrap_or_else(|| WhereClause {
-        where_token: Default::default(),
-        predicates: Default::default(),
-    });
-    let mut params = Punctuated::new();
-    if let Some(lifetime) = &lifetime {
-        params.push(parse_quote!(#lifetime));
-    }
-    for param in generics.params.into_iter() {
-        match &param {
-            syn::GenericParam::Type(t) => where_clause.predicates.push(parse_quote! {
-                #t: #traid
-            }),
-            syn::GenericParam::Lifetime(lt) => {
-                if let Some(lifetime) = &lifetime {
-                    where_clause.predicates.push(parse_quote! {
-                        #lifetime: #lt
-                    })
-                }
-            }
-            _ => {}
+pub fn prepare_generics(
+    generics: &mut Generics,
+    traid: TypeParamBound,
+    lifetime: Option<Lifetime>,
+) {
+    if let Some(lt) = lifetime {
+        if generics.lifetimes().next().is_some() {
+            let lifetimes = generics.lifetimes();
+            generics.params.push(parse_quote! {#lt: #(#lifetimes)+*});
+        } else {
+            generics.params.push(parse_quote! {#lt})
         }
-        params.push(param);
     }
-
-    Generics {
-        where_clause: Some(where_clause),
-        params,
-        ..generics
+    for tp in generics.type_params_mut() {
+        tp.bounds.push(traid.clone());
     }
 }

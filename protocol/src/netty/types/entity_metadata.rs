@@ -13,9 +13,9 @@ use super::slot::*;
 const DUPLICATE_METADATA_INDEX: &str = "duplicate index in EntityMetadata";
 
 /// The first EntityMetadata
-pub type EntityMetadata0<'a> = PackedEntityMetadata<Value0<'a>>;
+pub type PackedEntityMetadata0<'a> = PackedEntityMetadata<Value0<'a>>;
 /// Chat shifted the ids
-pub type EntityMetadata57<'a> = PackedEntityMetadata<Value57<'a, Slot0<'a>>>;
+pub type PackedEntityMetadata57<'a> = PackedEntityMetadata<Value57<'a, Slot0<'a>>>;
 // todo! figure out if this was changed in version 67, 68 or 69
 /// change to key and type in their own respective bytes
 pub type EntityMetadata69<'a> = EntityMetadata<Value57<'a, Slot0<'a>>>;
@@ -55,9 +55,11 @@ pub type EntityMetadataS74<'a> =
 pub type EntityMetadata759<'a> =
     EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle759<'a, Slot402<'a>>>>;
 
+#[derive(ToStatic)]
 pub struct PackedEntityMetadata<Value> {
     inner: BTreeMap<u8, Value>,
 }
+
 impl<'dec, Value> Decode<'dec> for PackedEntityMetadata<Value>
 where
     Value: PackedMetadataDecode<'dec>,
@@ -94,6 +96,7 @@ where
     }
 }
 
+#[derive(ToStatic)]
 pub struct EntityMetadata<Value> {
     inner: BTreeMap<u8, Value>,
 }
@@ -133,7 +136,7 @@ where
 }
 
 trait PackedMetadataDecode<'dec>: Sized {
-    fn metadata_decode(id: u8, cursor: &mut std::io::Cursor<&[u8]>) -> decode::Result<Self>;
+    fn metadata_decode(id: u8, cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self>;
 }
 trait PackedMetadataEncode {
     fn encode_packed(&self, index: u8, writer: &mut impl std::io::Write) -> encode::Result<()>;
@@ -142,7 +145,7 @@ trait PackedMetadataEncode {
 macro_rules! packed_metadata {
     (
         $(#[$($enum_attr:tt)*])*
-        pub enum $name:ident $(<[$($generics:tt)*]>)? {
+        pub enum $name:ident $(<$($lt:lifetime),* $(,)? $($generic:ident),*>)? {
             $(
                 $(#[$($case_attr:tt)*])?
                 $case:ident
@@ -153,7 +156,7 @@ macro_rules! packed_metadata {
         }
     ) => {
         $(#[$($enum_attr)*])*
-        pub enum $name $(<$($generics)*>)? {
+        pub enum $name $(<'a, $($generic),*>)? {
             $(
                 $(#[$($case_attr)*])?
                 $case
@@ -161,10 +164,48 @@ macro_rules! packed_metadata {
                 $( {$( $field : $(#[$($named_attr)*])* $named_typ ),*} )?
             ),*
         }
+        impl<'dec, $($($lt,)* $($generic),*)?> PackedMetadataDecode<'dec>
+            for $name$(<$($lt,)* $($generic),*>)?
+        where $(
+            $('dec: $lt,)*
+            $($generic: Decode<'dec>),*
+        )? {
+            fn metadata_decode(id: u8, cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+                Ok(match id {
+                    $(
+                        $($id)? => Self::$case(Decode::decode(cursor)?)
+                            // $( ($(<$unnamed_typ>::decode(cursor)?),*) )?
+                            // $( { $($field : <$named_typ>::decode(cursor)?),* } )?
+                        ,
+                    )*
+                    _ => return Err(decode::Error::InvalidId),
+                })
+            }
+        }
+        impl<$($($lt,)* $($generic),*)?> PackedMetadataEncode
+            for $name<$($($lt,)* $($generic),*)?>
+        where
+            $($($generic: Encode),*)?
+        {
+            fn encode_packed(&self, index: u8, writer: &mut impl std::io::Write) -> encode::Result<()> {
+                match self {
+                    $(Self::$case(val)
+                        // $( ($(val),*) )?
+                        // $( { $($field),* } )?
+                    => {
+                        ((($($id)? as u8) << 5) & (index & 0b11111)).encode(writer)?;
+                        val.encode(writer)
+                        // $( $(<$unnamed_typ>::encode(val, writer)?;)* Ok(()) )?
+                        // $( $(<$named_typ>::encode($field, writer)?;)* Ok(()) )?
+                    }),*
+                }
+            }
+        }
     };
 }
 packed_metadata! {
-    pub enum Value0 <['a]> {
+    #[derive(ToStatic)]
+    pub enum Value0<'a> {
         Byte(i8) = 0,
         Short(i16) = 1,
         Int(i32) = 2,
@@ -176,14 +217,13 @@ packed_metadata! {
     }
 }
 
-// todo!()
 #[derive(Encoding, ToStatic)]
 pub struct Chat<'a>(Cow<'a, str>);
 
 packed_metadata! {
     #[derive(Encoding, ToStatic)]
     #[from(u8)]
-    pub enum Value57 <['a, Slot]> {
+    pub enum Value57 <'a, Slot> {
         #[case(0)]
         Byte(i8) = 0,
         VarInt(#[varint] i32) = 1,

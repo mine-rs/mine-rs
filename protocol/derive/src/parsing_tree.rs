@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as TS, TokenTree};
 use quote::ToTokens;
 use quote::{quote_spanned, spanned::Spanned, TokenStreamExt};
-use syn::{braced, Token, TypePath};
+use syn::{braced, Path, Token, Type, TypePath};
 use syn::{punctuated::Punctuated, token::Brace, Expr, ExprLit, Lit, LitInt, Pat, PatLit, PatOr};
 
 pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
@@ -46,18 +46,20 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
             };
 
             let packet = ver.packet;
-            let last_ident = packet
-                .path
-                .segments
-                .last()
-                .expect("path without last segment?")
-                .ident
-                .clone();
+            let packet_name = ver.name.unwrap_or_else(|| {
+                packet
+                    .path
+                    .segments
+                    .last()
+                    .expect("path without last segment?")
+                    .ident
+                    .clone()
+            });
 
             for (pv_lo, pv_hi, pv_span) in versions {
                 ver_id_mappings.insert(
                     Def {
-                        ident: last_ident.clone(),
+                        ident: packet_name.clone(),
                         id: idi32,
                         id_span,
                         pv_lo,
@@ -68,8 +70,6 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
                 )
             }
 
-            all_packets.insert(last_ident, packet.clone());
-
             let mut ver_pat = TS::new();
 
             ver_pat.append_separated(ver.pat, quote!(|));
@@ -77,11 +77,13 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
             pv_match_body.extend(quote!(
                 #ver_pat => {
                     $crate::replace! {
-                        $#prefix #packet ;
+                        #packet_name => $#prefix #packet ;
                         #($($t)*)
                     }
                 }
-            ))
+            ));
+
+            all_packets.insert(packet_name, packet);
         }
 
         pv_match_body.extend(quote!(_ => $($e)*,));
@@ -96,7 +98,7 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
 
     for (ident, packet) in &all_packets {
         packets_body.extend(quote!(#ident($#prefix #packet),));
-        custom_body.extend(quote!($#prefix #packet));
+        custom_body.extend(quote!(#ident => $#prefix #packet));
     }
 
     let custom = x.custom;
@@ -141,20 +143,24 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
         .collect();
 
     for (_, (path, mappings)) in packet_to_id_mappings {
-        let ltsiter = path
-            .path
-            .segments
-            .iter()
-            .filter_map(|segment| match &segment.arguments {
-                syn::PathArguments::AngleBracketed(bracketed) => Some(bracketed),
-                _ => None,
-            })
-            .flat_map(|bracketed| {
-                bracketed.args.iter().filter_map(|arg| match arg {
-                    syn::GenericArgument::Lifetime(lt) => Some(lt),
+        fn ltiter(path: &Path) -> impl Iterator<Item = &syn::Lifetime> {
+            path.segments
+                .iter()
+                .filter_map(|segment| match &segment.arguments {
+                    syn::PathArguments::AngleBracketed(bracketed) => Some(bracketed),
                     _ => None,
                 })
-            });
+                .flat_map(|bracketed| {
+                    bracketed.args.iter().flat_map(|arg| match arg {
+                        syn::GenericArgument::Lifetime(lt) => vec![lt],
+                        syn::GenericArgument::Type(Type::Path(path)) => {
+                            ltiter(&path.path).collect::<Vec<_>>()
+                        }
+                        _ => vec![],
+                    })
+                })
+        }
+        let ltsiter = ltiter(&path.path);
         let mut generics = quote! {};
         for lts in ltsiter {
             quote! {#lts,}.to_tokens(&mut generics);
@@ -236,6 +242,7 @@ impl syn::parse::Parse for IdMapping {
 pub struct VersionMapping {
     pat: Vec<syn::Pat>,
     _arrow: Token![=>],
+    pub name: Option<Ident>,
     pub packet: TypePath,
 }
 
@@ -249,9 +256,16 @@ impl syn::parse::Parse for VersionMapping {
             }
             let _: Token![|] = input.parse()?;
         }
+        let _arrow = input.parse()?;
+        let mut name = None;
+        if input.peek2(Token![=>]) {
+            name = Some(input.parse()?);
+            let _: Token![=>] = input.parse()?;
+        };
         Ok(VersionMapping {
             pat,
-            _arrow: input.parse()?,
+            _arrow,
+            name,
             packet: input.parse()?,
         })
     }

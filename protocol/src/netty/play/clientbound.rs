@@ -1,4 +1,5 @@
 use crate::netty::types::angle::Angle;
+use crate::netty::types::entity_metadata::PackedEntityMetadata0;
 use crate::netty::types::position::Position6;
 use crate::*;
 use attrs::*;
@@ -435,7 +436,7 @@ pub struct SpawnPlayer0<'a> {
     /// for "no item", unlike -1 used in other packets. A negative value
     /// crashes clients.
     pub current_item: u16,
-    pub metadata: EntityMetadata,
+    pub metadata: PackedEntityMetadata0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -457,11 +458,11 @@ pub struct SpawnPlayer5<'a> {
     /// for "no item", unlike -1 used in other packets. A negative value
     /// crashes clients.
     pub current_item: u16,
-    pub metadata: EntityMetadata,
+    pub metadata: PackedEntityMetadata0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct SpawnPlayer19 {
+pub struct SpawnPlayer19<'a> {
     #[varint]
     pub entity_id: i32,
     pub player_uuid: Uuid,
@@ -477,11 +478,11 @@ pub struct SpawnPlayer19 {
     /// for "no item", unlike -1 used in other packets. A negative value
     /// crashes clients.
     pub current_item: u16,
-    pub metadata: EntityMetadata,
+    pub metadata: PackedEntityMetadata0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct SpawnPlayer49 {
+pub struct SpawnPlayer49<EntityMetadata> {
     #[varint]
     pub entity_id: i32,
     pub player_uuid: Uuid,
@@ -502,10 +503,6 @@ pub struct PlayerProperty<'a> {
     pub value: Cow<'a, str>,
     pub signature: Cow<'a, str>,
 }
-
-#[derive(Encoding, ToStatic)]
-// todo! metadata
-pub struct EntityMetadata {}
 
 #[derive(Encoding, ToStatic)]
 pub struct CollectItem0 {
@@ -636,7 +633,7 @@ pub enum EntityKind0 {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct SpawnMob0 {
+pub struct SpawnMob0<'a> {
     #[varint]
     pub entity_id: i32,
     // todo! see #[separated] on Object
@@ -654,7 +651,7 @@ pub struct SpawnMob0 {
     pub velocity_y: i16,
     pub velocity_z: i16,
     // todo! see type
-    pub metadata: EntityMetadata,
+    pub metadata: PackedEntityMetadata0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -1041,13 +1038,13 @@ pub struct AttachEntity0 {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EntityMetadata0 {
+pub struct EntityMetadata0<'a> {
     pub entity_id: i32,
-    pub metadata: EntityMetadata,
+    pub metadata: PackedEntityMetadata0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EntityMetadata7 {
+pub struct EntityMetadata7<EntityMetadata> {
     #[varint]
     pub entity_id: i32,
     pub metadata: EntityMetadata,

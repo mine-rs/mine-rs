@@ -3,21 +3,38 @@ use quote::ToTokens;
 use syn::{Token, TypePath};
 
 pub struct ReplaceInput {
-    pub types: Vec<(Option<Token![$]>, TypePath)>,
+    pub types: Vec<ReplaceUnit>,
     pub rest: TokenStream,
+}
+
+pub struct ReplaceUnit {
+    pub ident: Option<Ident>,
+    pub dollar: Option<Token![$]>,
+    pub path: TypePath,
 }
 
 impl syn::parse::Parse for ReplaceInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut types = vec![];
         let mut dollar = None;
+        let mut ident = None;
         while !input.lookahead1().peek(Token![;]) {
+            if dollar.is_none() && ident.is_none() && input.peek2(Token![=>]) {
+                ident = Some(input.parse()?);
+                let _: Token![=>] = input.parse()?;
+                continue;
+            }
             if dollar.is_none() && input.peek(Token![$]) {
                 dollar = Some(input.parse()?);
                 continue;
             }
-            types.push((dollar, input.parse()?));
+            types.push(ReplaceUnit {
+                ident,
+                dollar,
+                path: input.parse()?,
+            });
             dollar = None;
+            ident = None;
         }
         if dollar.is_some() {
             panic!("no lone `$` allowed")
@@ -31,7 +48,7 @@ impl syn::parse::Parse for ReplaceInput {
 pub fn match_group(
     mut iter: impl Iterator<Item = TokenTree>,
     ts: &mut TokenStream,
-    packets: &Vec<(Option<Token![$]>, TypePath)>,
+    packets: &Vec<ReplaceUnit>,
 ) {
     while let Some(t) = iter.next() {
         match t {
@@ -127,28 +144,47 @@ fn tttox(mut iter: impl Iterator<Item = TokenTree>, output: &mut Vec<X>) {
 fn replace_group(
     g: impl Iterator<Item = TokenTree>,
     output: &mut TokenStream,
-    packets: &Vec<(Option<Token![$]>, TypePath)>,
+    packets: &Vec<ReplaceUnit>,
 ) {
     let mut innerout = vec![];
     tttox(g, &mut innerout);
-    for (dollar, packet) in packets {
-        fn replace(x: &X, dollar: Option<&Token![$]>, packet: &TypePath, ts: &mut TokenStream) {
+    for ReplaceUnit {
+        dollar,
+        ident,
+        path,
+    } in packets
+    {
+        fn replace(
+            x: &X,
+            dollar: Option<&Token![$]>,
+            ident: Option<&Ident>,
+            path: &TypePath,
+            ts: &mut TokenStream,
+        ) {
             match x {
                 X::ReplaceWithPacket(id, case) => {
-                    let ident_name = packet
-                        .path
-                        .segments
-                        .last()
-                        .expect("no last segment?")
-                        .ident
-                        .to_string();
-                    case.ident(ident_name.as_str(), id.span()).to_tokens(ts);
+                    if let Some(ident) = ident {
+                        case.ident(ident.to_string().as_str(), ident.span())
+                            .to_tokens(ts);
+                    } else {
+                        case.ident(
+                            &path
+                                .path
+                                .segments
+                                .last()
+                                .expect("no last segment?")
+                                .ident
+                                .to_string(),
+                            id.span(),
+                        )
+                        .to_tokens(ts);
+                    }
                 }
                 X::ReplaceWithPath => {
                     if let Some(dollar) = dollar {
                         dollar.to_tokens(ts);
                     }
-                    let mut packet = packet.clone();
+                    let mut packet = path.clone();
                     for segm in packet.path.segments.iter_mut() {
                         segm.arguments = syn::PathArguments::None;
                     }
@@ -158,12 +194,13 @@ fn replace_group(
                     if let Some(dollar) = dollar {
                         dollar.to_tokens(ts);
                     }
-                    packet.path.to_tokens(ts);
+                    path.path.to_tokens(ts);
                 }
                 X::Group(delim, innerer) => {
                     let mut g = TokenStream::new();
                     for x in innerer {
-                        replace(x, dollar, packet, &mut g);
+                        #[allow(clippy::deref_addrof)]
+                        replace(x, dollar, *&ident, path, &mut g);
                     }
                     Group::new(*delim, g).to_tokens(ts);
                 }
@@ -171,7 +208,7 @@ fn replace_group(
             }
         }
         for x in &innerout {
-            replace(x, dollar.as_ref(), packet, output)
+            replace(x, dollar.as_ref(), ident.as_ref(), path, output)
         }
     }
 }
