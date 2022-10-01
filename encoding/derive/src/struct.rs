@@ -35,6 +35,7 @@ pub fn derive_struct(
             Counted(_) => "#[counted(ty)]",
             Rest => "#[rest]",
             StringUuid => "#[stringuuid]",
+            Mutf8 => "#[mutf8]",
             BitField(ty) => {
                 if bitfield.is_some() {
                     error!(

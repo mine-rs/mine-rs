@@ -129,6 +129,16 @@ pub fn fields_codegen((kind, fields): (Naming, Vec<Field>)) -> FieldsCode {
                 }
                 .to_tokens(&mut serialization);
             }
+            Attrs::Mutf8(ms) => {
+                quote_spanned! {ms=>
+                    let #ident = <Mutf8<_> as Decode>::decode(cursor)?.into_inner();
+                }
+                .to_tokens(&mut parsing);
+                quote_spanned! {ms=>
+                    Encode::encode(<Mutf8<_>>::from(#ident), writer)?;
+                }
+                .to_tokens(&mut serialization);
+            }
             Attrs::Rest(cs) => {
                 quote_spanned! {cs=>
                     let #ident = <Rest<_> as Decode>::decode(cursor)?.into_inner();
@@ -137,7 +147,7 @@ pub fn fields_codegen((kind, fields): (Naming, Vec<Field>)) -> FieldsCode {
                 quote_spanned! {cs=>
                     Encode::encode(<&Rest<#ty>>::from(#ident), writer)?;
                 }
-                .to_tokens(&mut serialization)
+                .to_tokens(&mut serialization);
             }
         }
     }
@@ -203,6 +213,7 @@ pub fn bitfield_codegen(
                 From(_) => "`#[from(ty)]`",
                 Fixed(_) => "`#[fixed(prec, ty)]`",
                 Counted(_) => "`#[counted(ty)]`",
+                Mutf8 => "`#[mutf8]",
                 Rest => "`#[rest]`",
                 StringUuid => "`#[stringuuid]`",
                 BitField(_) => "`#[bitfield]`",

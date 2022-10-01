@@ -5,9 +5,8 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-miners-encoding = { version = "0.0.0-beta.0", path = "../encoding" }
+miners-encoding = { version = "0.0.0-beta.0", path = "../encoding", features = ["mutf8"] }
 miners-to-static = { version = "0.0.0-beta.0", path = "../to_static", optional = true }
-residua-mutf8 = "2.0.0"
 
 [features]
 default = ["to_static"]

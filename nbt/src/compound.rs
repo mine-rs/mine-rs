@@ -110,7 +110,7 @@ where
                 Ok(tag) => tag,
             };
             use std::collections::hash_map::Entry;
-            let key = Mutf8::decode(cursor)?.0;
+            let key = Mutf8::decode(cursor)?.into_inner();
             let entry = match this.entry(key) {
                 Entry::Occupied(_) => {
                     return Err(decode::Error::Custom("duplicate key in compound"))
@@ -128,7 +128,7 @@ where
                 NbtTag::ByteArray => {
                     Value::ByteArray(<Counted<Cow<[u8]>, i32>>::decode(cursor)?.inner)
                 }
-                NbtTag::String => Value::String(Mutf8::decode(cursor)?.0),
+                NbtTag::String => Value::String(Mutf8::decode(cursor)?.into_inner()),
                 NbtTag::List => Value::List(List::decode(cursor)?),
                 NbtTag::Compound => Value::Compound(Compound::decode(cursor)?),
                 NbtTag::IntArray => {

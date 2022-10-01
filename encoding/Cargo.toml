@@ -7,6 +7,7 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 thiserror = "1.0.32"
 uuid = { version = "1.1.2", optional = true }
+residua-mutf8 = { version = "2.0.0", optional = true }
 
 [dependencies.miners-to-static]
 version = "0.0.0-beta.0"
@@ -15,5 +16,6 @@ path = "../to_static"
 features = ["uuid"]
 
 [features]
-default = ["dep:uuid", "to_static"]
+default = ["dep:uuid", "to_static", "mutf8"]
 to_static = ["dep:miners-to-static"]
+mutf8 = ["dep:residua-mutf8"]

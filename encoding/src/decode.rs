@@ -27,6 +27,9 @@ pub enum Error {
     UnexpectedEndOfSlice,
     #[error("invalid id")]
     InvalidId,
+    #[cfg(feature = "mutf8")]
+    #[error("invalid mutf8 data")]
+    InvalidMutf8(#[from] mutf8::Error),
     #[error("{0}")]
     Custom(&'static str),
 }

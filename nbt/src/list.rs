@@ -164,7 +164,7 @@ where
                 let len = usize::try_from(i32::decode(cursor)?)?;
                 let mut v = Vec::with_capacity(len);
                 for _ in 0..len {
-                    v.push(Mutf8::decode(cursor)?.0)
+                    v.push(Mutf8::decode(cursor)?.into_inner())
                 }
                 v
             }),

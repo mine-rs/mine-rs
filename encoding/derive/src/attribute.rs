@@ -18,6 +18,7 @@ pub enum AttributeData {
     From(Type),
     Fixed(Fixed),
     Counted(TypePath),
+    Mutf8,
     Rest,
     StringUuid,
     BitField(BitField),
@@ -113,6 +114,12 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
                 data: AttributeData::Counted(a.0),
             })
         }),
+        Some(ident) if ident == "mutf8" => Some({
+            Ok(Attribute {
+                span,
+                data: AttributeData::Mutf8,
+            })
+        }),
         Some(ident) if ident == "rest" => Some(Ok(Attribute {
             span: ident.span().resolved_at(Span::call_site()),
             data: AttributeData::Rest,
@@ -146,6 +153,7 @@ pub enum Attrs {
     Fixed(Span, Fixed),
     StringUuid(Span),
     Counted(Span, TypePath),
+    Mutf8(Span),
     Rest(Span),
 }
 
@@ -153,7 +161,8 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
     let mut varint = None;
     let mut fixed = None;
     let mut stringuuid = None;
-    let mut count = None;
+    let mut counted = None;
+    let mut mutf8 = None;
     let mut rest = None;
 
     for attr_res in attrs.map(parse_attr) {
@@ -186,20 +195,28 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
                 }
             }
             Counted(ty) => {
-                if count.is_none() {
+                if counted.is_none() {
                     if rest.is_some() {
                         "`#[counted]` and `#[rest]` are mutually exclusive"
                     } else {
-                        count = Some((span, ty));
+                        counted = Some((span, ty));
                         continue;
                     }
                 } else {
                     "duplicate `#[counted(ty)]` attribute on field"
                 }
             }
+            Mutf8 => {
+                if mutf8.is_none() {
+                    mutf8 = Some(span);
+                    continue;
+                } else {
+                    "duplicate `#[mutf8]` attribute on field"
+                }
+            }
             Rest => {
                 if rest.is_none() {
-                    if count.is_some() {
+                    if counted.is_some() {
                         "`#[counted]` and `#[rest]` are mutually exclusive"
                     } else {
                         rest = Some(span);
@@ -225,28 +242,58 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
         };
         error!(span, err_message).to_tokens(res)
     }
-    match (varint, fixed, stringuuid, count, rest) {
-        (None, None, None, None, None) => Attrs::None,
-        (None, None, None, Some((cs, c)), None) => Attrs::Counted(cs, c),
-        (None, None, Some(s), a, None) => {
+    match (varint, fixed, stringuuid, counted, mutf8, rest) {
+        (None, None, None, None, None, None) => Attrs::None,
+        (None, None, None, None, None, Some(rs)) => Attrs::Rest(rs),
+        (None, None, None, None, Some(ms), a) => {
             if a.is_some() {
-                error!(s, "`stringuuid` incompatible with other attribute(s)").to_tokens(res);
+                error!(
+                    ms,
+                    "`#[mutf8]` incompatible with other annotated attribute(s)"
+                )
+                .to_tokens(res);
+            }
+            Attrs::Mutf8(ms)
+        }
+        (None, None, None, Some((cs, c)), a, b) => {
+            if a.is_some() || b.is_some() {
+                error!(
+                    cs,
+                    "`#[counted(ty)]` incompatible with other annotated attribute(s)"
+                )
+                .to_tokens(res);
+            }
+            Attrs::Counted(cs, c)
+        }
+        (None, None, Some(s), a, b, c) => {
+            if a.is_some() || b.is_some() || c.is_some() {
+                error!(
+                    s,
+                    "`#[stringuuid]` incompatible with other annotated attribute(s)"
+                )
+                .to_tokens(res);
             }
             Attrs::StringUuid(s)
         }
-        (None, None, None, None, Some(cs)) => Attrs::Rest(cs),
-        (None, Some((fs, f)), a, b, None) => {
-            if a.is_some() || b.is_some() {
-                error!(fs, "`fixed` incompatible with other attribute(s)").to_tokens(res);
+        (None, Some((fs, f)), a, b, c, d) => {
+            if a.is_some() || b.is_some() || c.is_some() || d.is_some() {
+                error!(
+                    fs,
+                    "`#[fixed(prec, ty)]` incompatible with other annotated attribute(s)"
+                )
+                .to_tokens(res);
             }
             Attrs::Fixed(fs, f)
         }
-        (Some(v), a, b, c, None) => {
-            if a.is_some() || b.is_some() || c.is_some() {
-                error!(v, "`varint` incompatible with other attribute(s)").to_tokens(res);
+        (Some(v), a, b, c, d, e) => {
+            if a.is_some() || b.is_some() || c.is_some() || d.is_some() || e.is_some() {
+                error!(
+                    v,
+                    "`#[varint]` incompatible with other annotated attribute(s)"
+                )
+                .to_tokens(res);
             }
             Attrs::Var(v)
         }
-        _ => todo!(),
     }
 }

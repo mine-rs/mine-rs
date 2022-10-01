@@ -36,17 +36,22 @@ impl<T> Rest<T> {
     }
 }
 
+fn rest<'dec>(cursor: &mut Cursor<&'dec [u8]>) -> decode::Result<&'dec [u8]> {
+    let pos = cursor.position() as usize;
+    let slice = cursor
+        .get_ref()
+        .get(pos..)
+        .ok_or(decode::Error::UnexpectedEndOfSlice)?;
+    cursor.set_position(cursor.get_ref().len() as u64);
+    Ok(slice)
+}
+
 impl<'dec, T: TryFrom<&'dec [u8]>> Decode<'dec> for Rest<T>
 where
     decode::Error: From<<T as TryFrom<&'dec [u8]>>::Error>,
 {
     fn decode(cursor: &mut Cursor<&'dec [u8]>) -> decode::Result<Self> {
-        let pos = cursor.position() as usize;
-        let slice = cursor
-            .get_ref()
-            .get(pos..)
-            .ok_or(decode::Error::UnexpectedEndOfSlice)?;
-        cursor.set_position(cursor.get_ref().len() as u64);
+        let slice = rest(cursor)?;
         Ok(Self(slice.try_into()?))
     }
 }
