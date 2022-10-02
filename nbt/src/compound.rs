@@ -94,10 +94,7 @@ impl<'a> Encode for Compound<'a> {
         NbtTag::End.encode(writer)
     }
 }
-impl<'dec, 'a> Decode<'dec> for Compound<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for Compound<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let mut this = HashMap::default();
         loop {

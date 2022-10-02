@@ -135,10 +135,7 @@ impl<'a> Encode for List<'a> {
     }
 }
 
-impl<'dec, 'a> Decode<'dec> for List<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for List<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         Ok(match NbtTag::decode(cursor)? {
             NbtTag::End => {

@@ -78,10 +78,7 @@ pub struct JoinGame1<'a> {
     pub level_type: Cow<'a, str>,
 }
 
-impl<'dec, 'a> Decode<'dec> for JoinGame1<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for JoinGame1<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let entity_id = i32::decode(cursor)?;
         let bitfield = u8::decode(cursor)?;
@@ -134,10 +131,7 @@ pub struct JoinGame29<'a> {
     pub reduced_debug_info: bool,
 }
 
-impl<'dec, 'a> Decode<'dec> for JoinGame29<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for JoinGame29<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let entity_id = i32::decode(cursor)?;
         let bitfield = u8::decode(cursor)?;
@@ -1440,10 +1434,7 @@ pub struct MapChunkBulk0<'a> {
     pub data: Cow<'a, [u8]>,
     pub column_metas: Vec<ChunkMeta0>,
 }
-impl<'dec, 'a> Decode<'dec> for MapChunkBulk0<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for MapChunkBulk0<'a> {
     fn decode(cursor: &'_ mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let column_count = u16::decode(cursor)?;
         let data_len = u32::decode(cursor)?;
@@ -1495,10 +1486,7 @@ pub struct MapChunkBulk23<'a> {
     pub column_metas: Vec<ChunkMeta23>,
 }
 
-impl<'dec, 'a> Decode<'dec> for MapChunkBulk23<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for MapChunkBulk23<'a> {
     fn decode(cursor: &'_ mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let column_count = u16::decode(cursor)?;
         let data_len = u32::decode(cursor)?;
@@ -1808,10 +1796,7 @@ pub struct OpenWindow0<'a> {
     pub use_title: bool,
 }
 
-impl<'dec, 'a> Decode<'dec> for OpenWindow0<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for OpenWindow0<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let window_id = u8::decode(cursor)?;
         let kind = u8::decode(cursor)?;
@@ -1890,10 +1875,7 @@ pub struct OpenWindow6<'a> {
     pub slot_count: u8,
 }
 
-impl<'dec, 'a> Decode<'dec> for OpenWindow6<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for OpenWindow6<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let window_id = u8::decode(cursor)?;
         let kind = <&str>::decode(cursor)?;

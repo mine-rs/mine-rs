@@ -39,10 +39,7 @@ pub struct Success5<'a> {
     pub username: Cow<'a, str>,
 }
 
-impl<'dec, 'a> Decode<'dec> for Success5<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for Success5<'a> {
     fn decode(buf: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let uuid = <&str as Decode>::decode(buf)?;
 

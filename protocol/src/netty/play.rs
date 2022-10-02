@@ -218,7 +218,7 @@ parsing_tree! {
         14..=18 => SpawnPlayer5<'a>,
         19..=48 => SpawnPlayer19<'a>,
         49..=56 => SpawnPlayer49<PackedEntityMetadata0<'a>>,
-        57..=66 => SpawnPlayer57 => SpawnPlayer49<PackedEntityMetadata57<'a>>,
+        57..=66 => SpawnPlayer57 => SpawnPlayer49<EntityMetadata57<'a>>,
         // 67..=317 => _67,
         // 318..=331 => _318,
         // 332..=498 => _332,
@@ -621,7 +621,7 @@ parsing_tree! {
     0x1c => {
         0..=6 => EntityMetadata0<'a>,
         7..=56 => EntityMetadata7<PackedEntityMetadata0<'a>>,
-        57..=66 => EntityMetadata57 => EntityMetadata7<PackedEntityMetadata57<'a>>,
+        57..=66 => EntityMetadata57 => EntityMetadata7<EntityMetadata57<'a>>,
         // 67..=79 => _67,
         // 80..=317 => _80,
         // 318..=331 => _318,

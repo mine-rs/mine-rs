@@ -12,10 +12,7 @@ pub enum Slot0<'a> {
         nbt: Compound<'a>,
     },
 }
-impl<'dec, 'a> Decode<'dec> for Slot0<'a>
-where
-    'dec: 'a,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for Slot0<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let block_id = i16::decode(cursor)?;
         if block_id == -1 {

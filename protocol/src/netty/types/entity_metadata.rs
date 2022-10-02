@@ -13,12 +13,13 @@ use super::slot::*;
 const DUPLICATE_METADATA_INDEX: &str = "duplicate index in EntityMetadata";
 
 /// The first EntityMetadata
-pub type PackedEntityMetadata0<'a> = PackedEntityMetadata<Value0<'a>>;
-/// Chat shifted the ids
-pub type PackedEntityMetadata57<'a> = PackedEntityMetadata<Value57<'a, Slot0<'a>>>;
-// todo! figure out if this was changed in version 67, 68 or 69
-/// change to key and type in their own respective bytes
-pub type EntityMetadata69<'a> = EntityMetadata<Value57<'a, Slot0<'a>>>;
+#[derive(ToStatic)]
+pub struct PackedEntityMetadata0<'a> {
+    inner: BTreeMap<u8, Value0<'a>>,
+}
+/// Chat shifted the ids and packed key and type values are no longer used
+/// both now have their own respective bytes
+pub type EntityMetadata57<'a> = EntityMetadata<Value57<'a, Slot0<'a>>>;
 /// Slot changed
 pub type EntityMetadata350<'a> = EntityMetadata<Value57<'a, Slot350<'a>>>;
 /// OptChat shifted the ids
@@ -56,14 +57,18 @@ pub type EntityMetadata759<'a> =
     EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle759<'a, Slot402<'a>>>>;
 
 #[derive(ToStatic)]
-pub struct PackedEntityMetadata<Value> {
-    inner: BTreeMap<u8, Value>,
+pub enum Value0<'a> {
+    Byte(i8),
+    Short(i16),
+    Int(i32),
+    Float(f32),
+    String(Cow<'a, str>),
+    Slot(Slot0<'a>),
+    Position(IntPosition),
+    Rotation(Rotation),
 }
 
-impl<'dec, Value> Decode<'dec> for PackedEntityMetadata<Value>
-where
-    Value: PackedMetadataDecode<'dec>,
-{
+impl<'dec: 'a, 'a> Decode<'dec> for PackedEntityMetadata0<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         let mut map = BTreeMap::new();
         loop {
@@ -74,23 +79,49 @@ where
             use std::collections::btree_map::Entry;
             match map.entry(packed & 0b11111) {
                 Entry::Vacant(vacant) => {
-                    vacant.insert(Value::metadata_decode(packed >> 5, cursor)?);
+                    vacant.insert(match packed >> 5 {
+                        0 => Value0::Byte(Decode::decode(cursor)?),
+                        1 => Value0::Short(Decode::decode(cursor)?),
+                        2 => Value0::Int(Decode::decode(cursor)?),
+                        3 => Value0::Float(Decode::decode(cursor)?),
+                        4 => Value0::String(Decode::decode(cursor)?),
+                        5 => Value0::Slot(Decode::decode(cursor)?),
+                        6 => Value0::Position(Decode::decode(cursor)?),
+                        7 => Value0::Rotation(Decode::decode(cursor)?),
+                        _ => return Err(decode::Error::InvalidId),
+                    });
                 }
                 Entry::Occupied(_) => {
                     return Err(decode::Error::Custom(DUPLICATE_METADATA_INDEX));
                 }
             }
         }
-        Ok(PackedEntityMetadata { inner: map })
+        Ok(PackedEntityMetadata0 { inner: map })
     }
 }
-impl<Value> Encode for PackedEntityMetadata<Value>
-where
-    Value: PackedMetadataEncode,
-{
+impl<'a> Encode for PackedEntityMetadata0<'a> {
     fn encode(&self, writer: &mut impl std::io::Write) -> encode::Result<()> {
-        for (index, value) in &self.inner {
-            value.encode_packed(*index, writer)?;
+        macro_rules! match_encode {
+            ($($case:ident => $num:literal),* $(,)?) => {
+                for (index, value) in &self.inner {
+                    match value {
+                        $(Value0::$case(val) => {
+                            ((($num as u8) << 5) | (index & 0b11111)).encode(writer)?;
+                            val.encode(writer)?;
+                        })*
+                    }
+                }
+            };
+        }
+        match_encode! {
+            Byte => 0,
+            Short => 1,
+            Int => 2,
+            Float => 3,
+            String => 4,
+            Slot => 5,
+            Position => 6,
+            Rotation => 7
         }
         Ok(())
     }
@@ -135,111 +166,27 @@ where
     }
 }
 
-trait PackedMetadataDecode<'dec>: Sized {
-    fn metadata_decode(id: u8, cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self>;
-}
-trait PackedMetadataEncode {
-    fn encode_packed(&self, index: u8, writer: &mut impl std::io::Write) -> encode::Result<()>;
-}
-
-macro_rules! packed_metadata {
-    (
-        $(#[$($enum_attr:tt)*])*
-        pub enum $name:ident $(<$($lt:lifetime),* $(,)? $($generic:ident),*>)? {
-            $(
-                $(#[$($case_attr:tt)*])?
-                $case:ident
-                $( ($( $(#[$($unnamed_attr:tt)*])* $unnamed_typ:ty),* $(,)?) )?
-                $( {$( $field:ident : $(#[$($named_attr:tt)*])* $named_typ:ty ),* $(,)?} )?
-                $(= $id:literal)?
-            ),* $(,)?
-        }
-    ) => {
-        $(#[$($enum_attr)*])*
-        pub enum $name $(<'a, $($generic),*>)? {
-            $(
-                $(#[$($case_attr)*])?
-                $case
-                $( ($( $(#[$($unnamed_attr)*])* $unnamed_typ),*) )?
-                $( {$( $field : $(#[$($named_attr)*])* $named_typ ),*} )?
-            ),*
-        }
-        impl<'dec, $($($lt,)* $($generic),*)?> PackedMetadataDecode<'dec>
-            for $name$(<$($lt,)* $($generic),*>)?
-        where $(
-            $('dec: $lt,)*
-            $($generic: Decode<'dec>),*
-        )? {
-            fn metadata_decode(id: u8, cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
-                Ok(match id {
-                    $(
-                        $($id)? => Self::$case(Decode::decode(cursor)?)
-                            // $( ($(<$unnamed_typ>::decode(cursor)?),*) )?
-                            // $( { $($field : <$named_typ>::decode(cursor)?),* } )?
-                        ,
-                    )*
-                    _ => return Err(decode::Error::InvalidId),
-                })
-            }
-        }
-        impl<$($($lt,)* $($generic),*)?> PackedMetadataEncode
-            for $name<$($($lt,)* $($generic),*)?>
-        where
-            $($($generic: Encode),*)?
-        {
-            fn encode_packed(&self, index: u8, writer: &mut impl std::io::Write) -> encode::Result<()> {
-                match self {
-                    $(Self::$case(val)
-                        // $( ($(val),*) )?
-                        // $( { $($field),* } )?
-                    => {
-                        ((($($id)? as u8) << 5) & (index & 0b11111)).encode(writer)?;
-                        val.encode(writer)
-                        // $( $(<$unnamed_typ>::encode(val, writer)?;)* Ok(()) )?
-                        // $( $(<$named_typ>::encode($field, writer)?;)* Ok(()) )?
-                    }),*
-                }
-            }
-        }
-    };
-}
-packed_metadata! {
-    #[derive(ToStatic)]
-    pub enum Value0<'a> {
-        Byte(i8) = 0,
-        Short(i16) = 1,
-        Int(i32) = 2,
-        Float(f32) = 3,
-        String(Cow<'a, str>) = 4,
-        Slot(Slot0<'a>) = 5,
-        Position(IntPosition) = 6,
-        Rotation(Rotation) = 7,
-    }
-}
-
 #[derive(Encoding, ToStatic)]
 pub struct Chat<'a>(Cow<'a, str>);
 
-packed_metadata! {
-    #[derive(Encoding, ToStatic)]
-    #[from(u8)]
-    pub enum Value57 <'a, Slot> {
-        #[case(0)]
-        Byte(i8) = 0,
-        VarInt(#[varint] i32) = 1,
-        Float(f32) = 2,
-        String(Cow<'a, str>) = 3,
-        Chat(Chat<'a>) = 4,
-        Slot(Slot) = 5,
-        Boolean(bool) = 6,
-        Rotation(Rotation) = 7,
-        Position(Position6) = 8,
-        OptPosition(Option<Position6>) = 9,
-        Direction(Direction) = 10,
-        OptUuid(Option<Uuid>) = 11,
-        BlockId(BlockId) = 12,
-        Nbt(Compound<'a>) = 13,
-    }
+#[derive(Encoding, ToStatic)]
+#[from(u8)]
+pub enum Value57<'a, Slot> {
+    #[case(0)]
+    Byte(i8),
+    VarInt(#[varint] i32),
+    Float(f32),
+    String(Cow<'a, str>),
+    Chat(Chat<'a>),
+    Slot(Slot),
+    Boolean(bool),
+    Rotation(Rotation),
+    Position(Position6),
+    OptPosition(Option<Position6>),
+    Direction(Direction),
+    OptUuid(Option<Uuid>),
+    BlockId(BlockId),
+    Nbt(Compound<'a>),
 }
 
 #[derive(Encoding, ToStatic)]
