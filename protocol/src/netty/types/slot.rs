@@ -103,8 +103,7 @@ fn slot0() {
 }
 
 #[derive(ToStatic)]
-// tree fiddy
-pub enum Slot350<'a> {
+pub enum Slot346<'a> {
     Empty,
     Item {
         id: u16,
@@ -112,11 +111,11 @@ pub enum Slot350<'a> {
         nbt: Compound<'a>,
     },
 }
-impl<'dec: 'a, 'a> Decode<'dec> for Slot350<'a> {
+impl<'dec: 'a, 'a> Decode<'dec> for Slot346<'a> {
     fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
         match u16::decode(cursor)? {
-            0xffff => Ok(Slot350::Empty),
-            id => Ok(Slot350::Item {
+            0xffff => Ok(Slot346::Empty),
+            id => Ok(Slot346::Item {
                 id,
                 count: u8::decode(cursor)?,
                 nbt: Compound::decode(cursor)?,
@@ -124,11 +123,11 @@ impl<'dec: 'a, 'a> Decode<'dec> for Slot350<'a> {
         }
     }
 }
-impl<'a> Encode for Slot350<'a> {
+impl<'a> Encode for Slot346<'a> {
     fn encode(&self, writer: &mut impl std::io::Write) -> encode::Result<()> {
         match self {
-            Slot350::Empty => 0xffffu16.encode(writer),
-            Slot350::Item { id, count, nbt } => {
+            Slot346::Empty => 0xffffu16.encode(writer),
+            Slot346::Item { id, count, nbt } => {
                 #[cfg(debug_assertions)]
                 if *id == 0xffff {
                     return Err(encode::Error::Custom("invalid item id 0xffff (-1)"));

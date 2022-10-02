@@ -21,15 +21,15 @@ pub struct PackedEntityMetadata0<'a> {
 /// both now have their own respective bytes
 pub type EntityMetadata57<'a> = EntityMetadata<Value57<'a, Slot0<'a>>>;
 /// Slot changed
-pub type EntityMetadata350<'a> = EntityMetadata<Value57<'a, Slot350<'a>>>;
+pub type EntityMetadata346<'a> = EntityMetadata<Value57<'a, Slot346<'a>>>;
 /// OptChat shifted the ids
 pub type EntityMetadata353<'a> =
-    EntityMetadata<Value353<'a, Slot350<'a>, Position6, Particle353<'a, Slot350<'a>>>>;
+    EntityMetadata<Value353<'a, Slot346<'a>, Position6, Particle353<'a, Slot346<'a>>>>;
 /// Slot type changed
 pub type EntityMetadata402<'a> =
     EntityMetadata<Value353<'a, Slot402<'a>, Position6, Particle353<'a, Slot402<'a>>>>;
 /// Position type changed
-pub type EntityMetadata442<'a> =
+pub type EntityMetadata441<'a> =
     EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle353<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadata463<'a> =
