@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::*;
 use attrs::*;
 
-use super::position::Position442;
+use super::position::Position441;
 
 macro_rules! particle_versions {
     ($(
@@ -235,7 +235,7 @@ pub struct Vibration<'a> {
 #[derive(ToStatic)]
 pub enum VibrationSource<'a> {
     /// vibration source "minecraft:block"
-    Block { position: Position442 },
+    Block { position: Position441 },
     /// vibration source "minecraft:entity"
     Entity {
         /// The ID of the entity the vibration originated from
@@ -252,7 +252,7 @@ impl<'dec: 'a, 'a> Decode<'dec> for VibrationSource<'a> {
         use VibrationSource::*;
         Ok(match <&str>::decode(cursor)? {
             "minecraft:block" => Block {
-                position: Position442::decode(cursor)?,
+                position: Position441::decode(cursor)?,
             },
             "minecraft:entity" => Entity {
                 id: Var::decode(cursor)?.into_inner(),

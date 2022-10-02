@@ -57,7 +57,7 @@ fn position6() {
 
 #[derive(Encoding, ToStatic, Clone, Copy)]
 #[bitfield]
-pub struct Position442 {
+pub struct Position441 {
     #[bits(26)]
     pub x: i32,
     #[bits(26)]
@@ -67,7 +67,7 @@ pub struct Position442 {
 }
 
 #[test]
-fn position442() {
+fn position441() {
     #[allow(clippy::unusual_byte_groupings, clippy::type_complexity)]
     const TESTS: &[([u8; 8], (i32, i16, i32))] = &[
         (
@@ -90,7 +90,7 @@ fn position442() {
     for (bytes, (x, y, z)) in TESTS.iter().copied() {
         let mut cursor = std::io::Cursor::new(&bytes[..]);
         #[allow(clippy::unwrap_used)]
-        let pos = Position442::decode(&mut cursor).unwrap();
+        let pos = Position441::decode(&mut cursor).unwrap();
         assert_eq!(pos.x, x);
         assert_eq!(pos.y, y);
         assert_eq!(pos.z, z);

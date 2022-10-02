@@ -30,31 +30,31 @@ pub type EntityMetadata402<'a> =
     EntityMetadata<Value353<'a, Slot402<'a>, Position6, Particle353<'a, Slot402<'a>>>>;
 /// Position type changed
 pub type EntityMetadata442<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle353<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle353<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadata463<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle463<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle463<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadata701<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle701<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle701<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadata706<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle706<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle706<'a, Slot402<'a>>>>;
 /// Added Particle information (DustColorTransition, Vibration)
 pub type EntityMetadata755<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle755<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle755<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadataS20<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, ParticleS20<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, ParticleS20<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadata757<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle757<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle757<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadataS74<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, ParticleS74<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, ParticleS74<'a, Slot402<'a>>>>;
 /// Particles shifted
 pub type EntityMetadata759<'a> =
-    EntityMetadata<Value353<'a, Slot402<'a>, Position442, Particle759<'a, Slot402<'a>>>>;
+    EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle759<'a, Slot402<'a>>>>;
 
 #[derive(ToStatic)]
 pub enum Value0<'a> {
