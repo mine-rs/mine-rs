@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 #[derive(Encoding, ToStatic)]
 pub struct Response0<'a> {
-    // todo! json thing
+    // TODO: json thing
     pub data: Cow<'a, str>,
 }
 

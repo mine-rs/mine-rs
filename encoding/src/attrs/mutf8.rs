@@ -63,4 +63,4 @@ fn to_mutf8(data: &str, writer: &mut impl Write) -> encode::Result<()> {
     Ok(())
 }
 
-// todo! add tests
+// TODO: add tests

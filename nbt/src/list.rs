@@ -196,7 +196,7 @@ macro_rules! from {
         impl<'a> From<Vec<$ufrom>> for List<'a> {
             fn from(val: Vec<$ufrom>) -> Self {
                 List::$case({
-                    // todo! replace this with into_raw_parts when available
+                    // TODO: replace this with into_raw_parts when available
                     let mut val = core::mem::ManuallyDrop::new(val);
                     let (ptr, length, capacity) = (val.as_mut_ptr(), val.len(), val.capacity());
                     unsafe { Vec::from_raw_parts(ptr as *mut $ifrom, length, capacity) }
@@ -242,7 +242,7 @@ impl<'a> From<Cow<'a, [u8]>> for List<'a> {
                 Cow::Borrowed(unsafe { std::slice::from_raw_parts(data as *const i8, len) })
             }
             Cow::Owned(vec) => {
-                // todo! replace this with into_raw_parts when available
+                // TODO: replace this with into_raw_parts when available
                 let mut vec = core::mem::ManuallyDrop::new(vec);
                 let (ptr, length, capacity) = (vec.as_mut_ptr(), vec.len(), vec.capacity());
                 Cow::Owned(unsafe { Vec::from_raw_parts(ptr as *mut i8, length, capacity) })

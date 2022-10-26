@@ -17,7 +17,7 @@ pub struct KeepAlive7 {
 
 #[derive(Encoding, ToStatic)]
 pub struct ChatMessage0<'a> {
-    // todo! add ChatMessage json thing
+    // TODO: add ChatMessage json thing
     pub message: Cow<'a, str>,
 }
 
@@ -329,13 +329,13 @@ pub struct PlayerBlockPlacement0 {
     pub x: i32,
     pub y: u8,
     pub z: i32,
-    // todo! WTF
+    // TODO: WTF
 }
 
 #[derive(Encoding, ToStatic)]
 pub struct PlayerBlockPlacement6 {
     pub location: Position6,
-    // todo! WTF (see above)
+    // TODO: WTF (see above)
 }
 
 #[derive(Encoding, ToStatic)]
@@ -415,7 +415,7 @@ pub struct ClickWindow0 {
     pub window_id: u8,
     pub action: ClickAction0,
     pub action_id: i16,
-    // todo! slot type
+    // TODO: slot type
     // item: Slot
 }
 impl<'dec> Decode<'dec> for ClickWindow0 {
@@ -629,7 +629,7 @@ pub struct ConfirmTransaction0 {
 #[derive(Encoding, ToStatic)]
 pub struct CreativeInventoryAction0 {
     pub slot: u16,
-    // todo! slot type
+    // TODO: slot type
     // item: Slot
 }
 
@@ -712,10 +712,10 @@ pub struct TabComplete37<'a> {
 #[derive(Encoding, ToStatic)]
 pub struct ClientSettings0<'a> {
     pub locale: Cow<'a, str>,
-    // todo! find out exactly when this field changed to the pv6's version of it
+    // TODO: find out exactly when this field changed to the pv6's version of it
     // instead of being an enum there it is plainly the exact view distance in chunks
     pub view_distance: ViewDistance0,
-    // todo! custom chat flags
+    // TODO: custom chat flags
     // https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Client_Settings
     pub chat_flags: u8,
     /// ????
@@ -738,7 +738,7 @@ pub struct ClientSettings6<'a> {
     pub locale: Cow<'a, str>,
     /// Client-side render distance, in chunks
     pub view_distance: u8,
-    // todo! custom chat flags
+    // TODO: custom chat flags
     // https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Client_Settings
     pub chat_mode: ChatMode6,
     /// ????

@@ -2,7 +2,7 @@ use crate::*;
 
 #[derive(Encoding, ToStatic, Clone, Copy)]
 #[bitfield]
-// todo! figure out when position changed, this might be the new version
+// TODO: figure out when position changed, this might be the new version
 // the old one had z and y swapped compared to the current one
 // was changed in pv442
 pub struct Position6 {

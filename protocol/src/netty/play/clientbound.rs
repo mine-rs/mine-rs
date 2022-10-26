@@ -193,13 +193,13 @@ pub enum Dimension0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct ChatMessage0<'a> {
-    // todo! add ChatMessage json thing
+    // TODO: add ChatMessage json thing
     pub message: Cow<'a, str>,
 }
 
 #[derive(Encoding, ToStatic)]
 pub struct ChatMessage6<'a> {
-    // todo! add ChatMessage json thing
+    // TODO: add ChatMessage json thing
     pub message: Cow<'a, str>,
     pub position: ChatMessagePosition6,
 }
@@ -222,7 +222,7 @@ pub struct TimeUpdate0 {
 pub struct EntityEquipment0 {
     pub entity_id: i32,
     pub slot: EquipmentSlot0,
-    // todo! slot data
+    // TODO: slot data
     // item: Slot,
 }
 
@@ -231,7 +231,7 @@ pub struct EntityEquipment7 {
     #[varint]
     pub entity_id: i32,
     pub slot: EquipmentSlot0,
-    // todo! slot data
+    // TODO: slot data
     // item: Slot,
 }
 
@@ -250,7 +250,7 @@ pub struct EntityEquipment49 {
     #[varint]
     pub entity_id: i32,
     pub slot: EquipmentSlot49,
-    // todo! slot data
+    // TODO: slot data
     // item: Slot,
 }
 
@@ -516,7 +516,7 @@ pub struct CollectItem7 {
 pub struct SpawnObject0 {
     #[varint]
     pub entity_id: i32,
-    // todo! (see [`Object0`])
+    // TODO: (see [`Object0`])
     pub kind: Object0,
     #[fixed(5, i32)]
     /// X position as a Fixed-Point number
@@ -529,13 +529,13 @@ pub struct SpawnObject0 {
     pub z: f64,
     pub pitch: Angle,
     pub yaw: Angle,
-    // todo! should be covered by kind, look above
+    // TODO: should be covered by kind, look above
     pub data: Object0,
 }
 
 #[derive(Encoding, ToStatic)]
 #[from(u8)]
-// todo! add #[separated] to have a custom option for
+// TODO: add #[separated] to have a custom option for
 // separated type and cursor/writer impl
 // would produce a custom read like `read(kind: $from, cursor: Cursor<&[u8]>) -> Result`
 // and write like `write_kind(&self, writer: impl Write) -> Result`
@@ -630,7 +630,7 @@ pub enum EntityKind0 {
 pub struct SpawnMob0<'a> {
     #[varint]
     pub entity_id: i32,
-    // todo! see #[separated] on Object
+    // TODO: see #[separated] on Object
     pub kind: EntityKind0,
     #[fixed(5, i32)]
     pub x: f64,
@@ -644,7 +644,7 @@ pub struct SpawnMob0<'a> {
     pub velocity_x: i16,
     pub velocity_y: i16,
     pub velocity_z: i16,
-    // todo! see type
+    // TODO: see type
     pub metadata: PackedEntityMetadata0<'a>,
 }
 
@@ -652,7 +652,7 @@ pub struct SpawnMob0<'a> {
 pub struct SpawnPainting0<'a> {
     #[varint]
     pub entity_id: i32,
-    // todo! #[max_len(13)]
+    // TODO: #[max_len(13)]
     /// Name of the painting. Max length 13
     pub title: Cow<'a, str>,
     pub x: i32,
@@ -664,7 +664,7 @@ pub struct SpawnPainting0<'a> {
 pub struct SpawnPainting8<'a> {
     #[varint]
     pub entity_id: i32,
-    // todo! #[max_len(13)]
+    // TODO: #[max_len(13)]
     /// Name of the painting. Max length 13
     pub title: Cow<'a, str>,
     pub location: Position6,
@@ -799,7 +799,7 @@ pub struct Entity7 {
 #[derive(Encoding, ToStatic)]
 pub struct EntityRelativeMove0 {
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it is, use EntityTeleport instead
     #[fixed(5, i8)]
@@ -818,7 +818,7 @@ pub struct EntityRelativeMove0 {
 pub struct EntityRelativeMove7 {
     #[varint]
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it is, use EntityTeleport instead
     #[fixed(5, i8)]
@@ -837,7 +837,7 @@ pub struct EntityRelativeMove7 {
 pub struct EntityRelativeMove22 {
     #[varint]
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it is, use EntityTeleport instead
     #[fixed(5, i8)]
@@ -880,7 +880,7 @@ pub struct EntityLook22 {
 #[derive(Encoding, ToStatic)]
 pub struct EntityLookAndRelativeMove0 {
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it is, use EntityTeleport instead
     #[fixed(5, i8)]
@@ -901,7 +901,7 @@ pub struct EntityLookAndRelativeMove0 {
 pub struct EntityLookAndRelativeMove7 {
     #[varint]
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it is, use EntityTeleport instead
     #[fixed(5, i8)]
@@ -922,7 +922,7 @@ pub struct EntityLookAndRelativeMove7 {
 pub struct EntityLookAndRelativeMove22 {
     #[varint]
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it is, use EntityTeleport instead
     #[fixed(5, i8)]
@@ -943,7 +943,7 @@ pub struct EntityLookAndRelativeMove22 {
 #[derive(Encoding, ToStatic)]
 pub struct EntityTeleport0 {
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     #[fixed(5, i32)]
     pub x: f64,
     #[fixed(5, i32)]
@@ -958,7 +958,7 @@ pub struct EntityTeleport0 {
 pub struct EntityTeleport7 {
     #[varint]
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     #[fixed(5, i32)]
     pub x: f64,
     #[fixed(5, i32)]
@@ -973,7 +973,7 @@ pub struct EntityTeleport7 {
 pub struct EntityTeleport22 {
     #[varint]
     pub entity_id: i32,
-    // todo! round x and z but floor y
+    // TODO: round x and z but floor y
     #[fixed(5, i32)]
     pub x: f64,
     #[fixed(5, i32)]
@@ -1047,7 +1047,7 @@ pub struct EntityMetadata7<EntityMetadata> {
 #[derive(Encoding, ToStatic)]
 pub struct EntityEffect0 {
     pub entity_id: i32,
-    // todo! effect ids
+    // TODO: effect ids
     pub effect_id: i8,
     pub amplifier: i8,
     pub duration: i16,
@@ -1057,7 +1057,7 @@ pub struct EntityEffect0 {
 pub struct EntityEffect7 {
     #[varint]
     pub entity_id: i32,
-    // todo! effect ids
+    // TODO: effect ids
     pub effect_id: i8,
     pub amplifier: i8,
     #[varint]
@@ -1068,7 +1068,7 @@ pub struct EntityEffect7 {
 pub struct EntityEffect10 {
     #[varint]
     pub entity_id: i32,
-    // todo! effect ids
+    // TODO: effect ids
     pub effect_id: i8,
     pub amplifier: i8,
     #[varint]
@@ -1170,7 +1170,7 @@ pub enum ModifierOperation0 {
 }
 
 #[derive(Encoding, ToStatic)]
-// todo! make this nice to interact with
+// TODO: make this nice to interact with
 pub struct ChunkData0<'a> {
     pub chunk_x: i32,
     pub chunk_y: i32,
@@ -1180,7 +1180,7 @@ pub struct ChunkData0<'a> {
     pub continuous: bool,
     /// Bitmask with 1 for every 16x16x16 section which data follows in the compressed data.
     pub primary_bitmap: u16,
-    // todo! waht is this for?
+    // TODO: waht is this for?
     /// Same as above, but this is used exclusively for the 'add' portion of the payload
     pub add_bitmap: u16,
     #[counted(u32)]
@@ -1188,7 +1188,7 @@ pub struct ChunkData0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-// todo! make this nice to interact with
+// TODO: make this nice to interact with
 pub struct ChunkData23<'a> {
     pub chunk_x: i32,
     pub chunk_y: i32,
@@ -1203,7 +1203,7 @@ pub struct ChunkData23<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-// todo! make this nice to interact with
+// TODO: make this nice to interact with
 pub struct ChunkData27<'a> {
     pub chunk_x: i32,
     pub chunk_y: i32,
@@ -1233,7 +1233,7 @@ impl<'dec> Decode<'dec> for MultiBlockChange0 {
         let record_count = u16::decode(cursor)?;
         let data_size: i32 = i32::decode(cursor)?;
         if data_size != record_count as i32 * 4 {
-            // todo! different error
+            // TODO: different error
             return Err(decode::Error::InvalidId);
         }
         let records: Vec<_> = (0..record_count)
@@ -1275,7 +1275,7 @@ impl<'dec> Decode<'dec> for MultiBlockChange4 {
         let record_count = u16::decode(cursor)?;
         let data_size: i32 = i32::decode(cursor)?;
         if data_size != record_count as i32 * 4 {
-            // todo! different error
+            // TODO: different error
             return Err(decode::Error::InvalidId);
         }
         let records: Vec<_> = (0..record_count)
@@ -1362,7 +1362,7 @@ pub struct BlockChange0 {
     pub y: u8,
     pub z: i32,
     #[varint]
-    // todo! extract the next two variables into concrete types for the version
+    // TODO: extract the next two variables into concrete types for the version
     pub block_type: i32,
     pub block_data: u8,
 }
@@ -1378,7 +1378,7 @@ pub struct BlockChange6 {
 #[derive(Encoding, ToStatic)]
 pub struct BlockChange25 {
     pub location: Position6,
-    // todo! global palette block id, maybe separate into id and type?
+    // TODO: global palette block id, maybe separate into id and type?
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Block_Change
     #[varint]
     pub block_id: i32,
@@ -1443,7 +1443,7 @@ impl<'dec: 'a, 'a> Decode<'dec> for MapChunkBulk0<'a> {
         let data = cursor
             .get_ref()
             .get(pos as usize..data_len as usize + pos as usize)
-            // todo! different error
+            // TODO: different error
             .ok_or(decode::Error::InvalidId)?;
         cursor.set_position(data_len as u64 + pos);
         let column_metas = (0..column_count)
@@ -1495,7 +1495,7 @@ impl<'dec: 'a, 'a> Decode<'dec> for MapChunkBulk23<'a> {
         let data = cursor
             .get_ref()
             .get(pos as usize..data_len as usize + pos as usize)
-            // todo! different error
+            // TODO: different error
             .ok_or(decode::Error::InvalidId)?;
         cursor.set_position(data_len as u64 + pos);
         let column_metas = (0..column_count)
@@ -1560,10 +1560,10 @@ pub struct ExplosionRecord {
 }
 
 #[derive(Encoding, ToStatic)]
-// todo! more detailed data using #[separated]
+// TODO: more detailed data using #[separated]
 pub struct Effect0 {
     pub effect_id: i32,
-    // todo! relative? fixed point?
+    // TODO: relative? fixed point?
     /// The X location of the effect multiplied by 8
     pub x: i32,
     /// The Y location of the effect multiplied by 8
@@ -1575,7 +1575,7 @@ pub struct Effect0 {
 }
 
 #[derive(Encoding, ToStatic)]
-// todo! see above
+// TODO: see above
 pub struct Effect6 {
     pub effect_id: i32,
     pub location: Position6,
@@ -1586,7 +1586,7 @@ pub struct Effect6 {
 #[derive(Encoding, ToStatic)]
 pub struct SoundEffect0<'a> {
     pub effect_id: Cow<'a, str>,
-    // todo! relative? fixed point?
+    // TODO: relative? fixed point?
     /// The X location of the effect multiplied by 8
     pub x: i32,
     /// The Y location of the effect multiplied by 8
@@ -1616,7 +1616,7 @@ pub enum SoundCategory0 {
 #[derive(Encoding, ToStatic)]
 pub struct SoundEffect1<'a> {
     pub effect_id: Cow<'a, str>,
-    // todo! relative? fixed point?
+    // TODO: relative? fixed point?
     /// The X location of the effect multiplied by 8
     pub x: i32,
     /// The Y location of the effect multiplied by 8
@@ -1631,7 +1631,7 @@ pub struct SoundEffect1<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct Particle0<'a> {
-    // todo! specific strings into enum
+    // TODO: specific strings into enum
     pub name: Cow<'a, str>,
     pub x: f32,
     pub y: f32,
@@ -1648,7 +1648,7 @@ pub struct Particle0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct Particle17<'a> {
-    // todo! specific strings into enum
+    // TODO: specific strings into enum
     pub name: Cow<'a, str>,
     pub x: f32,
     pub y: f32,
@@ -1661,7 +1661,7 @@ pub struct Particle17<'a> {
     pub offset_z: f32,
     pub speed: f32,
     pub number: i32,
-    // todo! read exact number of varints using enum of possible names
+    // TODO: read exact number of varints using enum of possible names
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Particle_2
     #[rest]
     pub data: Cow<'a, [u8]>,
@@ -1669,7 +1669,7 @@ pub struct Particle17<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct Particle29<'a> {
-    // todo! specific strings into enum
+    // TODO: specific strings into enum
     pub name: Cow<'a, str>,
     /// If true, particle distance increases from 256 to 65536
     pub long_distance: bool,
@@ -1684,7 +1684,7 @@ pub struct Particle29<'a> {
     pub offset_z: f32,
     pub speed: f32,
     pub number: i32,
-    // todo! read exact number of varints using enum of possible names
+    // TODO: read exact number of varints using enum of possible names
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Particle_2
     #[rest]
     pub data: Cow<'a, [u8]>,
@@ -1937,7 +1937,7 @@ impl<'a> Encode for OpenWindow6<'a> {
 
 // #[derive(Encoding, ToStatic)]
 #[derive(ToStatic)]
-// todo! very good place for #[separate]
+// TODO: very good place for #[separate]
 pub enum InventoryKind0 {
     /// Chest, large chest, or minecart with chest
     // #[from(0)]
@@ -1961,7 +1961,7 @@ pub enum InventoryKind0 {
 
 // #[derive(Encoding, ToStatic)]
 #[derive(ToStatic)]
-// todo! very good place for #[separate]
+// TODO: very good place for #[separate]
 pub enum InventoryKind6 {
     /// Chest, large chest, or minecart with chest
     // #[from(0)]
@@ -2000,7 +2000,7 @@ pub struct SetSlot0 {
     pub window_id: u8,
     /// The slot that should be updated
     pub slot: u16,
-    // todo! slot data
+    // TODO: slot data
     // data: Slot
 }
 
@@ -2009,7 +2009,7 @@ pub struct WindowItems0 {
     /// The id of window which items are being sent for. 0 for player inventory.
     pub window_id: u8,
     // #[counted(u16)]
-    // todo! slot data
+    // TODO: slot data
     // slots: Vec<Slot>
 }
 
@@ -2052,12 +2052,12 @@ pub struct UpdateSign6<'a> {
 pub struct Maps0 {
     #[varint]
     pub item_damage: i32,
-    // todo! #[rest]
-    // todo! impl MapData
+    // TODO: #[rest]
+    // TODO: impl MapData
     // map_data: MapData<'a>,
 }
 
-// todo! WTF
+// TODO: WTF
 // https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Maps
 // enum MapData<'a> {
 //     ColorColumn{
@@ -2078,7 +2078,7 @@ pub struct UpdateBlockEntity0 {
     /// varies
     pub data_length: u16,
     // Present if data length > 0. Compressed with gzip. Varies
-    // todo! nbt
+    // TODO: nbt
     // data: Nbt
 }
 
@@ -2090,7 +2090,7 @@ pub struct UpdateBlockEntity6 {
     /// varies
     pub data_length: u16,
     // Present if data length > 0. Compressed with gzip. Varies
-    // todo! nbt
+    // TODO: nbt
     // data: Nbt
 }
 
@@ -2213,7 +2213,7 @@ pub struct PlayerListAddPlayer28<'a> {
     pub gamemode: GameMode17,
     // varint
     pub ping: i32,
-    // todo! chat
+    // TODO: chat
     pub display_name: Option<Cow<'a, str>>,
 }
 
@@ -2318,7 +2318,7 @@ pub enum ScoreboardObjectiveAction12<'a> {
     },
 }
 
-// todo! check that there aren't any other cases in later supported protocol versions
+// TODO: check that there aren't any other cases in later supported protocol versions
 // support up to pv66
 #[derive(Encoding, ToStatic)]
 #[from(&str)]

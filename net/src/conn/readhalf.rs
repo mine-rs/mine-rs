@@ -52,7 +52,7 @@ where
     R: AsyncRead + Unpin,
 {
     async fn read(&mut self, buf: &mut Vec<u8>, len: u32) -> io::Result<()> {
-        // todo! replace with readbuf or similar api once that is stabilized
+        // TODO: replace with readbuf or similar api once that is stabilized
         buf.resize(buf.len() + len as usize, 0);
         let slice_start = buf.len() - len as usize;
         self.reader.read_exact(&mut buf[slice_start..]).await?;
@@ -248,7 +248,7 @@ where
 
                 compression_buf.reserve_exact(uncompressed_len as usize);
 
-                // todo! reuse decompress
+                // TODO: reuse decompress
                 let mut zlib = flate2::Decompress::new(true);
 
                 // error check?
@@ -259,7 +259,7 @@ where
                 )
                 .ok();
 
-                // todo! enable this when reusing decompress
+                // TODO: enable this when reusing decompress
                 // zlib.reset(true);
 
                 Ok(EncodedData(compression_buf))

@@ -60,4 +60,4 @@ impl_fixed! {
     [i8, u8, i16, u16, i32, u32]: f64
 }
 
-// todo! add tests
+// TODO: add tests

@@ -128,7 +128,7 @@ pub fn derive_enum(
             None => {
                 if let Some(prev) = &mut prev {
                     *prev += 1;
-                    // todo! support u128 probably using enum
+                    // TODO: support u128 probably using enum
                     let lit = proc_macro2::Literal::i128_unsuffixed(*prev);
                     parse_quote!(#lit)
                 } else {
