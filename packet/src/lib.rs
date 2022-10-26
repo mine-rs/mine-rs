@@ -5,7 +5,7 @@ pub trait Packet {
     fn encode_for_version(
         &self,
         version: i32,
-        writer: &mut (impl std::io::Write + ?Sized),
+        writer: &mut impl std::io::Write,
     ) -> Option<encode::Result<()>>;
 }
 
