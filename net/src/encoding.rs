@@ -4,6 +4,8 @@ use {
     miners_encoding::{decode, encode, Decode, Encode},
 };
 
+use miners_packet::DynPacket;
+
 use crate::packing::{Compression, Compressor, PackedData};
 
 /// Holds a mutable reference to a buffer with the following layout
@@ -128,6 +130,19 @@ impl Encoder {
         self.encodebuf.clear();
         self.encodebuf.push(0);
         match packet.encode_for_version(version, &mut self.encodebuf) {
+            Some(Ok(())) => Some(Ok(EncodedData(&mut self.encodebuf))),
+            Some(Err(e)) => Some(Err(e)),
+            None => None,
+        }
+    }
+    pub fn encode_dyn_packet(
+        &mut self,
+        version: i32,
+        packet: &dyn DynPacket<Vec<u8>>,
+    ) -> Option<encode::Result<EncodedData>> {
+        self.encodebuf.clear();
+        self.encodebuf.push(0);
+        match packet.dyn_encode_for_version(version, &mut self.encodebuf) {
             Some(Ok(())) => Some(Ok(EncodedData(&mut self.encodebuf))),
             Some(Err(e)) => Some(Err(e)),
             None => None,
