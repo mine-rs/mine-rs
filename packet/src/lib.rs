@@ -23,6 +23,7 @@ pub trait DynPacket<W: std::io::Write> {
         version: i32,
         writer: &mut W,
     ) -> Option<encode::Result<()>>;
+    fn type_name(&self) -> &'static str;
 }
 
 impl<T: Packet, W: std::io::Write> DynPacket<W> for T {
@@ -35,5 +36,8 @@ impl<T: Packet, W: std::io::Write> DynPacket<W> for T {
             writer: &mut W,
         ) -> Option<encode::Result<()>> {
         Packet::encode_for_version(self, version, writer)
+    }
+    fn type_name(&self) -> &'static str {
+        std::any::type_name::<T>()
     }
 }

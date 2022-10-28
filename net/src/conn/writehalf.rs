@@ -86,11 +86,11 @@ where
                 Err(e) => Err(e),
             }
         } else {
-            //TODO: Hopefully find a way to add type info to this
             #[cfg(debug_assertions)]
             eprintln!(
-                "tried to write packet of type unknown in mismatching protocol version {version}",
+                "tried to write packet of type `{}` in mismatching protocol version {version}", packet.type_name()
             );
+
             Ok(())
         }
     }
