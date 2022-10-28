@@ -36,6 +36,7 @@ fn verify_len(len: u32) -> std::io::Result<()> {
 /// Returned from `Connection::split()`
 pub struct ReadHalf<R> {
     pub(super) compression: Option<Vec<u8>>,
+    zlib: flate2::Decompress, 
     readbuf: Vec<u8>,
     reader: Reader<R>,
 }
@@ -100,78 +101,6 @@ impl<R: AsyncRead + Unpin> AsyncRead for Reader<R> {
             }
         }
     }
-    /*
-    this is really complicated
-    all for using unblock
-    fuck unblock
-    we ain't doing this
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-        buf: &mut [u8],
-    ) -> std::task::Poll<io::Result<usize>> {
-        let this = self.get_mut();
-        match &mut this.decryption {
-            None => Pin::new(&mut this.reader).poll_read(cx, buf),
-            Some(decryption) => {
-                // If task is None, that means we haven't spawned the task yet, so we spawn it.
-                if decryption.task.is_none() {
-                    // Clear the decryption buffer.
-                    //decryption.buf.clear();
-                    decryption.buf.fill(0);
-
-                    //decryption.buf.resize(1024 * 8, 0);
-
-                    // Read the data to the decryption buffer.
-                    let n = ready!(Pin::new(&mut this.reader).poll_read(cx, &mut decryption.buf))?;
-
-                    // We use std::mem::take because we can't pass the decryption buf directly.
-                    let mut owned_decryption_buf = std::mem::take(&mut decryption.buf);
-                    // We use clone because we can't pass the decryptor directly.
-                    let mut owned_decryptor = decryption.decryptor.clone();
-
-                    // Create and store the task.
-                    decryption.task = Some(unblock(move || -> (Decryptor<Aes128>, Vec<u8>, usize) {
-                        // Decryption
-                        let (chunks, _rest) =
-                            InOutBuf::from(&mut owned_decryption_buf[0..n]).into_chunks();
-                        owned_decryptor.decrypt_blocks_inout_mut(chunks);
-                        (owned_decryptor, owned_decryption_buf, n)
-                    }));
-                }
-                //This should be fine because if the task is None, we set it to Some in the above if clause.
-                #[allow(clippy::unwrap_used)]
-                let task = decryption.task.as_mut().unwrap();
-
-
-                let (decryptor, decryption_buf, n) = ready!(task.poll(cx));
-                let len = buf.len();
-
-                let n = if len < n {
-                    buf.copy_from_slice(&decryption_buf[decryption.offset..len]);
-                    // Put the decryptor and buf back.
-                    decryption.buf = decryption_buf;
-                    decryption.decryptor = decryptor;
-                    // Set the offset
-                    decryption.offset = len;
-                    // Return the amount of bytes read to the buf supplied.
-                    len
-
-                } else {
-                    buf.copy_from_slice(&decryption_buf[decryption.offset..n]);
-                    // Put the decryptor and buf back.
-                    decryption.buf = decryption_buf;
-                    decryption.decryptor = decryptor;
-                    // Set the task to None.
-                    decryption.task = None;
-                    // Return the amount of bytes read to the buf supplied
-                    n - decryption.offset
-                };
-                Poll::Ready(Ok(n))
-            }
-        }
-    }
-    */
 }
 
 #[derive(Debug)]
@@ -187,6 +116,7 @@ impl<R> ReadHalf<R> {
     pub(super) fn new(reader: R) -> Self {
         Self {
             compression: None,
+            zlib: flate2::Decompress::new(true),
             readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader: Reader {
                 reader,
@@ -248,11 +178,8 @@ where
 
                 compression_buf.reserve_exact(uncompressed_len as usize);
 
-                // TODO: reuse decompress
-                let mut zlib = flate2::Decompress::new(true);
-
                 // error check?
-                zlib.decompress_vec(
+                self.zlib.decompress_vec(
                     &reader.get_ref()[reader.get_ref().len()..],
                     compression_buf,
                     flate2::FlushDecompress::Finish,
