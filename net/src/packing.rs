@@ -29,8 +29,6 @@ impl Compression {
 
         varint_vec(uncompressed_len, buf);
 
-        // TODO: error handling?
-        // this really shouldn't throw errors as we reserve
         self.zlib
             .compress_vec(&encoded.0[1..], buf, flate2::FlushCompress::Finish)
             .ok();
