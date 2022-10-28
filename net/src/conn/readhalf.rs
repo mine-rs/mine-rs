@@ -186,8 +186,7 @@ where
                 )
                 .ok();
 
-                // TODO: enable this when reusing decompress
-                // zlib.reset(true);
+                self.zlib.reset(true);
 
                 Ok(EncodedData(compression_buf))
             }
