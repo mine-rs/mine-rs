@@ -53,7 +53,7 @@ where
 {
     pub async fn write_packet<P>(
         &mut self,
-        version: i32,
+        version: miners_version::ProtocolVersion,
         packet: P,
         encoder: &mut Encoder,
     ) -> miners_encoding::encode::Result<()>
@@ -76,7 +76,7 @@ where
     }
     pub async fn write_dyn_packet(
         &mut self,
-        version: i32,
+        version: miners_version::ProtocolVersion,
         packet: &dyn DynPacket<Vec<u8>>,
         encoder: &mut Encoder,
     ) -> miners_encoding::encode::Result<()> {

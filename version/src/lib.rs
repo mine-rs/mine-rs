@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, fmt::Display};
 
 const SNAPSHOT: i32 = 0x40000000;
 
@@ -13,7 +13,14 @@ impl InvalidVersion {
 }
 
 #[repr(transparent)]
+#[derive(Debug, Clone, Copy)]
 pub struct ProtocolVersion(i32);
+
+impl Display for ProtocolVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl Deref for ProtocolVersion {
     type Target = i32;

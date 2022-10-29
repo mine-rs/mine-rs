@@ -17,12 +17,12 @@ status_cb_custom! {
         #(#PacketName(#PacketTypeLt),)
     }
     impl<'a> Packet for CbStatus<'a> {
-        fn id_for_version(&self, version: i32) -> Option<i32> {
+        fn id_for_version(&self, version: miners_version::ProtocolVersion) -> Option<i32> {
             match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
         }
         fn encode_for_version(
             &self,
-            version: i32,
+            version: miners_version::ProtocolVersion,
             writer: &mut impl std::io::Write,
         ) -> Option<encode::Result<()>> {
             match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}
@@ -54,12 +54,12 @@ status_sb_custom! {
         #(#PacketName(#PacketTypeLt),)
     }
     impl Packet for SbStatus {
-        fn id_for_version(&self, version: i32) -> Option<i32> {
+        fn id_for_version(&self, version: miners_version::ProtocolVersion) -> Option<i32> {
             match self {#(Self::#PacketName(#packet_name) => #packet_name.id_for_version(version),)}
         }
         fn encode_for_version(
             &self,
-            version: i32,
+            version: miners_version::ProtocolVersion,
             writer: &mut impl std::io::Write,
         ) -> Option<encode::Result<()>> {
             match self {#(Self::#PacketName(#packet_name) => #packet_name.encode_for_version(version, writer),)}

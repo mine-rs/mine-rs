@@ -121,7 +121,7 @@ impl Encoder {
     #[cfg(feature = "packet")]
     pub fn encode_packet<P>(
         &mut self,
-        version: i32,
+        version: miners_version::ProtocolVersion,
         packet: P,
     ) -> Option<encode::Result<EncodedData>>
     where
@@ -137,7 +137,7 @@ impl Encoder {
     }
     pub fn encode_dyn_packet(
         &mut self,
-        version: i32,
+        version: miners_version::ProtocolVersion,
         packet: &dyn DynPacket<Vec<u8>>,
     ) -> Option<encode::Result<EncodedData>> {
         self.encodebuf.clear();

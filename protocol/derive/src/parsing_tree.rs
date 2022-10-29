@@ -175,14 +175,14 @@ pub fn parsing_tree(x: ParsingTreeInput) -> TokenStream {
         quote! {_ => None}.to_tokens(&mut match_body);
         quote! {
             impl<#generics> Packet for #prefix #path {
-                fn id_for_version(&self, version: i32) -> Option<i32> {
-                    match version {
+                fn id_for_version(&self, version: miners_version::ProtocolVersion) -> Option<i32> {
+                    match *version {
                         #match_body
                     }
                 }
-                fn encode_for_version(&self, version: i32, writer: &mut impl ::std::io::Write)
+                fn encode_for_version(&self, version: miners_version::ProtocolVersion, writer: &mut impl ::std::io::Write)
                 -> Option<::miners_encoding::encode::Result<()>> {
-                    let id = match version { #match_body }?;
+                    let id = match *version { #match_body }?;
                     if let Err(e) = ::miners_encoding::Encode::encode(&::miners_encoding::attrs::Var::from(id), writer) {
                         return Some(Err(e))
                     }
