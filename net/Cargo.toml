@@ -6,6 +6,7 @@ license = "MIT OR Apache-2.0"
 description = "A library for low level minecraft networking"
 
 [dependencies]
+thiserror = "1.0.37"
 cfb8 = "0.8.1"
 aes = "0.8.1"
 flate2 = "1.0.24"

@@ -88,7 +88,8 @@ where
         } else {
             #[cfg(debug_assertions)]
             eprintln!(
-                "tried to write packet of type `{}` in mismatching protocol version {version}", packet.type_name()
+                "tried to write packet of type `{}` in mismatching protocol version {version}",
+                packet.type_name()
             );
 
             Ok(())

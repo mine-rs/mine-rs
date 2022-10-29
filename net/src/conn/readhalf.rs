@@ -36,7 +36,7 @@ fn verify_len(len: u32) -> std::io::Result<()> {
 /// Returned from `Connection::split()`
 pub struct ReadHalf<R> {
     pub(super) compression: Option<Vec<u8>>,
-    zlib: flate2::Decompress, 
+    zlib: flate2::Decompress,
     readbuf: Vec<u8>,
     reader: Reader<R>,
 }
@@ -179,12 +179,13 @@ where
                 compression_buf.reserve_exact(uncompressed_len as usize);
 
                 // error check?
-                self.zlib.decompress_vec(
-                    &reader.get_ref()[reader.get_ref().len()..],
-                    compression_buf,
-                    flate2::FlushDecompress::Finish,
-                )
-                .ok();
+                self.zlib
+                    .decompress_vec(
+                        &reader.get_ref()[reader.get_ref().len()..],
+                        compression_buf,
+                        flate2::FlushDecompress::Finish,
+                    )
+                    .ok();
 
                 self.zlib.reset(true);
 
