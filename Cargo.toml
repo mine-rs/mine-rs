@@ -42,4 +42,5 @@ members = [
   "chat",
   "to_static",
   "to_static/derive",
+  "version",
 ]

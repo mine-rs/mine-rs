@@ -2,7 +2,6 @@
 pub mod conn;
 pub mod encoding;
 pub mod packing;
-pub mod version;
 
 #[cfg(feature = "workpool")]
 pub(crate) mod workpool;
