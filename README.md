@@ -1,6 +1,12 @@
+![License](https://img.shields.io/badge/license-MIT%20|%20Apache%202-yellow?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/mine-rs/mine-rs?style=for-the-badge)
+![GitHub last commit](https://img.shields.io/github/last-commit/mine-rs/mine-rs?style=for-the-badge)
+
+
+
 # mine-rs
 
-A project aimed towards providing tools necessary to implement Clients and
+A project aimed towards providing low-level tools necessary to implement Clients and
 Servers for Minecraft.
 
 ## License
