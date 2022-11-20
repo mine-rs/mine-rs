@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [features]
-default = ["net", "protocol"]
+default = ["net", "protocol", "version"]
 net = ["dep:miners-net"]
 auth = ["dep:miners-auth"]
 chat = ["dep:miners-chat"]
