@@ -16,6 +16,7 @@ encoding_derive = ["dep:miners-encoding-derive", "encoding"]
 encoding = ["dep:miners-encoding", "miners-net?/encoding"]
 to_static_derive = ["dep:miners-to-static-derive", "to_static"]
 to_static = ["dep:miners-to-static", "miners-nbt?/to_static"]
+version = ["dep:miners-version"]
 
 [dependencies]
 miners-net = { path = "net", version = "0.0.0-beta.0", optional = true }
@@ -28,6 +29,7 @@ miners-encoding-derive = { path = "encoding/derive", version = "0.0.0-beta.0", o
 miners-encoding = { path = "encoding", version = "0.0.0-beta.0", optional = true }
 miners-to-static-derive = { path = "to_static/derive", version = "0.0.0-beta.0", optional = true }
 miners-to-static = { path = "to_static", version = "0.0.0-beta.0", optional = true }
+miners-version = { path = "version", version = "0.0.0-beta.0", optional = true }
 
 [workspace]
 members = [

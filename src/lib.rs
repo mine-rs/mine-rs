@@ -14,6 +14,8 @@ pub use miners_net as net;
 pub use miners_packet as packet;
 #[cfg(feature = "protocol")]
 pub use miners_protocol as protocol;
+#[cfg(feature = "version")]
+pub use miners_version as version;
 #[cfg(feature = "encoding")]
 #[doc(alias = "miners_encoding")]
 pub mod encoding {
