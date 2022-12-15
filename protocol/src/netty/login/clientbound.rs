@@ -11,8 +11,7 @@ pub struct Disconnect0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EncryptionResponse0<'a> {
-    pub server_id: Cow<'a, str>,
+pub struct EncryptionRequest0<'a> {
     #[counted(u16)]
     pub public_key: Cow<'a, [u8]>,
     #[counted(u16)]
@@ -20,11 +19,11 @@ pub struct EncryptionResponse0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EncryptionResponse19<'a> {
-    pub server_id: Cow<'a, str>,
+pub struct EncryptionRequest19<'a> {
     pub public_key: Cow<'a, [u8]>,
     pub verify_token: Cow<'a, [u8]>,
 }
+
 
 #[derive(Encoding, ToStatic)]
 pub struct Success0<'a> {

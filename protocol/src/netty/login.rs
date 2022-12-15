@@ -11,8 +11,8 @@ parsing_tree! {
         // 385..=390 => _385,
     },
     0x01 => {
-        0..=18 => EncryptionResponse0<'a>,
-        19..=384 => EncryptionResponse19<'a>,
+        0..=18 => EncryptionRequest0<'a>, //EncryptionResponse0<'a>,
+        19..=384 => EncryptionRequest19<'a>, //EncryptionResponse19<'a>,
         // 385..=390 => _385,
     },
     0x02 => {
@@ -77,8 +77,8 @@ parsing_tree! {
         // 1073741908..=1073741918 => _1073741908,
     },
     0x01 => {
-        0..=18 => EncryptionRequest0<'a>,
-        19..=384 => EncryptionRequest19<'a>,
+        0..=18 => EncryptionResponse0<'a>,
+        19..=384 => EncryptionResponse19<'a>,
         // 385..=390 => _385,
         // 391..=758 => _391,
         // 759..=760 => _759,

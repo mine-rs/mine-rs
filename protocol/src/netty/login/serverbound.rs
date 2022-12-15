@@ -9,7 +9,8 @@ pub struct LoginStart0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EncryptionRequest0<'a> {
+pub struct EncryptionResponse0<'a> {
+    pub server_id: Cow<'a, str>,
     #[counted(u16)]
     pub public_key: Cow<'a, [u8]>,
     #[counted(u16)]
@@ -17,7 +18,8 @@ pub struct EncryptionRequest0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EncryptionRequest19<'a> {
+pub struct EncryptionResponse19<'a> {
+    pub server_id: Cow<'a, str>,
     pub public_key: Cow<'a, [u8]>,
     pub verify_token: Cow<'a, [u8]>,
 }
