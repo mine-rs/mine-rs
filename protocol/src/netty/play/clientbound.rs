@@ -8,23 +8,50 @@ use std::borrow::Cow;
 use uuid::Uuid;
 
 #[derive(Encoding, ToStatic)]
+/// The server will frequently send out a keep-alive, each containing a random
+/// ID. The client must respond with the same payload
+/// (see [`serverbound::KeepAlive0`][ka0]/[`serverbound::KeepAlive7`][ka7]).
+/// If the client does not respond to them for over 30 seconds, the server
+/// kicks the client. Vice versa, if the server does not send any keep-alives
+/// for 20 seconds, the client will disconnect and yields a "Timed out"
+/// exception.
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Keep_Alive)
+/// 
+/// [ka0]: super::serverbound::KeepAlive0
+/// [ka7]: super::serverbound::KeepAlive7
 pub struct KeepAlive0 {
     pub id: i32,
 }
 
 #[derive(Encoding, ToStatic)]
+/// The server will frequently send out a keep-alive, each containing a random
+/// ID. The client must respond with the same payload
+/// (see [`serverbound::KeepAlive7`][ka7]). If the
+/// client does not respond to them for over 30 seconds, the server kicks the
+/// client. Vice versa, if the server does not send any keep-alives for 20
+/// seconds, the client will disconnect and yields a "Timed out" exception.
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5972#Keep_Alive)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_31_32.html#packets:play_clientbound_00)
+/// 
+/// [ka7]: super::serverbound::KeepAlive7
 pub struct KeepAlive32 {
     #[varint]
     pub id: i32,
 }
 
 #[derive(ToStatic)]
+/// Sent after the Login Sequence
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Join_Game)
 pub struct JoinGame0 {
+    /// Entity ID of the Player
     pub entity_id: i32,
     pub hardcore: bool,
     pub gamemode: GameMode0,
     pub dimension: Dimension0,
-    pub difficulty: super::Difficulty0,
+    pub difficulty: Difficulty0,
     pub max_players: u8,
 }
 
@@ -67,14 +94,21 @@ impl Encode for JoinGame0 {
 }
 
 #[derive(ToStatic)]
+/// Sent after the Login Sequence
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5048#Join_Game)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_0_1.html#packets:play_clientbound_01)
 pub struct JoinGame1<'a> {
+    /// Entity ID of the Player
     pub entity_id: i32,
     pub hardcore: bool,
     pub gamemode: GameMode0,
     pub dimension: Dimension0,
-    pub difficulty: super::Difficulty0,
+    pub difficulty: Difficulty0,
     pub max_players: u8,
-    /// "default", "flat", "largeBiomes", "amplified", "default_1_1"
+    /// indicates the kind of world gen used for the level, values should be
+    /// one of `"default"`, `"flat"`, `"largeBiomes"`, `"amplified"` or
+    /// `"default_1_1"`
     pub level_type: Cow<'a, str>,
 }
 
@@ -119,14 +153,21 @@ impl Encode for JoinGame1<'_> {
 }
 
 #[derive(ToStatic)]
+/// Sent after the Login Sequence
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5947#Join_Game)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_28_29.html#packets:play_clientbound_01)
 pub struct JoinGame29<'a> {
+    /// Entity ID of the Player
     pub entity_id: i32,
     pub hardcore: bool,
     pub gamemode: GameMode0,
     pub dimension: Dimension0,
-    pub difficulty: super::Difficulty0,
+    pub difficulty: Difficulty0,
     pub max_players: u8,
-    /// "default", "flat", "largeBiomes", "amplified", "default_1_1"
+    /// indicates the kind of world gen used for the level, values should be
+    /// one of `"default"`, `"flat"`, `"largeBiomes"`, `"amplified"` or
+    /// `"default_1_1"`
     pub level_type: Cow<'a, str>,
     pub reduced_debug_info: bool,
 }
