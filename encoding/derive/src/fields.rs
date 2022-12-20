@@ -209,6 +209,7 @@ pub fn bitfield_codegen(
             use crate::attribute::AttributeData::*;
             let err = match data {
                 VarInt => "`#[varint]`",
+                Separated => "`#[separated]`",
                 Case(_) => "`#[case(id)]`",
                 From(_) => "`#[from(ty)]`",
                 Fixed(_) => "`#[fixed(prec, ty)]`",

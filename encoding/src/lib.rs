@@ -11,6 +11,9 @@ use std::io::{Cursor, Read, Write};
 
 pub mod attrs;
 
+pub mod separated;
+pub use separated::*;
+
 pub mod decode;
 pub mod encode;
 

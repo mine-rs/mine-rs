@@ -1,6 +1,7 @@
 use crate::netty::types::angle::Angle;
 use crate::netty::types::entity_metadata::PackedEntityMetadata0;
 use crate::netty::types::position::Position6;
+use crate::netty::types::slot::Slot0;
 use crate::*;
 use attrs::*;
 
@@ -219,20 +220,18 @@ pub struct TimeUpdate0 {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EntityEquipment0 {
+pub struct EntityEquipment0<'a> {
     pub entity_id: i32,
     pub slot: EquipmentSlot0,
-    // TODO: slot data
-    // item: Slot,
+    pub item: Slot0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EntityEquipment7 {
+pub struct EntityEquipment7<'a> {
     #[varint]
     pub entity_id: i32,
     pub slot: EquipmentSlot0,
-    // TODO: slot data
-    // item: Slot,
+    pub item: Slot0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -246,12 +245,11 @@ pub enum EquipmentSlot0 {
 }
 
 #[derive(Encoding, ToStatic)]
-pub struct EntityEquipment49 {
+pub struct EntityEquipment49<'a> {
     #[varint]
     pub entity_id: i32,
     pub slot: EquipmentSlot49,
-    // TODO: slot data
-    // item: Slot,
+    pub item: Slot0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
@@ -512,34 +510,70 @@ pub struct CollectItem7 {
     pub collector_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(ToStatic)]
 pub struct SpawnObject0 {
-    #[varint]
+    // #[varint]
     pub entity_id: i32,
-    // TODO: (see [`Object0`])
     pub kind: Object0,
-    #[fixed(5, i32)]
+    // #[fixed(5, i32)]
     /// X position as a Fixed-Point number
     pub x: f64,
-    #[fixed(5, i32)]
+    // #[fixed(5, i32)]
     /// Y position as a Fixed-Point number
     pub y: f64,
-    #[fixed(5, i32)]
+    // #[fixed(5, i32)]
     /// Z position as a Fixed-Point number
     pub z: f64,
     pub pitch: Angle,
     pub yaw: Angle,
-    // TODO: should be covered by kind, look above
-    pub data: Object0,
+}
+impl Encode for SpawnObject0 {
+    fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
+        let Self {
+            entity_id,
+            x,
+            y,
+            z,
+            pitch,
+            yaw,
+            kind: data,
+        } = self;
+        Encode::encode(&Var::<i32>::from(*entity_id), writer)?;
+        data.encode_part(writer)?;
+        Encode::encode(&Fixed::<5u8, i32, f64>::from(x), writer)?;
+        Encode::encode(&Fixed::<5u8, i32, f64>::from(y), writer)?;
+        Encode::encode(&Fixed::<5u8, i32, f64>::from(z), writer)?;
+        Encode::encode(pitch, writer)?;
+        Encode::encode(yaw, writer)?;
+        data.encode_rest(writer)?;
+        Ok(())
+    }
+}
+impl<'dec> Decode<'dec> for SpawnObject0 {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+        let entity_id = <Var<_> as Decode>::decode(cursor)?.into_inner();
+        let kind = u8::decode(cursor)?;
+        let x = <Fixed<5u8, i32, _> as Decode>::decode(cursor)?.into_inner();
+        let y = <Fixed<5u8, i32, _> as Decode>::decode(cursor)?.into_inner();
+        let z = <Fixed<5u8, i32, _> as Decode>::decode(cursor)?.into_inner();
+        let pitch = Decode::decode(cursor)?;
+        let yaw = Decode::decode(cursor)?;
+        let data = SeparatedDecode::decode_with_part(kind, cursor)?;
+        Ok(Self {
+            entity_id,
+            x,
+            y,
+            z,
+            pitch,
+            yaw,
+            kind: data,
+        })
+    }
 }
 
 #[derive(Encoding, ToStatic)]
 #[from(u8)]
-// TODO: add #[separated] to have a custom option for
-// separated type and cursor/writer impl
-// would produce a custom read like `read(kind: $from, cursor: Cursor<&[u8]>) -> Result`
-// and write like `write_kind(&self, writer: impl Write) -> Result`
-// and `write_self(self, writer: impl Write) -> Result
+#[separated]
 pub enum Object0 {
     #[case(1)]
     Boat,

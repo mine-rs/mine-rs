@@ -164,3 +164,45 @@ impl<W> serde::ser::SerializeTupleStruct for &mut CompoundSerializer<W> {
         todo!()
     }
 }
+
+impl<W> serde::ser::SerializeMap for &mut CompoundSerializer<W> {
+    type Ok = ();
+
+    type Error = crate::Error;
+
+    fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Self::Error>
+    where
+        T: serde::Serialize {
+        todo!()
+    }
+
+    fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    where
+        T: serde::Serialize {
+        todo!()
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        todo!()
+    }
+}
+
+impl<W> serde::ser::SerializeStruct for &mut CompoundSerializer<W> {
+    type Ok = ();
+
+    type Error = crate::Error;
+
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error>
+    where
+        T: serde::Serialize {
+        todo!()
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        todo!()
+    }
+}

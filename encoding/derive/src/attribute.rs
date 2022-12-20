@@ -14,6 +14,7 @@ pub struct Attribute {
 #[allow(clippy::large_enum_variant)]
 pub enum AttributeData {
     VarInt,
+    Separated,
     Case(Expr),
     From(Type),
     Fixed(Fixed),
@@ -83,6 +84,10 @@ pub fn parse_attr(attr: syn::Attribute) -> Option<Result<Attribute, syn::Error>>
         Some(ident) if ident == "varint" => Some(Ok(Attribute {
             span: ident.span().resolved_at(Span::call_site()),
             data: AttributeData::VarInt,
+        })),
+        Some(ident) if ident == "separated" => Some(Ok(Attribute {
+            span: ident.span(),
+            data: AttributeData::Separated,
         })),
         Some(ident) if ident == "stringuuid" => Some(Ok(Attribute {
             span: ident.span().resolved_at(Span::call_site()),
@@ -184,8 +189,9 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
                     "duplicate `#[varint]` attribute on field"
                 }
             }
+            Separated => "`#[separated]` not allowed on field",
             Case(_) => "`#[case(id)]` not allowed on field",
-            From(_) => continue,
+            From(_) => "`#[from(ty)]` not allowed on field",
             Fixed(fixd) => {
                 if fixed.is_none() {
                     fixed = Some((span, fixd));
@@ -196,12 +202,11 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
             }
             Counted(ty) => {
                 if counted.is_none() {
-                    if rest.is_some() {
-                        "`#[counted]` and `#[rest]` are mutually exclusive"
-                    } else {
+                    if rest.is_none() {
                         counted = Some((span, ty));
                         continue;
                     }
+                    "`#[counted]` and `#[rest]` are mutually exclusive"
                 } else {
                     "duplicate `#[counted(ty)]` attribute on field"
                 }
@@ -210,18 +215,16 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
                 if mutf8.is_none() {
                     mutf8 = Some(span);
                     continue;
-                } else {
-                    "duplicate `#[mutf8]` attribute on field"
                 }
+                "duplicate `#[mutf8]` attribute on field"
             }
             Rest => {
                 if rest.is_none() {
-                    if counted.is_some() {
-                        "`#[counted]` and `#[rest]` are mutually exclusive"
-                    } else {
+                    if counted.is_none() {
                         rest = Some(span);
                         continue;
                     }
+                    "`#[counted]` and `#[rest]` are mutually exclusive"
                 } else {
                     "duplicate `#[rest(ty)]` attribute on field"
                 }
@@ -230,9 +233,8 @@ pub fn field_attrs(attrs: impl Iterator<Item = syn::Attribute>, res: &mut TokenS
                 if stringuuid.is_none() {
                     stringuuid = Some(span);
                     continue;
-                } else {
-                    "duplicate `#[stringuuid]` attribute on field"
                 }
+                "duplicate `#[stringuuid]` attribute on field"
             }
             BitField(_) => "`#[bitfield]` not allowed on field",
             Bits(_) => {

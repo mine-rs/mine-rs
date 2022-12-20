@@ -29,6 +29,7 @@ pub fn derive_struct(
         use crate::attribute::AttributeData::*;
         let kind = match data {
             VarInt => "#[varint]",
+            Separated => "#[separated]",
             Case(_) => "#[case(ty)]",
             From(_) => "#[from(ty)]",
             Fixed(_) => "#[fixed(prec, ty)]",
