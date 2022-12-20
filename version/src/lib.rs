@@ -38,9 +38,9 @@ impl TryFrom<i32> for ProtocolVersion {
     }
 }
 
-impl Into<i32> for ProtocolVersion {
-    fn into(self) -> i32 {
-        *self
+impl From<ProtocolVersion> for i32 {
+    fn from(val: ProtocolVersion) -> Self {
+        *val
     }
 }
 
