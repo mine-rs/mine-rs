@@ -1152,6 +1152,12 @@ pub enum Direction0 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Spawn Experience Orb
+///
+/// Spawns one or more experience orbs.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Spawn_Experience_Orb)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_11)
 pub struct SpawnExpOrb0 {
     #[varint]
     pub entity_id: i32,
@@ -1166,13 +1172,21 @@ pub struct SpawnExpOrb0 {
 }
 
 #[derive(ToStatic)]
+/// Entity Velocity
+///
+/// Sets the Velocity of an Entity
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Velocity)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_12)
 pub struct EntityVelocity0 {
     pub entity_id: i32,
-    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    // TODO: decide for or against converting to and from f32 here
+    // if deciding FOR it, also update SpawnMob0
+    /// value is clamped to +3.9 and -3.9 in the notchian client
     pub x: f32,
-    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    /// value is clamped to +3.9 and -3.9 in the notchian client
     pub y: f32,
-    /// watch out, this value is clamped to +3.9 and -3.9 in the notchian client
+    /// value is clamped to +3.9 and -3.9 in the notchian client
     pub z: f32,
 }
 impl<'dec> Decode<'dec> for EntityVelocity0 {
@@ -1196,6 +1210,12 @@ impl Encode for EntityVelocity0 {
     }
 }
 #[derive(ToStatic)]
+/// Entity Velocity
+///
+/// Sets the Velocity of an Entity
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Velocity)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_12)
 pub struct EntityVelocity7 {
     // varint
     pub entity_id: i32,
@@ -1228,12 +1248,20 @@ impl Encode for EntityVelocity7 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Destroy Entities
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Destroy_Entities)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_13)
 pub struct DestroyEntities0 {
     #[counted(u8)]
     pub entities: Vec<i32>,
 }
 
 #[derive(ToStatic)]
+/// Destroy Entities
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Destroy_Entities)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_13)
 pub struct DestroyEntities7 {
     pub entities: Vec<i32>,
 }
@@ -1257,74 +1285,123 @@ impl Encode for DestroyEntities7 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity (No Move, No Look)
+///
+/// This packet may be used to initialize an entity.
+///
+/// For player entities, either this packet or any move/look packet is sent
+/// every game tick by the notchian server. So the meaning of this packet is
+/// basically that the entity did not move/look since the last such packet.
+///
+/// This Packet represents a move/look packet without any changes.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_14)
 pub struct Entity0 {
     pub entity_id: i32,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update/Init (No Move, No Look)
+///
+/// This packet may be used to initialize an entity.
+///
+/// For player entities, either this packet or any move/look packet is sent
+/// every game tick by the notchian server. So the meaning of this packet is
+/// basically that the entity did not move/look since the last such packet.
+///
+/// This Packet represents a move/look packet without any changes.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_14)
 pub struct Entity7 {
     #[varint]
     pub entity_id: i32,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Relative Move)
+///
+/// Relative entity movement of at most 4 blocks.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Relative_Move)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_15)
 pub struct EntityRelativeMove0 {
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport0`] instead
     #[fixed(5, i8)]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport0`] instead
     #[fixed(5, i8)]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport0`] instead
     #[fixed(5, i8)]
     pub dz: f32,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Relative Move)
+///
+/// Relative entity movement of at most 4 blocks.
+///
+/// no wiki.vg
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_15)
 pub struct EntityRelativeMove7 {
     #[varint]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport7`] instead
     #[fixed(5, i8)]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport7`] instead
     #[fixed(5, i8)]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport7`] instead
     #[fixed(5, i8)]
     pub dz: f32,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Relative Move)
+///
+/// Relative entity movement of at most 4 blocks.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Relative_Move)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_15)
 pub struct EntityRelativeMove22 {
     #[varint]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport22`] instead
     #[fixed(5, i8)]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport22`] instead
     #[fixed(5, i8)]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport22`] instead
     #[fixed(5, i8)]
     pub dz: f32,
+    /// whether or not the entity is currently located on the ground
     pub on_ground: bool,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Look)
+///
+/// This packet is sent by the server when an entity rotates.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Look)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_16)
 pub struct EntityLook0 {
     pub entity_id: i32,
     pub yaw: Angle,
@@ -1332,6 +1409,12 @@ pub struct EntityLook0 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Look)
+///
+/// This packet is sent by the server when an entity rotates.
+///
+/// no wiki.vg
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_16)
 pub struct EntityLook7 {
     #[varint]
     pub entity_id: i32,
@@ -1340,11 +1423,18 @@ pub struct EntityLook7 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Look)
+///
+/// This packet is sent by the server when an entity rotates.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Look)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_16)
 pub struct EntityLook22 {
     #[varint]
     pub entity_id: i32,
     pub yaw: Angle,
     pub pitch: Angle,
+    /// whether or not the entity is currently located on the ground
     pub on_ground: bool,
 }
 
@@ -1408,6 +1498,7 @@ pub struct EntityLookAndRelativeMove22 {
     pub dz: f32,
     pub yaw: Angle,
     pub pitch: Angle,
+    /// whether or not the entity is currently located on the ground or not
     pub on_ground: bool,
 }
 
