@@ -1439,19 +1439,26 @@ pub struct EntityLook22 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Relative Move, Look)
+///
+/// This packet is sent by the server when an entity rotates and moves less
+/// than 4 blocks.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Look_and_Relative_Move)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_17)
 pub struct EntityLookAndRelativeMove0 {
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport0`] instead
     #[fixed(5, i8)]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport0`] instead
     #[fixed(5, i8)]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport0`] instead
     #[fixed(5, i8)]
     pub dz: f32,
     pub yaw: Angle,
@@ -1459,20 +1466,27 @@ pub struct EntityLookAndRelativeMove0 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Relative Move, Look)
+///
+/// This packet is sent by the server when an entity rotates and moves less
+/// than 4 blocks.
+///
+/// no wiki.vg
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_17)
 pub struct EntityLookAndRelativeMove7 {
     #[varint]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport7`] instead
     #[fixed(5, i8)]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport7`] instead
     #[fixed(5, i8)]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport7`] instead
     #[fixed(5, i8)]
     pub dz: f32,
     pub yaw: Angle,
@@ -1480,29 +1494,42 @@ pub struct EntityLookAndRelativeMove7 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Relative Move, Look)
+///
+/// This packet is sent by the server when an entity rotates and moves less
+/// than 4 blocks.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Look_and_Relative_Move)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_17)
 pub struct EntityLookAndRelativeMove22 {
     #[varint]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport22`] instead
     #[fixed(5, i8)]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport22`] instead
     #[fixed(5, i8)]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
-    /// if it is, use EntityTeleport instead
+    /// if it can't, use [`EntityTeleport22`] instead
     #[fixed(5, i8)]
     pub dz: f32,
     pub yaw: Angle,
     pub pitch: Angle,
-    /// whether or not the entity is currently located on the ground or not
+    /// whether or not the entity is currently located on the ground
     pub on_ground: bool,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Absolute Move, Look)
+///
+/// This packet is sent by the server when an entity moves more than 4 blocks.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Teleport)
+/// [burger](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_18)
 pub struct EntityTeleport0 {
     pub entity_id: i32,
     // TODO: round x and z but floor y
@@ -1517,6 +1544,12 @@ pub struct EntityTeleport0 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Absolute Move, Look)
+///
+/// This packet is sent by the server when an entity moves more than 4 blocks.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Teleport)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_18)
 pub struct EntityTeleport7 {
     #[varint]
     pub entity_id: i32,
@@ -1532,6 +1565,12 @@ pub struct EntityTeleport7 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Absolute Move, Look)
+///
+/// This packet is sent by the server when an entity moves more than 4 blocks.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Teleport)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_18)
 pub struct EntityTeleport22 {
     #[varint]
     pub entity_id: i32,
@@ -1544,16 +1583,29 @@ pub struct EntityTeleport22 {
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
+    /// whether or not the entity is currently located on the ground
     pub on_ground: bool,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Head Look)
+///
+/// Changes the direction an entity's head is facing.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Head_Look)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_19)
 pub struct EntityHeadLook0 {
     pub entity_id: i32,
     pub head_yaw: Angle,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Head Look)
+///
+/// Changes the direction an entity's head is facing.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Head_Look)
+/// [burger](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_19)
 pub struct EntityHeadLook7 {
     #[varint]
     pub entity_id: i32,
@@ -1561,6 +1613,10 @@ pub struct EntityHeadLook7 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Status
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Status)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1a)
 pub struct EntityStatus0 {
     pub entity_id: i32,
     pub entity_status: Status0,
@@ -1587,19 +1643,41 @@ pub enum Status0 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Attach Entity
+///
+/// This packet is sent when an entity is attached to another entity.
+/// (e.g. a player entering a minecart, a sheep being leashed)
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Attach_Entity)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1b)
 pub struct AttachEntity0 {
     pub entity_id: i32,
     pub vehicle_id: i32,
+    /// If true leashes the entity to the vehicle
     pub leash: bool,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Metadata
+///
+/// Updates one or more metadata properties for an existing entity. Any
+/// properties not included in the Metadata field are left unchanged.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Metadata)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1c)
 pub struct EntityMetadata0<'a> {
     pub entity_id: i32,
     pub metadata: PackedEntityMetadata0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Metadata
+///
+/// Updates one or more metadata properties for an existing entity. Any
+/// properties not included in the Metadata field are left unchanged.
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Metadata)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1c)
 pub struct EntityMetadata7<EntityMetadata> {
     #[varint]
     pub entity_id: i32,
@@ -1607,43 +1685,69 @@ pub struct EntityMetadata7<EntityMetadata> {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Effect
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Effect)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1d)
 pub struct EntityEffect0 {
     pub entity_id: i32,
     // TODO: effect ids
     pub effect_id: i8,
+    /// Effect Level - 1
     pub amplifier: i8,
+    /// in seconds
     pub duration: i16,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Effect
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Effect)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1d)
 pub struct EntityEffect7 {
     #[varint]
     pub entity_id: i32,
     // TODO: effect ids
     pub effect_id: i8,
+    /// Effect Level - 1
     pub amplifier: i8,
     #[varint]
+    /// in seconds
     pub duration: i32,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Entity Effect
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5422#Entity_Effect)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_9_10.html#packets:play_clientbound_1d)
 pub struct EntityEffect10 {
     #[varint]
     pub entity_id: i32,
     // TODO: effect ids
     pub effect_id: i8,
+    /// Effect Level - 1
     pub amplifier: i8,
     #[varint]
+    /// in seconds
     pub duration: i32,
     pub hide_particles: bool,
 }
 
 #[derive(Encoding, ToStatic)]
+/// Remove Entity Effect
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Remove_Entity_Effect)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1e)
 pub struct RemoveEntityEffect0 {
     pub entity_id: i32,
     pub effect_id: i8,
 }
 #[derive(Encoding, ToStatic)]
+/// Remove Entity Effect
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Remove_Entity_Effect)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1e)
 pub struct RemoveEntityEffect7 {
     #[varint]
     pub entity_id: i32,
@@ -1651,12 +1755,25 @@ pub struct RemoveEntityEffect7 {
 }
 
 #[derive(Encoding, ToStatic)]
+/// Set Experience
+/// 
+/// Sent by the server when the client should change experience levels.
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Set_Experience)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1f)
 pub struct SetExperience0 {
     pub experience_bar: f32,
     pub level: i16,
     pub total_exp: i16,
 }
+
 #[derive(Encoding, ToStatic)]
+/// Set Experience
+/// 
+/// Sent by the server when the client should change experience levels.
+/// 
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Set_Experience)
+/// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1f)
 pub struct SetExperience7 {
     pub experience_bar: f32,
     #[varint]
