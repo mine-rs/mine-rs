@@ -4,7 +4,7 @@ use Cursor;
 
 /// Minecraft's VarInt
 ///
-/// https://wiki.vg/VarInt_And_VarLong
+/// <https://wiki.vg/VarInt_And_VarLong>
 #[repr(transparent)]
 pub struct Var<T>(pub(crate) T);
 

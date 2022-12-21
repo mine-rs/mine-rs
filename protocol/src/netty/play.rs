@@ -72,9 +72,9 @@ parsing_tree! {
 
     },
     0x04 => {
-        0..=6 => EntityEquipment0,
-        7..=48 => EntityEquipment7,
-        49..=66 => EntityEquipment49,
+        0..=6 => EntityEquipment0<'a>,
+        7..=48 => EntityEquipment7<'a>,
+        49..=66 => EntityEquipment49<'a>,
         // 67..=94 => _67,
         // 95..=352 => _95,
         // 353..=719 => _353,

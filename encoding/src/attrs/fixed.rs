@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 /// Minecraft's Fixed Point Numbers
 ///
-/// https://wiki.vg/Protocol#Fixed-point_numbers
+/// <https://wiki.vg/Protocol#Fixed-point_numbers>
 pub struct Fixed<const PRECISION: u8, Protocol, Logical> {
     pub(crate) logical: Logical,
     _marker: PhantomData<Protocol>,
