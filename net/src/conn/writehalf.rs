@@ -2,7 +2,6 @@
 use crate::encoding::Encoder;
 use crate::{encoding::EncodedData, packing::Compression, writer::Writer};
 use futures_lite::AsyncWrite;
-use miners_packet::DynPacket;
 use std::io;
 
 pub struct WriteHalf<W> {
@@ -71,27 +70,6 @@ where
                 "tried to write packet of type {0} in mismatching protocol version {version}",
                 std::any::type_name::<P>(),
             );
-            Ok(())
-        }
-    }
-    pub async fn write_dyn_packet(
-        &mut self,
-        version: miners_version::ProtocolVersion,
-        packet: &dyn DynPacket<Vec<u8>>,
-        encoder: &mut Encoder,
-    ) -> miners_encoding::encode::Result<()> {
-        if let Some(res) = encoder.encode_dyn_packet(version, packet) {
-            match res {
-                Ok(encoded) => Ok(self.write(encoded).await?),
-                Err(e) => Err(e),
-            }
-        } else {
-            #[cfg(debug_assertions)]
-            eprintln!(
-                "tried to write packet of type `{}` in mismatching protocol version {version}",
-                packet.type_name()
-            );
-
             Ok(())
         }
     }
