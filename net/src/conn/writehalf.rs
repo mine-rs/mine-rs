@@ -1,4 +1,3 @@
-#[cfg(feature = "packet")]
 use crate::encoding::Encoder;
 use crate::{encoding::EncodedData, packing::Compression, writer::Writer};
 use futures_lite::AsyncWrite;
@@ -46,7 +45,6 @@ where
     }
 }
 
-#[cfg(feature = "packet")]
 impl<W> WriteHalf<W>
 where
     W: AsyncWrite + Unpin,

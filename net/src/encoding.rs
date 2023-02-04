@@ -1,4 +1,3 @@
-#[cfg(feature = "encoding")]
 use {
     crate::helpers::varint_vec,
     miners_encoding::{decode, encode, Decode, Encode},
@@ -45,7 +44,6 @@ impl<'encoded> EncodedData<'encoded> {
     pub unsafe fn from_raw(raw: &mut Vec<u8>) -> EncodedData {
         EncodedData(raw)
     }
-    #[cfg(feature = "encoding")]
     pub fn to_packet(&self) -> decode::Result<(i32, &[u8])> {
         let mut cursor = std::io::Cursor::new(&self.0[1..]);
 
@@ -54,7 +52,6 @@ impl<'encoded> EncodedData<'encoded> {
 
         Ok((id, &self.0[pos + 1..]))
     }
-    #[cfg(feature = "encoding")]
     pub fn into_packet(self) -> decode::Result<(i32, &'encoded [u8])> {
         let mut cursor = std::io::Cursor::new(&self.0[1..]);
 
@@ -96,7 +93,6 @@ impl<'encoded> EncodedData<'encoded> {
 
 #[derive(Default)]
 pub struct Encoder {
-    #[cfg_attr(not(feature = "encoding"), allow(unused))]
     encodebuf: Vec<u8>,
 }
 impl From<Vec<u8>> for Encoder {
@@ -110,7 +106,6 @@ impl Encoder {
     }
 }
 impl Encoder {
-    #[cfg(feature = "encoding")]
     pub fn encode(&mut self, id: i32, data: impl Encode) -> encode::Result<EncodedData> {
         self.encodebuf.clear();
         self.encodebuf.push(0);
@@ -118,7 +113,6 @@ impl Encoder {
         data.encode(&mut self.encodebuf)?;
         Ok(EncodedData(&mut self.encodebuf))
     }
-    #[cfg(feature = "packet")]
     pub fn encode_packet<P>(
         &mut self,
         version: miners_version::ProtocolVersion,

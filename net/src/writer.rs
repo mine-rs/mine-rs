@@ -2,7 +2,6 @@ use std::io;
 
 use futures_lite::{AsyncWrite, AsyncWriteExt};
 
-#[cfg(feature = "workpool")]
 use crate::DEFAULT_UNBLOCK_THRESHOLD;
 use crate::{
     helpers::{encrypt, varint_slice},
