@@ -1,16 +1,13 @@
-use crate::*;
-
-#[derive(Encoding, ToStatic, Clone, Copy)]
-#[bitfield]
+#[derive(Bitfield, ToStatic, Clone, Copy)]
 // TODO: figure out when position changed, this might be the new version
 // the old one had z and y swapped compared to the current one
 // was changed in pv442
 pub struct Position6 {
-    #[bits(26)]
+    #[encoding(bits = "26")]
     pub x: i32,
-    #[bits(12)]
+    #[encoding(bits = "12")]
     pub y: i16,
-    #[bits(26)]
+    #[encoding(bits = "26")]
     pub z: i32,
 }
 impl Position6 {
@@ -21,6 +18,7 @@ impl Position6 {
 
 #[test]
 fn position6() {
+    use crate::*;
     #[allow(clippy::unusual_byte_groupings, clippy::type_complexity)]
     const TESTS: &[([u8; 8], (i32, i16, i32))] = &[
         (
@@ -55,19 +53,19 @@ fn position6() {
     }
 }
 
-#[derive(Encoding, ToStatic, Clone, Copy)]
-#[bitfield]
+#[derive(Bitfield, ToStatic, Clone, Copy)]
 pub struct Position441 {
-    #[bits(26)]
+    #[encoding(bits = "26")]
     pub x: i32,
-    #[bits(26)]
+    #[encoding(bits = "26")]
     pub z: i32,
-    #[bits(12)]
+    #[encoding(bits = "12")]
     pub y: i16,
 }
 
 #[test]
 fn position441() {
+    use crate::*;
     #[allow(clippy::unusual_byte_groupings, clippy::type_complexity)]
     const TESTS: &[([u8; 8], (i32, i16, i32))] = &[
         (

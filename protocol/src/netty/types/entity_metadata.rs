@@ -1,5 +1,5 @@
-use crate::*;
-use attrs::*;
+
+use ::miners_encoding::{decode, encode, Decode, Encode};
 
 use miners_nbt::Compound;
 use std::borrow::Cow;
@@ -170,11 +170,11 @@ where
 pub struct Chat<'a>(Cow<'a, str>);
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum Value57<'a, Slot> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Byte(i8),
-    VarInt(#[varint] i32),
+    VarInt(#[encoding(varint)] i32),
     Float(f32),
     String(Cow<'a, str>),
     Chat(Chat<'a>),
@@ -190,11 +190,11 @@ pub enum Value57<'a, Slot> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum Value353<'a, Slot, Position, Particle> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Byte(i8),
-    VarInt(#[varint] i32),
+    VarInt(#[encoding(varint)] i32),
     Float(f32),
     String(Cow<'a, str>),
     Chat(Chat<'a>),
@@ -213,16 +213,16 @@ pub enum Value353<'a, Slot, Position, Particle> {
     VillagerData(VillagerData),
     /// 0 for absent; 1 + actual value otherwise. Used for entity IDs.
     /// introduced in pv459 (19w06a)
-    OptVarInt(#[varint] i32),
+    OptVarInt(#[encoding(varint)] i32),
     /// introduced in pv461 (19w08a)
     Pose(Pose),
     /// A VarInt that points towards the CAT_VARIANT registry.
-    CatVariant(#[varint] i32),
+    CatVariant(#[encoding(varint)] i32),
     /// A VarInt that points towards the FROG_VARIANT registry.
-    FrogVariant(#[varint] i32),
+    FrogVariant(#[encoding(varint)] i32),
     GlobalPos(GlobalPos<'a, Position>),
     /// A VarInt that points towards the PAINTING_VARIANT registry.
-    PaintingVariant(#[varint] i32),
+    PaintingVariant(#[encoding(varint)] i32),
 }
 
 #[derive(Encoding, ToStatic)]
@@ -241,18 +241,18 @@ pub struct Rotation {
 
 #[derive(Encoding, ToStatic)]
 pub struct VillagerData {
-    #[varint]
+    #[encoding(varint)]
     kind: i32,
-    #[varint]
+    #[encoding(varint)]
     profession: i32,
-    #[varint]
+    #[encoding(varint)]
     level: i32,
 }
 
 #[derive(Encoding, ToStatic)]
 // #[varint]
 // technically varint but no values greater than u7
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum Pose {
     Standing = 0,
     FallFlying,
@@ -266,7 +266,7 @@ pub enum Pose {
 #[derive(Encoding, ToStatic)]
 // #[varint]
 // technically a varint but can only assume byte values
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum Direction {
     Down = 0,
     Up,

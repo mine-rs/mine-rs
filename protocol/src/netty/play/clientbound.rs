@@ -2,8 +2,11 @@ use crate::netty::types::angle::Angle;
 use crate::netty::types::entity_metadata::PackedEntityMetadata0;
 use crate::netty::types::position::Position6;
 use crate::netty::types::slot::Slot0;
-use crate::*;
-use attrs::*;
+
+use ::miners_encoding::{
+    attrs::{Fixed, StringUuid, Var},
+    decode, encode, Decode, Encode,
+};
 
 use std::borrow::Cow;
 use uuid::Uuid;
@@ -39,7 +42,7 @@ pub struct KeepAlive0 {
 ///
 /// [ka7]: super::serverbound::KeepAlive7
 pub struct KeepAlive32 {
-    #[varint]
+    #[encoding(varint)]
     pub id: i32,
 }
 
@@ -218,7 +221,7 @@ impl Encode for JoinGame29<'_> {
 }
 
 #[derive(Encoding, ToStatic, Clone, Copy)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum GameMode0 {
     Survival = 0,
     Creative,
@@ -228,7 +231,7 @@ pub enum GameMode0 {
 pub use super::Difficulty0;
 
 #[derive(Encoding, ToStatic)]
-#[from(i8)]
+#[encoding(from = "i8")]
 pub enum Dimension0 {
     Nether = -1,
     Overworld = 0,
@@ -265,7 +268,7 @@ pub struct ChatMessage6<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ChatMessagePosition6 {
     Chat = 0,
     System,
@@ -312,14 +315,14 @@ pub struct EntityEquipment0<'a> {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Equipment)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_06)
 pub struct EntityEquipment7<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub slot: EquipmentSlot0,
     pub item: Slot0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u16)]
+#[encoding(from = "u16")]
 pub enum EquipmentSlot0 {
     Hand = 0,
     Boots,
@@ -337,14 +340,14 @@ pub enum EquipmentSlot0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=6739#Entity_Equipment)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_48_49.html#packets:play_clientbound_04)
 pub struct EntityEquipment49<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub slot: EquipmentSlot49,
     pub item: Slot0<'a>,
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum EquipmentSlot49 {
     Hand = 0,
     Offhand,
@@ -369,8 +372,7 @@ pub struct SpawnPosition0 {
     pub z: i32,
 }
 
-#[derive(Encoding, ToStatic, Clone, Copy)]
-#[bitfield]
+#[derive(Bitfield, ToStatic, Clone, Copy)]
 /// Spawn Position
 ///
 /// Sent by the server after login to specify the coordinates of the spawn
@@ -380,11 +382,11 @@ pub struct SpawnPosition0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5368#Spawn_Position)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_5_6.html#packets:play_clientbound_05)
 pub struct SpawnPosition6 {
-    #[bits(26)]
+    #[encoding(bits = 26)]
     pub x: i32,
-    #[bits(26)]
+    #[encoding(bits = 26)]
     pub z: i32,
-    #[bits(12)]
+    #[encoding(bits = 12)]
     pub y: i16,
 }
 
@@ -434,7 +436,7 @@ pub struct UpdateHealth7 {
     /// Amount of Half Food Bars
     ///
     /// value range: 0..=20?
-    #[varint]
+    #[encoding(varint)]
     pub food: i32,
     /// Food Saturation
     ///
@@ -571,18 +573,18 @@ pub struct PositionAndLook6 {
     pub relativity: PositionAndLookBitfield6,
 }
 
-#[derive(Encoding, ToStatic)]
-#[bitfield(u8, reverse)]
+#[derive(Bitfield, ToStatic)]
+#[encoding(typ = "u8", reverse)]
 pub struct PositionAndLookBitfield6 {
-    #[bool]
+    #[encoding(bool)]
     pub x: bool,
-    #[bool]
+    #[encoding(bool)]
     pub y: bool,
-    #[bool]
+    #[encoding(bool)]
     pub z: bool,
-    #[bool]
+    #[encoding(bool)]
     pub pitch: bool,
-    #[bool]
+    #[encoding(bool)]
     pub yaw: bool,
 }
 
@@ -665,7 +667,7 @@ pub struct UseBed6 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Use_Bed)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_0a)
 pub struct UseBed7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     /// Position of the head part of the targeted bed
     pub location: Position6,
@@ -679,7 +681,7 @@ pub struct UseBed7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Animation)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_0b)
 pub struct Animation0 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub animation: super::AnimationId0,
 }
@@ -707,15 +709,15 @@ pub struct Animation0 {
 /// no pv6 wiki.vg
 /// [pv6 burger diff](https://rob9315.github.io/mcpackets/diff_5_6.html#packets:play_clientbound_0c)
 pub struct SpawnPlayer0<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub player_uuid: StringUuid,
     pub name: Cow<'a, str>,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -750,16 +752,16 @@ pub struct SpawnPlayer0<'a> {
 /// [pv7 wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Spawn_Player)
 /// [pv7 burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_0c)
 pub struct SpawnPlayer5<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub player_uuid: StringUuid,
     pub name: Cow<'a, str>,
     pub properties: Vec<PlayerProperty<'a>>,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -792,14 +794,14 @@ pub struct SpawnPlayer5<'a> {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5643#Spawn_Player)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_18_19.html#packets:play_clientbound_0c)
 pub struct SpawnPlayer19<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub player_uuid: Uuid,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -833,14 +835,14 @@ pub struct SpawnPlayer19<'a> {
 /// no wiki.vg
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_48_49.html#packets:play_clientbound_0c)
 pub struct SpawnPlayer49<EntityMetadata> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub player_uuid: Uuid,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -900,10 +902,10 @@ pub struct CollectItem0 {
 /// [`PlayerPositionAndLook0`]: super::serverbound::PlayerPositionAndLook0
 /// [`PlayerPositionAndLook10`]: super::serverbound::PlayerPositionAndLook10
 pub struct CollectItem7 {
-    #[varint]
+    #[encoding(varint)]
     /// The item's entity id
     pub collected_id: i32,
-    #[varint]
+    #[encoding(varint)]
     /// The entity's id that collected the item
     pub collector_id: i32,
 }
@@ -916,16 +918,16 @@ pub struct CollectItem7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Spawn_Object)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_0e)
 pub struct SpawnObject0 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub kind: ObjectKind0,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     /// X position as a Fixed-Point number
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     /// Y position as a Fixed-Point number
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     /// Z position as a Fixed-Point number
     pub z: f64,
     pub pitch: Angle,
@@ -937,22 +939,22 @@ pub struct SpawnObject0 {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ObjectKind0 {
-    #[case(1)]
+    #[encoding(case = "1")]
     Boat,
     ItemStack,
     AreaEffectCloud,
-    #[case(10)]
+    #[encoding(case = "10")]
     Minecart,
     /// unused since 1.6.x
     StorageMinecart,
     /// unused since 1.6.x
     PoweredMinecart,
-    #[case(50)]
+    #[encoding(case = "50")]
     ActivatedTNT,
     EnderCrystal,
-    #[case(60)]
+    #[encoding(case = "60")]
     Arrow,
     Snowball,
     Egg,
@@ -961,7 +963,7 @@ pub enum ObjectKind0 {
     ThrownEnderpearl,
     WitherSkull,
     ShulkerBullet,
-    #[case(70)]
+    #[encoding(case = "70")]
     FallingObject,
     ItemFrame,
     EyeOfEnder,
@@ -971,7 +973,7 @@ pub enum ObjectKind0 {
     FireworkRocket,
     LeashKnot,
     ArmorStand,
-    #[case(90)]
+    #[encoding(case = "90")]
     FishingFloat,
     SpectralArrow,
     TippedArrow,
@@ -1084,14 +1086,14 @@ pub enum EntityKind0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Spawn_Mob)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_0f)
 pub struct SpawnMob0<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub kind: EntityKind0,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub pitch: Angle,
     pub head_pitch: Angle,
@@ -1117,7 +1119,7 @@ pub struct SpawnMob0<'a> {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Spawn_Painting)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_10)
 pub struct SpawnPainting0<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: #[max_len(13)]
     /// Name of the painting. Max length 13
@@ -1133,7 +1135,7 @@ pub struct SpawnPainting0<'a> {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5408#Spawn_Painting)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_7_8.html#packets:play_clientbound_10)
 pub struct SpawnPainting8<'a> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: #[max_len(13)]
     /// Name of the painting. Max length 13
@@ -1143,7 +1145,7 @@ pub struct SpawnPainting8<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u32)]
+#[encoding(from = "u32")]
 pub enum Direction0 {
     NegZ = 0,
     NegX,
@@ -1159,13 +1161,13 @@ pub enum Direction0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Spawn_Experience_Orb)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_11)
 pub struct SpawnExpOrb0 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     /// The amount of experience this orb will reward once collected
     pub count: i16,
@@ -1253,7 +1255,7 @@ impl Encode for EntityVelocity7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Destroy_Entities)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_13)
 pub struct DestroyEntities0 {
-    #[counted(u8)]
+    #[encoding(counted = "u8")]
     pub entities: Vec<i32>,
 }
 
@@ -1285,7 +1287,7 @@ impl Encode for DestroyEntities7 {
 }
 
 #[derive(Encoding, ToStatic)]
-/// Entity (No Move, No Look)
+/// Entity Update/Init (No Move, No Look)
 ///
 /// This packet may be used to initialize an entity.
 ///
@@ -1315,7 +1317,7 @@ pub struct Entity0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_14)
 pub struct Entity7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
 }
 
@@ -1331,15 +1333,15 @@ pub struct EntityRelativeMove0 {
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport0`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport0`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport0`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dz: f32,
 }
 
@@ -1351,20 +1353,20 @@ pub struct EntityRelativeMove0 {
 /// no wiki.vg
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_15)
 pub struct EntityRelativeMove7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport7`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport7`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport7`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dz: f32,
 }
 
@@ -1376,20 +1378,20 @@ pub struct EntityRelativeMove7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Relative_Move)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_15)
 pub struct EntityRelativeMove22 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport22`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport22`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport22`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dz: f32,
     /// whether or not the entity is currently located on the ground
     pub on_ground: bool,
@@ -1416,7 +1418,7 @@ pub struct EntityLook0 {
 /// no wiki.vg
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_16)
 pub struct EntityLook7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1430,7 +1432,7 @@ pub struct EntityLook7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Look)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_16)
 pub struct EntityLook22 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1451,15 +1453,15 @@ pub struct EntityLookAndRelativeMove0 {
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport0`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport0`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport0`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dz: f32,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1474,20 +1476,20 @@ pub struct EntityLookAndRelativeMove0 {
 /// no wiki.vg
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_17)
 pub struct EntityLookAndRelativeMove7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport7`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport7`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport7`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dz: f32,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1502,20 +1504,20 @@ pub struct EntityLookAndRelativeMove7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Look_and_Relative_Move)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_17)
 pub struct EntityLookAndRelativeMove22 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: round x and z but floor y
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport22`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dx: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport22`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dy: f32,
     /// watch out, this must satisfy -4.0 <= x < 4.0
     /// if it can't, use [`EntityTeleport22`] instead
-    #[fixed(5, i8)]
+    #[encoding(fixed(5, "i8"))]
     pub dz: f32,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1533,11 +1535,11 @@ pub struct EntityLookAndRelativeMove22 {
 pub struct EntityTeleport0 {
     pub entity_id: i32,
     // TODO: round x and z but floor y
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1551,14 +1553,14 @@ pub struct EntityTeleport0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Teleport)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_18)
 pub struct EntityTeleport7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: round x and z but floor y
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1572,14 +1574,14 @@ pub struct EntityTeleport7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5706#Entity_Teleport)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_21_22.html#packets:play_clientbound_18)
 pub struct EntityTeleport22 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: round x and z but floor y
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
     pub yaw: Angle,
     pub pitch: Angle,
@@ -1607,7 +1609,7 @@ pub struct EntityHeadLook0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Head_Look)
 /// [burger](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_19)
 pub struct EntityHeadLook7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub head_yaw: Angle,
 }
@@ -1623,7 +1625,7 @@ pub struct EntityStatus0 {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum Status0 {
     EntityHurt = 2,
     EntityDead,
@@ -1679,7 +1681,7 @@ pub struct EntityMetadata0<'a> {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Metadata)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1c)
 pub struct EntityMetadata7<EntityMetadata> {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub metadata: EntityMetadata,
 }
@@ -1705,13 +1707,13 @@ pub struct EntityEffect0 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Effect)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1d)
 pub struct EntityEffect7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: effect ids
     pub effect_id: i8,
     /// Effect Level - 1
     pub amplifier: i8,
-    #[varint]
+    #[encoding(varint)]
     /// in seconds
     pub duration: i32,
 }
@@ -1722,13 +1724,13 @@ pub struct EntityEffect7 {
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5422#Entity_Effect)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_9_10.html#packets:play_clientbound_1d)
 pub struct EntityEffect10 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     // TODO: effect ids
     pub effect_id: i8,
     /// Effect Level - 1
     pub amplifier: i8,
-    #[varint]
+    #[encoding(varint)]
     /// in seconds
     pub duration: i32,
     pub hide_particles: bool,
@@ -1736,7 +1738,7 @@ pub struct EntityEffect10 {
 
 #[derive(Encoding, ToStatic)]
 /// Remove Entity Effect
-/// 
+///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Remove_Entity_Effect)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1e)
 pub struct RemoveEntityEffect0 {
@@ -1745,20 +1747,20 @@ pub struct RemoveEntityEffect0 {
 }
 #[derive(Encoding, ToStatic)]
 /// Remove Entity Effect
-/// 
+///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Remove_Entity_Effect)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1e)
 pub struct RemoveEntityEffect7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub effect_id: i8,
 }
 
 #[derive(Encoding, ToStatic)]
 /// Set Experience
-/// 
+///
 /// Sent by the server when the client should change experience levels.
-/// 
+///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Set_Experience)
 /// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_1f)
 pub struct SetExperience0 {
@@ -1769,30 +1771,43 @@ pub struct SetExperience0 {
 
 #[derive(Encoding, ToStatic)]
 /// Set Experience
-/// 
+///
 /// Sent by the server when the client should change experience levels.
-/// 
+///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Set_Experience)
 /// [burger diff](https://rob9315.github.io/mcpackets/diff_6_7.html#packets:play_clientbound_1f)
 pub struct SetExperience7 {
     pub experience_bar: f32,
-    #[varint]
+    #[encoding(varint)]
     pub level: i32,
-    #[varint]
+    #[encoding(varint)]
     pub total_exp: i32,
 }
 
+// TODO: Add more documentation on this, maybe a list of known properties
 #[derive(Encoding, ToStatic)]
+/// Entity Update (Properties)
+///
+/// Sets attributes on the given entity.
+///
+/// Attributes are a system of buffs/debuffs that are properties on mobs and
+/// players. Attributes also have modifiers that adjust the strength of their
+/// effect.
+///
+/// [Minecraft Wiki](https://minecraft.fandom.com/wiki/Attribute)
+///
+/// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Properties)
+/// [burger](https://rob9315.github.io/mcpackets/13w41b.html#packets:play_clientbound_20)
 pub struct EntityProperties0<'a> {
     pub entity_id: i32,
-    #[counted(u32)]
+    #[encoding(counted = "u32")]
     pub properties: Vec<EntityProperty0<'a>>,
 }
 #[derive(Encoding, ToStatic)]
 pub struct EntityProperty0<'a> {
     pub key: Cow<'a, str>,
     pub value: f64,
-    #[counted(u16)]
+    #[encoding(counted = "u16")]
     pub modifiers: Vec<Modifier0>,
 }
 #[derive(Encoding, ToStatic)]
@@ -1805,7 +1820,7 @@ pub struct Modifier0 {
 #[derive(Encoding, ToStatic)]
 pub struct EntityProperties7<'a> {
     pub entity_id: i32,
-    #[counted(u32)]
+    #[encoding(counted = "u32")]
     pub properties: Vec<EntityProperty7<'a>>,
 }
 #[derive(Encoding, ToStatic)]
@@ -1857,12 +1872,13 @@ pub struct ChunkData0<'a> {
     /// column, where the primary bit map specifies exactly which sections are
     /// included, and which are air
     pub continuous: bool,
-    /// Bitmask with 1 for every 16x16x16 section which data follows in the compressed data.
+    /// Bitmask with 1 for every 16x16x16 section which data follows in [`compressed_data`](#structfield.compressed_data).
     pub primary_bitmap: u16,
-    // TODO: waht is this for?
-    /// Same as above, but this is used exclusively for the 'add' portion of the payload
+    // TODO: what is this for?
+    /// Same as [`primary_bitmap`](#structfield.primary_bitmap), but this is used exclusively for the 'add' portion of the payload
     pub add_bitmap: u16,
-    #[counted(u32)]
+    #[encoding(counted = "u32")]
+    /// The chunk data is compressed using Zlib Deflate
     pub compressed_data: Cow<'a, [u8]>,
 }
 
@@ -1877,7 +1893,7 @@ pub struct ChunkData23<'a> {
     pub continuous: bool,
     /// Bitmask with 1 for every 16x16x16 section which data follows in the compressed data.
     pub primary_bitmap: u16,
-    #[counted(u32)]
+    #[encoding(counted = "u32")]
     pub compressed_data: Cow<'a, [u8]>,
 }
 
@@ -2020,18 +2036,17 @@ pub struct MultiBlockChange25 {
 #[derive(Encoding, ToStatic)]
 pub struct Record25 {
     pub rel_pos: RecordRelativePosition25,
-    #[varint]
+    #[encoding(varint)]
     pub block_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
-#[bitfield]
+#[derive(Bitfield, ToStatic)]
 pub struct RecordRelativePosition25 {
-    #[bits(4)]
+    #[encoding(bits = 4)]
     pub x: u8,
-    #[bits(4)]
+    #[encoding(bits = 4)]
     pub z: u8,
-    #[bits(8)]
+    #[encoding(bits = 8)]
     pub y: u8,
 }
 
@@ -2040,7 +2055,7 @@ pub struct BlockChange0 {
     pub x: i32,
     pub y: u8,
     pub z: i32,
-    #[varint]
+    #[encoding(varint)]
     // TODO: extract the next two variables into concrete types for the version
     pub block_type: i32,
     pub block_data: u8,
@@ -2049,7 +2064,7 @@ pub struct BlockChange0 {
 #[derive(Encoding, ToStatic)]
 pub struct BlockChange6 {
     pub location: Position6,
-    #[varint]
+    #[encoding(varint)]
     pub block_type: i32,
     pub block_data: u8,
 }
@@ -2059,7 +2074,7 @@ pub struct BlockChange25 {
     pub location: Position6,
     // TODO: global palette block id, maybe separate into id and type?
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Block_Change
-    #[varint]
+    #[encoding(varint)]
     pub block_id: i32,
 }
 
@@ -2071,7 +2086,7 @@ pub struct BlockAction0 {
     pub action_id: u8,
     pub action_param: u8,
     /// The block type ID for the block, not including metadata/damage value
-    #[varint]
+    #[encoding(varint)]
     pub block_type: i32,
 }
 
@@ -2081,13 +2096,13 @@ pub struct BlockAction6 {
     pub action_id: u8,
     pub action_param: u8,
     /// The block type ID for the block, not including metadata/damage value
-    #[varint]
+    #[encoding(varint)]
     pub block_type: i32,
 }
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockBreakAnimation0 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub x: i32,
     pub y: i32,
@@ -2098,7 +2113,7 @@ pub struct BlockBreakAnimation0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct BlockBreakAnimation6 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub location: Position6,
     /// 0-9
@@ -2212,9 +2227,9 @@ pub struct MapChunkBulk27<'a> {
     /// Whether or not the chunk data contains a light nibble array. This is
     /// true in the main world, false in the end + nether
     pub skylight_sent: bool,
-    #[counted(u32)]
+    #[encoding(counted = "u32")]
     pub column_metas: Vec<ChunkMeta23>,
-    #[rest]
+    #[encoding(rest)]
     pub data: Cow<'a, [u8]>,
 }
 
@@ -2224,7 +2239,7 @@ pub struct Explosion0 {
     pub y: f32,
     pub z: f32,
     pub radius: f32,
-    #[counted(u32)]
+    #[encoding(counted = "u32")]
     pub records: Vec<ExplosionRecord>,
     pub motion_x: f32,
     pub motion_y: f32,
@@ -2280,7 +2295,7 @@ pub struct SoundEffect0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum SoundCategory0 {
     Master = 0,
     Music,
@@ -2342,7 +2357,7 @@ pub struct Particle17<'a> {
     pub number: i32,
     // TODO: read exact number of varints using enum of possible names
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Particle_2
-    #[rest]
+    #[encoding(rest)]
     pub data: Cow<'a, [u8]>,
 }
 
@@ -2365,7 +2380,7 @@ pub struct Particle29<'a> {
     pub number: i32,
     // TODO: read exact number of varints using enum of possible names
     // https://wiki.vg/index.php?title=Protocol&oldid=7368#Particle_2
-    #[rest]
+    #[encoding(rest)]
     pub data: Cow<'a, [u8]>,
 }
 
@@ -2375,10 +2390,10 @@ pub struct Particle29<'a> {
 // }
 
 // #[derive(Encoding, ToStatic)]
-// #[from(u8)]
+// #[encoding(from = "u8")]
 #[derive(ToStatic)]
 pub enum ChangeGameState0 {
-    // #[case(0)]
+    // #[encoding(case = "0")]
     InvalidBed,
     BeginRaining,
     EndRaining,
@@ -2393,7 +2408,7 @@ pub enum ChangeGameState0 {
 }
 
 #[derive(Encoding, ToStatic, Clone, Copy)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum DemoMessage0 {
     WelcomeToDemo = 0,
     MovementControl = 101,
@@ -2454,15 +2469,15 @@ impl Encode for ChangeGameState0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct SpawnGlobalEntity0 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     /// The global entity type, currently always 1 for thunderbolt.
     pub kind: u8,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub x: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub y: f64,
-    #[fixed(5, i32)]
+    #[encoding(fixed(5, "i32"))]
     pub z: f64,
 }
 
@@ -2687,7 +2702,7 @@ pub struct SetSlot0 {
 pub struct WindowItems0 {
     /// The id of window which items are being sent for. 0 for player inventory.
     pub window_id: u8,
-    // #[counted(u16)]
+    // #[encoding(counted = "u16")]
     // TODO: slot data
     // slots: Vec<Slot>
 }
@@ -2729,9 +2744,9 @@ pub struct UpdateSign6<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct Maps0 {
-    #[varint]
+    #[encoding(varint)]
     pub item_damage: i32,
-    // TODO: #[rest]
+    // TODO: #[encoding(rest)]
     // TODO: impl MapData
     // map_data: MapData<'a>,
 }
@@ -2780,14 +2795,13 @@ pub struct SignEditorOpen0 {
     pub z: i32,
 }
 
-#[derive(Encoding, ToStatic)]
-#[bitfield]
+#[derive(Bitfield, ToStatic)]
 pub struct SignEditorOpen6 {
-    #[bits(26)]
+    #[encoding(bits = 26)]
     pub x: i32,
-    #[bits(26)]
+    #[encoding(bits = 26)]
     pub z: i32,
-    #[bits(12)]
+    #[encoding(bits = 12)]
     pub y: i16,
 }
 
@@ -2799,7 +2813,7 @@ pub struct Statistics0<'a> {
 #[derive(Encoding, ToStatic)]
 pub struct Statistic0<'a> {
     pub name: Cow<'a, str>,
-    #[varint]
+    #[encoding(varint)]
     /// The amount to increase by
     pub amount: i32,
 }
@@ -2821,13 +2835,13 @@ pub struct PlayerListItem7<'a> {
     /// The client will remove the user from the list if false.
     pub online: bool,
     /// Ping, presumably in ms.
-    #[varint]
+    #[encoding(varint)]
     pub ping: i32,
 }
 
 #[derive(Encoding, ToStatic)]
 pub enum PlayerListItem17<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     AddPlayers(Vec<PlayerListAddPlayer17<'a>>),
     UpdateGamemode(Vec<PlayerListUpdateGamemode17>),
     UpdateLatency(Vec<PlayerListUpdateLatency17>),
@@ -2838,7 +2852,7 @@ pub struct PlayerListAddPlayer17<'a> {
     pub uuid: Uuid,
     pub name: Cow<'a, str>,
     pub gamemode: GameMode17,
-    #[varint]
+    #[encoding(varint)]
     pub ping: i32,
 }
 
@@ -2851,13 +2865,13 @@ pub struct PlayerListUpdateGamemode17 {
 #[derive(Encoding, ToStatic)]
 pub struct PlayerListUpdateLatency17 {
     pub uuid: Uuid,
-    #[varint]
+    #[encoding(varint)]
     pub ping: i32,
 }
 
 #[derive(Encoding, ToStatic)]
 pub enum PlayerListItem19<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     AddPlayers(Vec<PlayerListAddPlayer19<'a>>),
     UpdateGamemode(Vec<PlayerListUpdateGamemode17>),
     UpdateLatency(Vec<PlayerListUpdateLatency17>),
@@ -2866,7 +2880,7 @@ pub enum PlayerListItem19<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub enum PlayerListItem28<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     AddPlayers(Vec<PlayerListAddPlayer28<'a>>),
     UpdateGamemode(Vec<PlayerListUpdateGamemode17>),
     UpdateLatency(Vec<PlayerListUpdateLatency17>),
@@ -2880,7 +2894,7 @@ pub struct PlayerListAddPlayer19<'a> {
     pub name: Cow<'a, str>,
     pub properties: Vec<PlayerProperty19<'a>>,
     pub gamemode: GameMode17,
-    #[varint]
+    #[encoding(varint)]
     pub ping: i32,
 }
 
@@ -2967,9 +2981,9 @@ pub struct ScoreboardObjective0<'a> {
     pub action: ScoreboardAction0,
 }
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ScoreboardAction0 {
-    #[case(0)]
+    #[encoding(case = "0")]
     Create,
     Remove,
     Update,
@@ -2983,9 +2997,9 @@ pub struct ScoreboardObjective12<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ScoreboardObjectiveAction12<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Create {
         value: Cow<'a, str>,
         kind: ScoreboardObjectiveKind12,
@@ -3000,11 +3014,11 @@ pub enum ScoreboardObjectiveAction12<'a> {
 // TODO: check that there aren't any other cases in later supported protocol versions
 // support up to pv66
 #[derive(Encoding, ToStatic)]
-#[from(&str)]
+#[encoding(from = "&str")]
 pub enum ScoreboardObjectiveKind12 {
-    #[case("integer")]
+    #[encoding(case = "\"integer\"")]
     Integer,
-    #[case("hearts")]
+    #[encoding(case = "\"hearts\"")]
     Hearts,
 }
 
@@ -3016,9 +3030,9 @@ pub struct UpdateScore0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum UpdateScoreAction0<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Update {
         /// The name of the objective the score belongs to
         text: Cow<'a, str>,
@@ -3036,14 +3050,14 @@ pub struct UpdateScore7<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum UpdateScoreAction7<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Update {
         /// The name of the objective the score belongs to
         text: Cow<'a, str>,
         /// The score to be displayed next to the entry
-        #[varint]
+        #[encoding(varint)]
         kind: i32,
     },
     Remove,
@@ -3057,14 +3071,14 @@ pub struct UpdateScore21<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum UpdateScoreAction21<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Update {
         /// The name of the objective the score belongs to
         text: Cow<'a, str>,
         /// The score to be displayed next to the entry
-        #[varint]
+        #[encoding(varint)]
         kind: i32,
     },
     Remove {
@@ -3080,7 +3094,7 @@ pub struct DisplayScoreboard0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ScoreboardPosition {
     List = 0,
     Sidebar,
@@ -3095,13 +3109,13 @@ pub struct Teams0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub enum TeamAction0<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Create {
         display_name: Cow<'a, str>,
         prefix: Cow<'a, str>,
         suffix: Cow<'a, str>,
         friendly_fire: TeamFriendlyFire,
-        #[counted(u16)]
+        #[encoding(counted = "u16")]
         players: Vec<Cow<'a, str>>,
     },
     Remove,
@@ -3112,11 +3126,11 @@ pub enum TeamAction0<'a> {
         friendly_fire: TeamFriendlyFire,
     },
     AddPlayers {
-        #[counted(u16)]
+        #[encoding(counted = "u16")]
         players: Vec<Cow<'a, str>>,
     },
     RemovePlayers {
-        #[counted(u16)]
+        #[encoding(counted = "u16")]
         players: Vec<Cow<'a, str>>,
     },
 }
@@ -3129,7 +3143,7 @@ pub struct Teams7<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub enum TeamAction7<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Create {
         display_name: Cow<'a, str>,
         prefix: Cow<'a, str>,
@@ -3160,7 +3174,7 @@ pub struct Teams11<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub enum TeamAction11<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     Create {
         display_name: Cow<'a, str>,
         prefix: Cow<'a, str>,
@@ -3190,7 +3204,7 @@ pub enum TeamAction11<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum TeamFriendlyFire {
     Off = 0,
     On,
@@ -3198,15 +3212,15 @@ pub enum TeamFriendlyFire {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(&str)]
+#[encoding(from = "&str")]
 pub enum NameTagVisibility11 {
-    #[case("always")]
+    #[encoding(case = "\"always\"")]
     Always,
-    #[case("hideForOtherTeams")]
+    #[encoding(case = "\"hideForOtherTeams\"")]
     HideForOtherTeams,
-    #[case("hideForOwnTeam")]
+    #[encoding(case = "\"hideForOwnTeam\"")]
     HideForOwnTeam,
-    #[case("never")]
+    #[encoding(case = "\"never\"")]
     Never,
 }
 
@@ -3214,7 +3228,7 @@ pub enum NameTagVisibility11 {
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
     pub channel: Cow<'a, str>,
-    #[counted(u16)]
+    #[encoding(counted = "u16")]
     pub data: Cow<'a, [u8]>,
 }
 
@@ -3229,7 +3243,7 @@ pub struct PluginMessage29<'a> {
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage32<'a> {
     pub channel: Cow<'a, str>,
-    #[rest]
+    #[encoding(rest)]
     pub data: Cow<'a, [u8]>,
 }
 
@@ -3245,17 +3259,17 @@ pub struct ServerDifficulty6 {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(i32)]
+#[encoding(from = "i32")]
 pub enum CombatEvent7<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     EnterCombat,
     EndCombat {
-        #[varint]
+        #[encoding(varint)]
         duration: i32,
         entity_id: i32,
     },
     EntityDead {
-        #[varint]
+        #[encoding(varint)]
         player_id: i32,
         entity_id: i32,
         message: Cow<'a, str>,
@@ -3263,17 +3277,17 @@ pub enum CombatEvent7<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum CombatEvent8<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     EnterCombat,
     EndCombat {
-        #[varint]
+        #[encoding(varint)]
         duration: i32,
         entity_id: i32,
     },
     EntityDead {
-        #[varint]
+        #[encoding(varint)]
         player_id: i32,
         entity_id: i32,
         message: Cow<'a, str>,
@@ -3282,13 +3296,13 @@ pub enum CombatEvent8<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct Camera9 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
 }
 
 #[derive(Encoding, ToStatic)]
 pub enum WorldBorder15 {
-    #[case(0)]
+    #[encoding(case = "0")]
     SetSize {
         radius: f64,
     },
@@ -3299,7 +3313,7 @@ pub enum WorldBorder15 {
         /// From experiments, it appears that Notchian server does not sync
         /// world border speed to game ticks, so it gets out of sync with
         /// server lag
-        #[varint]
+        #[encoding(varint)]
         speed: i32,
     },
     SetCenter {
@@ -3310,7 +3324,7 @@ pub enum WorldBorder15 {
 
 #[derive(Encoding, ToStatic)]
 pub enum WorldBorder16 {
-    #[case(0)]
+    #[encoding(case = "0")]
     SetSize {
         radius: f64,
     },
@@ -3321,7 +3335,7 @@ pub enum WorldBorder16 {
         /// From experiments, it appears that Notchian server does not sync
         /// world border speed to game ticks, so it gets out of sync with
         /// server lag
-        #[varint]
+        #[encoding(varint)]
         speed: i32,
     },
     SetCenter {
@@ -3333,17 +3347,17 @@ pub enum WorldBorder16 {
         z: f64,
         old_radius: f64,
         new_radius: f64,
-        #[varint]
+        #[encoding(varint)]
         speed: i32,
         /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984.
-        #[varint]
+        #[encoding(varint)]
         portal_tp_boundary: i32,
     },
 }
 
 #[derive(Encoding, ToStatic)]
 pub enum WorldBorder17 {
-    #[case(0)]
+    #[encoding(case = "0")]
     SetSize {
         radius: f64,
     },
@@ -3354,7 +3368,7 @@ pub enum WorldBorder17 {
         /// From experiments, it appears that Notchian server does not sync
         /// world border speed to game ticks, so it gets out of sync with
         /// server lag
-        #[varint]
+        #[encoding(varint)]
         speed: i32,
     },
     SetCenter {
@@ -3362,11 +3376,11 @@ pub enum WorldBorder17 {
         z: f64,
     },
     SetWarningTime {
-        #[varint]
+        #[encoding(varint)]
         warning_time: i32,
     },
     SetWarningBlocks {
-        #[varint]
+        #[encoding(varint)]
         warning_blocks: i32,
     },
     Initialize {
@@ -3374,21 +3388,21 @@ pub enum WorldBorder17 {
         z: f64,
         old_radius: f64,
         new_radius: f64,
-        #[varint]
+        #[encoding(varint)]
         speed: i32,
         /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984.
-        #[varint]
+        #[encoding(varint)]
         portal_tp_boundary: i32,
-        #[varint]
+        #[encoding(varint)]
         warning_time: i32,
-        #[varint]
+        #[encoding(varint)]
         warning_blocks: i32,
     },
 }
 
 #[derive(Encoding, ToStatic)]
 pub enum WorldBorder32 {
-    #[case(0)]
+    #[encoding(case = "0")]
     SetSize {
         radius: f64,
     },
@@ -3399,7 +3413,7 @@ pub enum WorldBorder32 {
         /// From experiments, it appears that Notchian server does not sync
         /// world border speed to game ticks, so it gets out of sync with
         /// server lag
-        #[varint]
+        #[encoding(varint)]
         speed: i64,
     },
     SetCenter {
@@ -3407,11 +3421,11 @@ pub enum WorldBorder32 {
         z: f64,
     },
     SetWarningTime {
-        #[varint]
+        #[encoding(varint)]
         warning_time: i32,
     },
     SetWarningBlocks {
-        #[varint]
+        #[encoding(varint)]
         warning_blocks: i32,
     },
     Initialize {
@@ -3419,22 +3433,22 @@ pub enum WorldBorder32 {
         z: f64,
         old_radius: f64,
         new_radius: f64,
-        #[varint]
+        #[encoding(varint)]
         speed: i64,
         /// Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984.
-        #[varint]
+        #[encoding(varint)]
         portal_tp_boundary: i32,
-        #[varint]
+        #[encoding(varint)]
         warning_time: i32,
-        #[varint]
+        #[encoding(varint)]
         warning_blocks: i32,
     },
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum Title18<'a> {
-    #[case(0)]
+    #[encoding(case = "0")]
     SetTitle {
         text: Cow<'a, str>,
     },
@@ -3453,7 +3467,7 @@ pub enum Title18<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct SetCompression27 {
-    #[varint]
+    #[encoding(varint)]
     pub threshold: i32,
 }
 
@@ -3481,6 +3495,6 @@ pub struct SetCoolDown48 {
     ///
     /// if it's cooldown, that's in ticks
     /// item id would be well... the item id
-    #[varint]
+    #[encoding(varint)]
     pub cooldown: i32,
 }

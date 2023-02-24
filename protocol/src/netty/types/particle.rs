@@ -228,7 +228,7 @@ pub struct Vibration<'a> {
     source: VibrationSource<'a>,
     /// The amount of ticks it takes for the vibration to travel from its
     /// source to its destination.
-    #[varint]
+    #[encoding(varint)]
     ticks: i32,
 }
 
