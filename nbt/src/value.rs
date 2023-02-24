@@ -15,6 +15,48 @@ pub enum Value<'a> {
     IntArray(Vec<i32>),
     LongArray(Vec<i64>),
 }
+
+macro_rules! as_t {
+    ($fn:ident, $variant:ident, $t:ty) => {
+        pub fn $fn(&self) -> Option<&$t> {
+            if let Self::$variant(v) = self {
+                Some(v)
+            } else {
+                None
+            }
+        }
+    };
+}
+
+macro_rules! as_t_copy {
+    ($fn:ident, $variant:ident, $t:ty) => {
+        pub fn $fn(&self) -> Option<$t> {
+            if let Self::$variant(v) = self {
+                Some(*v)
+            } else {
+                None
+            }
+        }
+    };
+}
+
+
+impl Value<'_> {
+    as_t_copy!(as_byte, Byte, i8);
+    as_t_copy!(as_short, Short, i16);
+    as_t_copy!(as_int, Int, i32);
+    as_t_copy!(as_long, Long, i64);
+    as_t_copy!(as_float, Float, f32);
+    as_t_copy!(as_double, Double, f64);
+    as_t!(as_byte_array, ByteArray, Cow<'_, [u8]>);
+    as_t!(as_string, String, Cow<'_, str>);
+    as_t!(as_list, List, List<'_>);
+    as_t!(as_compound, Compound, Compound<'_>);
+    as_t!(as_int_array, IntArray, Vec<i32>);
+    as_t!(as_long_array, LongArray, Vec<i64>);
+    
+}
+
 macro_rules! from {
     ($($case:ident $ufrom:ident $ifrom:ident;)+) => {$(
         impl<'a> From<$ifrom> for Value<'a> {
