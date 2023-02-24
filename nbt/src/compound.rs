@@ -1,8 +1,24 @@
+use std::ops::{Deref, DerefMut};
+
 use crate::*;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 #[repr(transparent)]
 pub struct Compound<'a>(HashMap<Cow<'a, str>, Value<'a>>);
+
+impl<'a> Deref for Compound<'a> {
+    type Target = HashMap<Cow<'a, str>, Value<'a>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'a> DerefMut for Compound<'a> {    
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<'a> Compound<'a> {
     pub const fn new(map: HashMap<Cow<'a, str>, Value<'a>>) -> Self {
