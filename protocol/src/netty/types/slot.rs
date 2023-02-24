@@ -1,5 +1,6 @@
-use crate::*;
-use attrs::*;
+
+use ::miners_encoding::{decode, encode, Decode, Encode};
+
 use miners_nbt::Compound;
 
 #[derive(ToStatic, Clone, Debug, PartialEq)]
@@ -141,13 +142,13 @@ impl<'a> Encode for Slot346<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(bool)]
+#[encoding(from = "bool")]
 pub enum Slot402<'a> {
-    #[case(false)]
+    #[encoding(case = "false")]
     Empty,
-    #[case(true)]
+    #[encoding(case = "true")]
     Item {
-        #[varint]
+        #[encoding(varint)]
         id: i32,
         count: u8,
         nbt: Compound<'a>,

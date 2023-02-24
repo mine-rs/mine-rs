@@ -1,5 +1,3 @@
-use crate::*;
-
 #[derive(Encoding, ToStatic)]
 pub struct Request0 {}
 

@@ -1,6 +1,8 @@
-use crate::{netty::types::position::Position6, *};
+use crate::netty::types::position::Position6;
 
-use attrs::*;
+
+use ::miners_encoding::{decode, encode, Decode, Encode};
+
 use std::borrow::Cow;
 use uuid::Uuid;
 
@@ -11,7 +13,7 @@ pub struct KeepAlive0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct KeepAlive7 {
-    #[varint]
+    #[encoding(varint)]
     pub id: i32,
 }
 
@@ -29,22 +31,22 @@ pub struct UseEntity0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct UseEntity7 {
-    #[varint]
+    #[encoding(varint)]
     pub target_id: i32,
     pub mouse: i8,
 }
 
 #[derive(Encoding, ToStatic)]
 pub struct UseEntity33 {
-    #[varint]
+    #[encoding(varint)]
     pub target_id: i32,
     pub kind: UseEntityKind33,
 }
 
 #[derive(Encoding, ToStatic)]
-#[varint]
+#[encoding(varint)]
 pub enum UseEntityKind33 {
-    #[case(0)]
+    #[encoding(case = "0")]
     Interact,
     Attack,
     InteractAt {
@@ -295,7 +297,7 @@ impl Encode for PlayerDigging6 {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum DiggingAction0 {
     Started = 0,
     Cancelled,
@@ -307,7 +309,7 @@ pub enum DiggingAction0 {
 }
 
 #[derive(Encoding, ToStatic, Clone, Copy)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum BlockFace0 {
     NegY = 0,
     PosY,
@@ -364,16 +366,16 @@ pub struct EntityAction0 {
 
 #[derive(Encoding, ToStatic)]
 pub struct EntityAction7 {
-    #[varint]
+    #[encoding(varint)]
     pub entity_id: i32,
     pub action: EntityAction,
     /// Horse jump boost. Ranged from 0 -> 100.
-    #[varint]
+    #[encoding(varint)]
     pub jump_boost: i32,
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum EntityAction {
     Crouch = 1,
     Uncrouch,
@@ -395,12 +397,12 @@ pub struct SteerVehicle7 {
     pub forward: f32,
     pub flags: SteerVehicleFlags7,
 }
-#[derive(Encoding, ToStatic)]
-#[bitfield(u8, reverse)]
+#[derive(Bitfield, ToStatic)]
+#[encoding(typ = "u8", reverse)]
 pub struct SteerVehicleFlags7 {
-    #[bool]
+    #[encoding(bool)]
     pub jump: bool,
-    #[bool]
+    #[encoding(bool)]
     pub unmount: bool,
 }
 
@@ -725,7 +727,7 @@ pub struct ClientSettings0<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ViewDistance0 {
     Far = 0,
     Normal,
@@ -747,34 +749,34 @@ pub struct ClientSettings6<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ChatMode6 {
     Enabled = 0,
     CommandsOnly,
     Hidden,
 }
 
-#[derive(Encoding, ToStatic)]
-#[bitfield(u8, reverse)]
+#[derive(Bitfield, ToStatic)]
+#[encoding(typ = "u8", reverse)]
 pub struct DisplayedSkinParts6 {
-    #[bool]
+    #[encoding(bool)]
     pub cape: bool,
-    #[bool]
+    #[encoding(bool)]
     pub jacket: bool,
-    #[bool]
+    #[encoding(bool)]
     pub left_sleeve: bool,
-    #[bool]
+    #[encoding(bool)]
     pub right_sleeve: bool,
-    #[bool]
+    #[encoding(bool)]
     pub left_pants: bool,
-    #[bool]
+    #[encoding(bool)]
     pub right_pants: bool,
-    #[bool]
+    #[encoding(bool)]
     pub hat: bool,
 }
 
 #[derive(Encoding, ToStatic)]
-#[from(u8)]
+#[encoding(from = "u8")]
 pub enum ClientStatus0 {
     Respawn = 0,
     RequestStats,
@@ -785,7 +787,7 @@ pub enum ClientStatus0 {
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
     pub channel: Cow<'a, str>,
-    #[counted(u16)]
+    #[encoding(counted = "u16")]
     pub data: Cow<'a, [u8]>,
 }
 
@@ -800,7 +802,7 @@ pub struct PluginMessage29<'a> {
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage32<'a> {
     pub channel: Cow<'a, str>,
-    #[rest]
+    #[encoding(rest)]
     pub data: Cow<'a, [u8]>,
 }
 
@@ -816,7 +818,7 @@ pub struct ResourcePackStatus32<'a> {
 }
 
 #[derive(Encoding, ToStatic)]
-#[varint]
+#[encoding(varint)]
 pub enum ResourcePackStatusResult32 {
     SuccessfullyLoaded = 0,
     Declined,

@@ -1,5 +1,4 @@
-use crate::*;
-use attrs::*;
+
 
 use std::borrow::Cow;
 
@@ -11,9 +10,9 @@ pub struct LoginStart0<'a> {
 #[derive(Encoding, ToStatic)]
 pub struct EncryptionResponse0<'a> {
     pub server_id: Cow<'a, str>,
-    #[counted(u16)]
+    #[encoding(counted = "u16")]
     pub public_key: Cow<'a, [u8]>,
-    #[counted(u16)]
+    #[encoding(counted = "u16")]
     pub verify_token: Cow<'a, [u8]>,
 }
 

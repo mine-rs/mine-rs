@@ -1,175 +1,99 @@
+use darling::util::Flag;
 use proc_macro2::{Ident, TokenStream};
 use quote::ToTokens;
-use syn::{parse_quote, spanned::Spanned, DataEnum, Generics, Variant};
+use syn::{parse_quote, Generics};
 
 use crate::{
-    attribute::{parse_attr, Attribute},
-    fields::{fields_codegen, fields_to_codegen_input, FieldsCode},
+    fields::{self, FieldsCode},
     generics::prepare_generics,
+    EncodingVariant,
 };
 
-pub fn derive_enum(
-    ident: Ident,
-    attrs: Vec<syn::Attribute>,
+pub(crate) fn enum_from_variants(
+    variants: Vec<EncodingVariant>,
     generics: Generics,
-    enom: DataEnum,
-) -> TokenStream {
-    let mut res = TokenStream::new();
-
-    let mut varint = None;
-    let mut from = None;
-
-    for attr in attrs.into_iter().flat_map(parse_attr) {
-        let Attribute { span, data } = match attr {
-            Ok(attr) => attr,
-            Err(e) => {
-                e.into_compile_error().to_tokens(&mut res);
-                continue;
-            }
-        };
-        use crate::attribute::AttributeData::*;
-        match data {
-            VarInt => {
-                if varint.is_none() {
-                    varint = Some(span);
-                    continue;
-                } else {
-                    error!(span, "`#[varint]` specified more than once")
-                }
-            }
-            Case(_) => error!(span, "`#[case(id)]` not allowed on enum declaration"),
-            From(ty) => {
-                if from.is_none() {
-                    from = Some(ty);
-                    continue;
-                } else {
-                    error!(span, "`#[from(ty)]` specified more than once")
-                }
-            }
-            Fixed(_) => error!(span, "`#[fixed(prec, ty)]` not allowed on enum declaration"),
-            Counted(_) => error!(span, "`#[counted(ty)]` not allowed on enum declaration"),
-            Mutf8 => error!(span, "`#[mutf8]` not allowed on enum declaration"),
-            StringUuid => error!(span, "`#[stringuuid]` not allowed on enum declaration"),
-            Rest => error!(span, "`#[rest]` not allowed on enum declaration"),
-            BitField(_) => error!(span, "`#[bitfield]` not allowed on enum declaration"),
-            Bits(_) => error!(span, "`#[bits(size)]` not allowed on enum declaration"),
-            Bool => error!(span, "`#[bool]` not allowed on enum declaration"),
-        }
-        .to_tokens(&mut res);
-    }
-
-    let variant_count = enom.variants.len();
-
-    let typ = from.unwrap_or_else(|| parse_quote!(i32));
+    ident: Ident,
+    varint: Flag,
+    from: Option<syn::Type>,
+    crate_path: &syn::Path,
+) -> darling::Result<TokenStream> {
+    let mut errors = darling::Error::accumulator();
 
     let mut decode_match_contents = quote!();
     let mut encode_match_contents = quote!();
 
-    let mut prev = None;
+    let mut prev_case = None;
 
-    for Variant {
-        attrs,
-        ident,
-        fields,
-        discriminant,
-    } in enom.variants
-    {
-        let mut case = discriminant.map(|(_, expr)| expr);
+    let id_type = from.unwrap_or_else(|| syn::parse_quote! {i32});
 
-        for attr_res in attrs.into_iter().flat_map(parse_attr) {
-            let Attribute { span, data } = match attr_res {
-                Ok(attr) => attr,
-                Err(e) => {
-                    e.into_compile_error().to_tokens(&mut res);
-                    continue;
-                }
-            };
-            use crate::attribute::AttributeData::*;
-            let err = match data {
-                VarInt => "`#[varint]` not allowed on enum variant",
-                Case(expr) => {
-                    if case.is_none() {
-                        case = Some(expr);
-                        continue;
-                    } else {
-                        "specified more than one case"
-                    }
-                }
-                From(_) => "`#[from(ty)]` not allowed on enum variant",
-                Fixed(_) => "`#[fixed(prec, ty)]` not allowed on enum variant",
-                Counted(_) => "`#[counted(ty)]` not allowed on enum variant",
-                Mutf8 => "`#[mutf8]` not allowed on enum variant",
-                StringUuid => "`#[stringuuid]` not allowed on enum variant",
-                Rest => "`#[rest]` not allowed on enum variant",
-                BitField(_) => "`#[bitfield]` not allowed on enum variant",
-                Bits(_) => "`#[bits(size)]` not allowed on enum variant",
-                Bool => "`#[bool]` not allowed on enum variant",
-            };
-            error!(span, err).to_tokens(&mut res);
-        }
+    let variant_count = variants.len();
 
-        let case = match case {
-            Some(case) => {
-                if let syn::Expr::Lit(syn::ExprLit {
-                    lit: syn::Lit::Int(int),
-                    ..
-                }) = &case
-                {
-                    match int.base10_parse::<i128>() {
-                        Ok(n) => prev = Some(n),
-                        Err(e) => {
-                            e.into_compile_error().to_tokens(&mut res);
-                            continue;
-                        }
-                    }
-                }
-                case
-            }
-            None => {
-                if let Some(prev) = &mut prev {
-                    *prev += 1;
-                    // TODO: support u128 probably using enum
-                    let lit = proc_macro2::Literal::i128_unsuffixed(*prev);
-                    parse_quote!(#lit)
-                } else {
-                    let span = (&typ).into_token_stream().span();
-                    error!(span, "couldn't deduce id, annotate with `case` attribute")
-                        .to_tokens(&mut res);
-                    continue;
+    for variant in variants {
+        let Some(case) = variant.case.or(variant.discriminant).map(|expr|{
+            // update discriminant
+            if let syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Int(int),
+                ..
+            }) = &expr {
+                if let Ok(num) = int.base10_parse::<i128>() {
+                    prev_case = Some(num);
                 }
             }
+            expr
+        }).or_else(||{
+            if let Some(prev) = &mut prev_case {
+                *prev += 1;
+                let lit = proc_macro2::Literal::i128_unsuffixed(*prev);
+                Some(parse_quote!(#lit))
+            } else {
+                let err = darling::Error::custom(crate::NEITHER_CASE_NOR_DISCRIMINANT);
+                errors.push(err.with_span(&variant.ident.span()));
+                None
+            }
+        }) else {
+            continue;
         };
 
         let FieldsCode {
             parsing,
             destructuring,
             serialization,
-        } = fields_to_codegen_input(fields, &mut res)
-            .map(fields_codegen)
-            .unwrap_or_default();
+        } = match fields::codegen(variant.fields, crate_path) {
+            Ok(k) => k,
+            Err(e) => {
+                errors.push(e);
+                continue;
+            }
+        };
+
+        let var_ident = variant.ident;
 
         quote! {
             #case => {
                 #parsing
-                Self::#ident #destructuring
+                Self::#var_ident #destructuring
             },
         }
         .to_tokens(&mut decode_match_contents);
 
-        let encode_id = if varint.is_some() {
-            quote!(Var::<#typ>::from(#case).encode(writer)?;)
+        let encode_id = if varint.is_present() {
+            quote!(#crate_path::Encode::encode(&#crate_path::attrs::Var::<#id_type>::from(#case), writer)?;)
         } else {
-            quote!(#typ::encode(&#case, writer)?;)
+            quote!(<#id_type as #crate_path::Encode>::encode(&#case, writer)?;)
         };
 
         quote! {
-            Self::#ident #destructuring => {
+            Self::#var_ident #destructuring => {
                 #encode_id
                 #serialization
             },
         }
         .to_tokens(&mut encode_match_contents);
     }
+
+    errors.finish()?;
+
+    let mut res = quote!();
 
     let (allow_unreachable, wildcard_match) = if variant_count == 0 {
         (
@@ -181,13 +105,13 @@ pub fn derive_enum(
     };
 
     let mut encode_generics = generics.clone();
-    prepare_generics(&mut encode_generics, parse_quote!(Encode), None);
+    prepare_generics(&mut encode_generics, parse_quote!(#crate_path::Encode), None);
     let (implgenerics, typegenerics, whereclause) = encode_generics.split_for_impl();
     quote! {
-        impl #implgenerics Encode for #ident #typegenerics
+        impl #implgenerics #crate_path::Encode for #ident #typegenerics
         #whereclause
         {
-            fn encode(&self, writer: &mut impl ::std::io::Write) -> encode::Result<()> {
+            fn encode(&self, writer: &mut impl ::std::io::Write) -> #crate_path::encode::Result<()> {
                 #allow_unreachable
                 #[allow(unused_must_use)]
                 Ok(match self {
@@ -202,32 +126,30 @@ pub fn derive_enum(
     let mut decode_generics = generics;
     prepare_generics(
         &mut decode_generics,
-        parse_quote!(Decode<'dec>),
+        parse_quote!(#crate_path::Decode<'dec>),
         Some(parse_quote!('dec)),
     );
 
     let (implgenerics, _, whereclause) = decode_generics.split_for_impl();
 
-    let decode_id = if varint.is_some() {
-        quote!(<Var<#typ> as Decode>::decode(cursor)?.into_inner())
+    let decode_id = if varint.is_present() {
+        quote!(<#crate_path::attrs::Var<#id_type> as #crate_path::Decode>::decode(cursor)?.into_inner())
     } else {
-        quote!(<#typ as Decode>::decode(cursor)?)
+        quote!(<#id_type as #crate_path::Decode>::decode(cursor)?)
     };
     quote! {
-        impl #implgenerics Decode<'dec> for #ident #typegenerics
+        impl #implgenerics #crate_path::Decode<'dec> for #ident #typegenerics
         #whereclause
         {
-            fn decode(cursor: &mut ::std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+            fn decode(cursor: &mut ::std::io::Cursor<&'dec [::core::primitive::u8]>) -> #crate_path::decode::Result<Self> {
                 Ok(match #decode_id {
                     #decode_match_contents
-                    _ => Err(decode::Error::InvalidId)?
+                    _ => Err(#crate_path::decode::Error::InvalidId)?
                 })
             }
         }
     }
     .to_tokens(&mut res);
 
-    // panic!("{:#?}", res);
-
-    res
+    Ok(res)
 }

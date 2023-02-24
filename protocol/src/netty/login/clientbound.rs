@@ -1,5 +1,5 @@
-use crate::*;
-use attrs::*;
+
+use ::miners_encoding::{Decode, Encode, decode, encode, attrs::StringUuid};
 
 use std::{borrow::Cow, str::FromStr};
 use uuid::Uuid;
@@ -12,9 +12,9 @@ pub struct Disconnect0<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct EncryptionRequest0<'a> {
-    #[counted(u16)]
+    #[encoding(counted = "u16")]
     pub public_key: Cow<'a, [u8]>,
-    #[counted(u16)]
+    #[encoding(counted = "u16")]
     pub verify_token: Cow<'a, [u8]>,
 }
 
@@ -67,6 +67,6 @@ impl<'a> Encode for Success5<'a> {
 
 #[derive(Encoding, ToStatic)]
 pub struct SetCompression27 {
-    #[varint]
+    #[encoding(varint)]
     pub threshold: i32,
 }
