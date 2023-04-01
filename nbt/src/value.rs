@@ -1,4 +1,6 @@
-use crate::*;
+use std::borrow::Cow;
+
+use crate::{List, Compound};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value<'a> {
@@ -64,7 +66,7 @@ impl<'a> From<String> for Value<'a> {
 }
 
 #[cfg(feature = "to_static")]
-impl<'a> ToStatic for Value<'a> {
+impl<'a> ::miners_to_static::ToStatic for Value<'a> {
     type Static = Value<'static>;
     fn to_static(&self) -> Self::Static {
         match self {

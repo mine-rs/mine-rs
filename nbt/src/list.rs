@@ -1,4 +1,8 @@
-use crate::*;
+use std::borrow::Cow;
+
+use miners_encoding::attrs::{Counted, Mutf8};
+
+use crate::{Compound, NbtTag};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum List<'a> {
@@ -18,7 +22,7 @@ pub enum List<'a> {
 }
 
 #[cfg(feature = "to_static")]
-impl<'a> ToStatic for List<'a> {
+impl<'a> ::miners_to_static::ToStatic for List<'a> {
     type Static = List<'static>;
     fn to_static(&self) -> Self::Static {
         match self {
@@ -56,8 +60,8 @@ impl<'a> ToStatic for List<'a> {
     }
 }
 
-impl<'a> Encode for List<'a> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
+impl<'a> ::miners_encoding::Encode for List<'a> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> ::miners_encoding::encode::Result<()> {
         match self {
             Self::Byte(bytes) => {
                 NbtTag::Byte.encode(writer)?;
@@ -135,12 +139,12 @@ impl<'a> Encode for List<'a> {
     }
 }
 
-impl<'dec: 'a, 'a> Decode<'dec> for List<'a> {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+impl<'dec: 'a, 'a> ::miners_encoding::Decode<'dec> for List<'a> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> ::miners_encoding::decode::Result<Self> {
         Ok(match NbtTag::decode(cursor)? {
             NbtTag::End => {
                 if i32::decode(cursor)? > 0 {
-                    return Err(decode::Error::Custom("TAG_End in List"));
+                    return Err(::miners_encoding::decode::Error::Custom("TAG_End in List"));
                 }
                 List::Invalid
             }

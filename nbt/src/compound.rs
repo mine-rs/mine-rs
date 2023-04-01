@@ -1,4 +1,10 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+};
+
+use miners_encoding::attrs::{Counted, Mutf8};
 
 use crate::*;
 
@@ -14,7 +20,7 @@ impl<'a> Deref for Compound<'a> {
     }
 }
 
-impl<'a> DerefMut for Compound<'a> {    
+impl<'a> DerefMut for Compound<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
@@ -30,7 +36,7 @@ impl<'a> Compound<'a> {
 }
 
 #[cfg(feature = "to_static")]
-impl<'a> ToStatic for Compound<'a> {
+impl<'a> ::miners_to_static::ToStatic for Compound<'a> {
     type Static = Compound<'static>;
     fn to_static(&self) -> Self::Static {
         Compound(self.0.to_static())
@@ -40,8 +46,8 @@ impl<'a> ToStatic for Compound<'a> {
     }
 }
 
-impl<'a> Encode for Compound<'a> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
+impl<'a> ::miners_encoding::Encode for Compound<'a> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> ::miners_encoding::encode::Result<()> {
         for (name, value) in self.0.iter() {
             let key = Mutf8::from(name);
             match value {
@@ -110,13 +116,15 @@ impl<'a> Encode for Compound<'a> {
         NbtTag::End.encode(writer)
     }
 }
-impl<'dec: 'a, 'a> Decode<'dec> for Compound<'a> {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+impl<'dec: 'a, 'a> ::miners_encoding::Decode<'dec> for Compound<'a> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> ::miners_encoding::decode::Result<Self> {
         let mut this = HashMap::default();
         loop {
             let tag = match NbtTag::decode(cursor) {
                 Ok(NbtTag::End) => break Ok(Compound(this)),
-                Err(decode::Error::Io(e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                Err(::miners_encoding::decode::Error::Io(e))
+                    if e.kind() == std::io::ErrorKind::UnexpectedEof =>
+                {
                     break Ok(Compound(this))
                 }
                 Err(e) => return Err(e),
@@ -126,12 +134,14 @@ impl<'dec: 'a, 'a> Decode<'dec> for Compound<'a> {
             let key = Mutf8::decode(cursor)?.into_inner();
             let entry = match this.entry(key) {
                 Entry::Occupied(_) => {
-                    return Err(decode::Error::Custom("duplicate key in compound"))
+                    return Err(::miners_encoding::decode::Error::Custom(
+                        "duplicate key in compound",
+                    ))
                 }
                 Entry::Vacant(entry) => entry,
             };
             let value = match tag {
-                NbtTag::End => unsafe { unreachable_unchecked() },
+                NbtTag::End => unsafe { ::core::hint::unreachable_unchecked() },
                 NbtTag::Byte => Value::Byte(i8::decode(cursor)?),
                 NbtTag::Short => Value::Short(i16::decode(cursor)?),
                 NbtTag::Int => Value::Int(i32::decode(cursor)?),

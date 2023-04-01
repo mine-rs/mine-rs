@@ -12,15 +12,23 @@ use crate::*;
 /// some characters like "\0" are represented in form of
 /// multi-byte sequences
 #[repr(transparent)]
-pub struct Mutf8<T>(T);
+pub struct Mutf8<T: ?Sized>(T);
 
-impl<T> Mutf8<T> {
+impl<T: ?Sized> Mutf8<T> {
     pub fn from(t: &T) -> &Self {
         // SAFETY: this is safe because Mutf8 is #[repr(transparent)]
         unsafe { std::mem::transmute(t) }
     }
+}
+impl<T> Mutf8<T> {
     pub fn into_inner(self) -> T {
         self.0
+    }
+}
+
+impl Encode for Mutf8<str> {
+    fn encode(&self, writer: &mut impl Write) -> encode::Result<()> {
+        to_mutf8(&self.0, writer)
     }
 }
 

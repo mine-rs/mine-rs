@@ -1,5 +1,3 @@
-use miners_encoding::{decode, Decode, Encode};
-
 #[derive(Debug, Clone, Copy)]
 pub enum NbtTag {
     End = 0,
@@ -17,9 +15,9 @@ pub enum NbtTag {
     LongArray = 12,
 }
 pub struct InvalidNbtTagByte;
-impl From<InvalidNbtTagByte> for decode::Error {
+impl From<InvalidNbtTagByte> for ::miners_encoding::decode::Error {
     fn from(_: InvalidNbtTagByte) -> Self {
-        decode::Error::InvalidId
+        ::miners_encoding::decode::Error::InvalidId
     }
 }
 impl TryFrom<u8> for NbtTag {
@@ -44,13 +42,13 @@ impl TryFrom<u8> for NbtTag {
         })
     }
 }
-impl<'dec> Decode<'dec> for NbtTag {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> decode::Result<Self> {
+impl<'dec> ::miners_encoding::Decode<'dec> for NbtTag {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> ::miners_encoding::decode::Result<Self> {
         u8::decode(cursor)?.try_into().map_err(Into::into)
     }
 }
-impl Encode for NbtTag {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
+impl ::miners_encoding::Encode for NbtTag {
+    fn encode(&self, writer: &mut impl std::io::Write) -> ::miners_encoding::encode::Result<()> {
         (*self as u8).encode(writer)
     }
 }

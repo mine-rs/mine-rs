@@ -40,6 +40,7 @@ members = [
   "protocol/derive",
   "net",
   "nbt",
+  "nbt/derive",
   "auth",
   "chat",
   "to_static",

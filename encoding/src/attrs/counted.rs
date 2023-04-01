@@ -171,6 +171,38 @@ macro_rules! impl_count {($($num:ident),*) => {$(
         }
     }
 
+    // [i8]
+
+    impl<'dec> Decode<'dec> for &Counted<[i8], $num> {
+        fn decode(cursor: &mut Cursor<&'dec [u8]>) -> decode::Result<Self> {
+            let count = $num::decode(cursor)?;
+            let pos = cursor.position() as usize;
+            let slice = cursor
+                .get_ref()
+                .get(pos..pos + count as usize)
+                .ok_or(decode::Error::UnexpectedEndOfSlice)?;
+            cursor.set_position(pos as u64 + count as u64);
+            let slice = unsafe {
+                let (data, len) = (slice.as_ptr(), slice.len());
+                std::slice::from_raw_parts(data as *const i8, len)
+            };
+            Ok(slice.into())
+        }
+    }
+
+    impl Encode for Counted<[i8], $num> {
+        fn encode(&self, writer: &mut impl Write) -> encode::Result<()> {
+            let slice = self.as_ref();
+            $num::try_from(slice.len())?.encode(writer)?;
+            let slice = unsafe {
+                let (data, len) = (slice.as_ptr(), slice.len());
+                std::slice::from_raw_parts(data as *const u8, len)
+            };
+            writer.write_all(slice)?;
+            Ok(())
+        }
+    }
+
     // [f32]
 
     impl<'dec> Decode<'dec> for &Counted<[f32], $num> {
