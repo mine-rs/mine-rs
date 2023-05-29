@@ -23,7 +23,7 @@ impl<T> Var<T> {
 /// given the number of bits this function returns
 /// how many bytes a Var will take up
 pub const fn var_size(bits: u32) -> usize {
-    (bits as usize * 8 + 6) / 7
+    (bits as usize + 6) / 7
 }
 
 macro_rules! impl_var {
