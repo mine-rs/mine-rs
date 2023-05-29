@@ -131,6 +131,7 @@ impl<'dec: 'a, 'a> Decode<'dec> for Compound<'a> {
                 Entry::Vacant(entry) => entry,
             };
             let value = match tag {
+                // Safety: This is safe because this case is handled earlier.
                 NbtTag::End => unsafe { unreachable_unchecked() },
                 NbtTag::Byte => Value::Byte(i8::decode(cursor)?),
                 NbtTag::Short => Value::Short(i16::decode(cursor)?),
