@@ -17,7 +17,10 @@ pub struct FieldsCode {
     pub serialization: TokenStream,
 }
 
-pub(crate) fn codegen(fields: darling::ast::Fields<EncodingField>, crate_path: &syn::Path) -> darling::Result<FieldsCode> {
+pub(crate) fn codegen(
+    fields: darling::ast::Fields<EncodingField>,
+    crate_path: &syn::Path,
+) -> darling::Result<FieldsCode> {
     let mut errors = darling::Error::accumulator();
     let mut parsing = quote!();
     let mut destructuring = quote!();

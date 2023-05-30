@@ -1,4 +1,3 @@
-
 use ::miners_encoding::{decode, encode, Decode, Encode};
 
 use miners_nbt::Compound;

@@ -40,7 +40,6 @@ macro_rules! as_t_copy {
     };
 }
 
-
 impl Value<'_> {
     as_t_copy!(as_byte, Byte, i8);
     as_t_copy!(as_short, Short, i16);
@@ -54,7 +53,6 @@ impl Value<'_> {
     as_t!(as_compound, Compound, Compound<'_>);
     as_t!(as_int_array, IntArray, Vec<i32>);
     as_t!(as_long_array, LongArray, Vec<i64>);
-    
 }
 
 macro_rules! from {

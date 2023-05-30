@@ -1,4 +1,4 @@
-use std::{ops::Deref, fmt::Display};
+use std::{fmt::Display, ops::Deref};
 
 const SNAPSHOT: i32 = 0x40000000;
 
@@ -47,7 +47,7 @@ impl From<ProtocolVersion> for i32 {
 impl ProtocolVersion {
     /// Constructs a new `ProtocolVersion` if the provided version is valid.
     /// # Errors
-    /// If the supplied version is invalid, an `InvalidVersion` error is returned. 
+    /// If the supplied version is invalid, an `InvalidVersion` error is returned.
     pub fn new(version: i32) -> Result<Self, InvalidVersion> {
         if ((0..=760).contains(&version)
             && !((111..201).contains(&version))
@@ -72,15 +72,14 @@ impl ProtocolVersion {
                 && version != SNAPSHOT & 4)
         {
             Ok(Self(version))
-        }
-        else {
+        } else {
             Err(InvalidVersion(0))
         }
     }
 
     /// Constructs a new `ProtocolVersion` without checking if the provided version is valid
     /// # Safety
-    /// This method is only safe if the supplied version is a valid version that has been implemented by mine-rs 
+    /// This method is only safe if the supplied version is a valid version that has been implemented by mine-rs
     pub unsafe fn new_unchecked(version: i32) -> Self {
         Self(version)
     }

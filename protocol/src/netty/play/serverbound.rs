@@ -1,6 +1,5 @@
 use crate::netty::types::position::Position6;
 
-
 use ::miners_encoding::{decode, encode, Decode, Encode};
 
 use std::borrow::Cow;

@@ -1,5 +1,4 @@
-
-use ::miners_encoding::{Decode, Encode, decode, encode, attrs::StringUuid};
+use ::miners_encoding::{attrs::StringUuid, decode, encode, Decode, Encode};
 
 use std::{borrow::Cow, str::FromStr};
 use uuid::Uuid;
@@ -23,7 +22,6 @@ pub struct EncryptionRequest19<'a> {
     pub public_key: Cow<'a, [u8]>,
     pub verify_token: Cow<'a, [u8]>,
 }
-
 
 #[derive(Encoding, ToStatic)]
 pub struct Success0<'a> {

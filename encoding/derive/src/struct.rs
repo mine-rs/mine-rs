@@ -19,7 +19,11 @@ pub(crate) fn struct_from_fieldscode(
     let mut res = quote!();
 
     let mut encode_generics = generics.clone();
-    prepare_generics(&mut encode_generics, parse_quote!(#crate_path::Encode), None);
+    prepare_generics(
+        &mut encode_generics,
+        parse_quote!(#crate_path::Encode),
+        None,
+    );
     let (implgenerics, typegenerics, whereclause) = encode_generics.split_for_impl();
     quote! {
         impl #implgenerics #crate_path::Encode for #ident #typegenerics

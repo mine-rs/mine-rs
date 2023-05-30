@@ -2,7 +2,7 @@ use miners_encoding::encode;
 use miners_version::ProtocolVersion;
 
 pub trait Packet {
-    fn id_for_version(&self, version: ProtocolVersion,) -> Option<i32>;
+    fn id_for_version(&self, version: ProtocolVersion) -> Option<i32>;
     fn encode_for_version(
         &self,
         version: ProtocolVersion,
@@ -11,7 +11,7 @@ pub trait Packet {
 }
 
 impl<T: Packet> Packet for &T {
-    fn id_for_version(&self, version: ProtocolVersion,) -> Option<i32> {
+    fn id_for_version(&self, version: ProtocolVersion) -> Option<i32> {
         (*self).id_for_version(version)
     }
 
@@ -25,7 +25,7 @@ impl<T: Packet> Packet for &T {
 }
 
 pub trait PacketExt: Packet {
-    fn exists_in_version(&self, version: ProtocolVersion,) -> bool {
+    fn exists_in_version(&self, version: ProtocolVersion) -> bool {
         self.id_for_version(version).is_some()
     }
 }

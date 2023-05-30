@@ -14,7 +14,7 @@ impl<'a> Deref for Compound<'a> {
     }
 }
 
-impl<'a> DerefMut for Compound<'a> {    
+impl<'a> DerefMut for Compound<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }

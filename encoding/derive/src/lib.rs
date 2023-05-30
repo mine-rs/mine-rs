@@ -2,7 +2,7 @@ use darling::{
     util::{Flag, SpannedValue},
     FromDeriveInput, FromField, FromVariant, ToTokens,
 };
-use syn::{parse_macro_input, DeriveInput, parse_quote};
+use syn::{parse_macro_input, parse_quote, DeriveInput};
 
 #[macro_use]
 extern crate quote;
@@ -90,8 +90,10 @@ pub fn encoding(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             r#enum::enum_from_variants(variants, generics, ident, varint, from, &crate_path)
         }
         darling::ast::Data::Struct(fields) => {
-            fields::codegen(fields, &crate_path)
-            .map(|fieldscode| r#struct::struct_from_fieldscode(fieldscode, generics, ident, &crate_path))},
+            fields::codegen(fields, &crate_path).map(|fieldscode| {
+                r#struct::struct_from_fieldscode(fieldscode, generics, ident, &crate_path)
+            })
+        }
     } {
         Ok(k) => k.into(),
         Err(e) => e.write_errors().into(),
@@ -196,7 +198,7 @@ pub fn bitfield(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     let destructuring = match fields.style {
         darling::ast::Style::Tuple => quote!( ( # destructuring ) ),
-        darling::ast::Style::Struct => quote!{ { #destructuring } },
+        darling::ast::Style::Struct => quote! { { #destructuring } },
         darling::ast::Style::Unit => quote!(),
     };
 

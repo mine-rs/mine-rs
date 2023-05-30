@@ -1,5 +1,3 @@
-
-
 use std::borrow::Cow;
 
 #[derive(Encoding, ToStatic)]
