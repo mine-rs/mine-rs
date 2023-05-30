@@ -6,8 +6,8 @@ pub enum List<'a> {
     Short(Vec<i16>),
     Int(Vec<i32>),
     Long(Vec<i64>),
-    Float(Cow<'a, [f32]>),
-    Double(Cow<'a, [f64]>),
+    Float(Vec<f32>),
+    Double(Vec<f64>),
     ByteArray(Vec<Cow<'a, [u8]>>),
     String(Vec<Cow<'a, str>>),
     List(Vec<List<'a>>),
@@ -219,12 +219,12 @@ macro_rules! from {
     ($($case:ident Cow<'a, [$from:ty]>;)+) => {$(
         impl<'a> From<&'a [$from]> for List<'a> {
             fn from(val: &'a [$from]) -> Self {
-                List::$case(Cow::Borrowed(val))
+                List::$case(Vec::from(val))
             }
         }
         impl<'a> From<Cow<'a, [$from]>> for List<'a> {
             fn from(val: Cow<'a, [$from]>) -> Self {
-                List::$case(val)
+                List::$case(Vec::from(val))
             }
         }
     )+}
