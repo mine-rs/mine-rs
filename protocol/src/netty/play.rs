@@ -1,3 +1,5 @@
+use miners_version::ProtocolVersion;
+
 use crate::*;
 
 pub mod clientbound;
@@ -2985,8 +2987,9 @@ play_cb_custom! {
     }
 }
 impl<'a> CbPlay<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
+        let pv = *version;
         play_cb_tree! {
             id, pv,
             {<#PacketTypeLt as Decode>::decode(&mut cursor).map(CbPlay::#PacketName)},
@@ -3933,8 +3936,9 @@ play_sb_custom! {
     }
 }
 impl<'a> SbPlay<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
+        let pv = *version;
         play_sb_tree! {
             id, pv,
             {<#PacketTypeLt as Decode>::decode(&mut cursor).map(SbPlay::#PacketName)},
