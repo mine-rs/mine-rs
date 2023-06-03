@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use miners_version::ProtocolVersion;
 
 use crate::*;
