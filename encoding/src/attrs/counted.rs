@@ -96,7 +96,7 @@ macro_rules! impl_count {($($num:ident),*) => {$(
         }
     }
 
-    
+
     /*
     Commented out because of UB
     // [f32]
@@ -106,7 +106,7 @@ macro_rules! impl_count {($($num:ident),*) => {$(
             Ok(Cow::Borrowed(slice).into())
         }
     }
-    
+
     impl<'enc> Encode for Counted<Cow<'enc, [f32]>, $num> {
         fn encode(&self, writer: &mut impl Write) -> encode::Result<()> {
             let cow = self.as_ref();
@@ -114,7 +114,7 @@ macro_rules! impl_count {($($num:ident),*) => {$(
         }
     }
 
-    
+
     // [f64]
 
     impl<'dec> Decode<'dec> for Counted<Cow<'dec, [f64]>, $num> {
@@ -123,7 +123,7 @@ macro_rules! impl_count {($($num:ident),*) => {$(
             Ok(Cow::Borrowed(slice).into())
         }
     }
-    
+
     impl<'enc> Encode for Counted<Cow<'enc, [f64]>, $num> {
         fn encode(&self, writer: &mut impl Write) -> encode::Result<()> {
             let cow = self.as_ref();
@@ -207,7 +207,7 @@ macro_rules! impl_count {($($num:ident),*) => {$(
             Ok(())
         }
     }
-    
+
 
     // [f64]
 
@@ -239,7 +239,7 @@ macro_rules! impl_count {($($num:ident),*) => {$(
         }
     }
 */
-    
+
     impl<'dec> Decode<'dec> for Counted<String, $num> {
         fn decode(cursor: &mut Cursor<&'dec [u8]>) -> decode::Result<Self> {
             let str = <&Counted::<str, $num>>::decode(cursor)?.as_ref();

@@ -3,15 +3,12 @@ use miners_version::ProtocolVersion;
 
 pub struct RawPacket<'a> {
     pub id: i32,
-    pub data: &'a [u8]
+    pub data: &'a [u8],
 }
 
 impl<'a> RawPacket<'a> {
     pub fn new(id: i32, data: &'a [u8]) -> Self {
-        Self {
-            id,
-            data,
-        }
+        Self { id, data }
     }
 }
 

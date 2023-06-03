@@ -30,7 +30,8 @@ handshaking_sb_custom! {
     }
 }
 impl<'a> SbHandshaking<'a> {
-    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> {
+        let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
         let pv = *version;
         handshaking_sb_tree! {

@@ -56,7 +56,8 @@ login_cb_custom! {
     }
 }
 impl<'a> CbLogin<'a> {
-    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> {
+        let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
         let pv = *version;
         login_cb_tree! {
@@ -112,7 +113,8 @@ login_sb_custom! {
     }
 }
 impl<'a> SbLogin<'a> {
-    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> {
+        let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
         let pv = *version;
         login_sb_tree! {

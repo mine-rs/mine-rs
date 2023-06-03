@@ -32,7 +32,8 @@ status_cb_custom! {
     }
 }
 impl<'a> CbStatus<'a> {
-    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> {
+        let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
         let pv = *version;
         status_cb_tree! {
@@ -70,7 +71,8 @@ status_sb_custom! {
     }
 }
 impl SbStatus {
-    pub fn parse(packet: RawPacket, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
+    pub fn parse(packet: RawPacket, version: ProtocolVersion) -> Result<Self, decode::Error> {
+        let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
         let pv = *version;
         status_sb_tree! {

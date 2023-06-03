@@ -16,11 +16,10 @@ pub(crate) use miners_to_static::ToStatic;
 use std::ops::{Deref, DerefMut};
 pub(crate) use std::{borrow::Cow, collections::HashMap, hint::unreachable_unchecked};
 
-
 #[derive(Debug, Clone)]
 pub struct Nbt<'a> {
     pub name: Cow<'a, str>,
-    pub data: Compound<'a>
+    pub data: Compound<'a>,
 }
 
 impl<'a> Deref for Nbt<'a> {
@@ -43,14 +42,14 @@ impl<'a> ToStatic for Nbt<'a> {
     fn to_static(&self) -> Self::Static {
         Self::Static {
             name: self.name.to_static(),
-            data: self.data.to_static()
+            data: self.data.to_static(),
         }
     }
 
     fn into_static(self) -> Self::Static {
         Self::Static {
             name: self.name.into_static(),
-            data: self.data.into_static()
+            data: self.data.into_static(),
         }
     }
 }
@@ -63,12 +62,7 @@ impl<'dec> Decode<'dec> for Nbt<'dec> {
         }
         let name = miners_encoding::attrs::Mutf8::decode(cursor)?.into_inner();
         let data = Compound::decode(cursor)?;
-        Ok(
-            Self {
-                name,
-                data
-            }
-        )
+        Ok(Self { name, data })
     }
 }
 
