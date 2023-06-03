@@ -1,3 +1,7 @@
+use std::ops::Deref;
+
+use miners_version::ProtocolVersion;
+
 use crate::*;
 pub mod serverbound;
 
@@ -26,8 +30,9 @@ handshaking_sb_custom! {
     }
 }
 impl<'a> SbHandshaking<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
+        let pv = *version;
         handshaking_sb_tree! {
             id, pv,
             {<#PacketTypeLt as Decode>::decode(&mut cursor).map(SbHandshaking::#PacketName)},

@@ -1,3 +1,5 @@
+use miners_version::ProtocolVersion;
+
 use crate::*;
 
 pub mod clientbound;
@@ -54,7 +56,7 @@ login_cb_custom! {
     }
 }
 impl<'a> CbLogin<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
+    pub fn parse(packet: RawPacket<'a>, pv: i32) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
         login_cb_tree! {
             id, pv,
@@ -109,8 +111,9 @@ login_sb_custom! {
     }
 }
 impl<'a> SbLogin<'a> {
-    pub fn parse(id: i32, pv: i32, data: &'a [u8]) -> Result<Self, decode::Error> {
+    pub fn parse(packet: RawPacket<'a>, version: ProtocolVersion) -> Result<Self, decode::Error> { let (id, data): (i32, &[u8]) = packet.into();
         let mut cursor = std::io::Cursor::new(data);
+        let pv = *version;
         login_sb_tree! {
             id, pv,
             {<#PacketTypeLt as Decode>::decode(&mut cursor).map(SbLogin::#PacketName)},
