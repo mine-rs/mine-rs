@@ -62,7 +62,7 @@ impl<'encoded> EncodedData<'encoded> {
     }
 }
 impl<'encoded> EncodedData<'encoded> {
-    pub fn split_pack<'compressed, 'ret>(
+    pub(crate) fn split_pack<'compressed, 'ret>(
         self,
         compressor: Option<&mut Compression>,
         buf: &'compressed mut Vec<u8>,
@@ -76,7 +76,7 @@ impl<'encoded> EncodedData<'encoded> {
             None => self.stripped_marker(),
         }
     }
-    pub fn pack<'compression, 'ret>(
+    pub(crate) fn pack<'compression, 'ret>(
         self,
         compression: Option<&'compression mut Compressor>,
     ) -> PackedData<'ret>

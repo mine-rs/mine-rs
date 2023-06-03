@@ -2,9 +2,9 @@ use crate::{encoding::EncodedData, helpers::varint_vec};
 
 const ZLIB_BUF_MIN: u32 = 1024;
 
-pub struct Compression {
-    threshold: u32,
-    zlib: flate2::Compress,
+pub(crate) struct Compression {
+    pub(crate) threshold: u32,
+    pub(crate) zlib: flate2::Compress,
 }
 impl Compression {
     fn do_compress<'compressed, 'encoded, 'packed>(
@@ -54,7 +54,7 @@ impl Compression {
     }
 }
 
-pub struct Compressor {
+pub(crate) struct Compressor {
     compression: Compression,
     buf: Vec<u8>,
 }

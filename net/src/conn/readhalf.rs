@@ -132,6 +132,10 @@ impl<R> ReadHalf<R> {
         Ok(())
     }
 
+    pub(super) fn enable_compression(&mut self) {
+        self.compression = Some(Vec::with_capacity(super::INITIAL_BUF_SIZE))
+    }
+
     #[cfg(feature = "workpool")]
     /// sets the threshold which determines if to offload
     /// packet decryption using cfb8/aes128 to the workpool

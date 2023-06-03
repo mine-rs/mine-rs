@@ -1,5 +1,6 @@
 use crate::encoding::Encoder;
 use crate::{encoding::EncodedData, packing::Compression, writer::Writer};
+use flate2::Compress;
 use futures_lite::AsyncWrite;
 use std::io;
 
@@ -28,6 +29,15 @@ impl<W> WriteHalf<W> {
     }
     pub fn enable_encryption(&mut self, encryptor: cfb8::Encryptor<aes::Aes128>) {
         self.writer.enable_encryption(encryptor)
+    }
+
+    pub fn enable_compression(&mut self, threshold: i32) {
+        self.compression = Some(
+            Compression {
+                threshold: threshold as u32, // TODO: Fix this to not use as casts
+                zlib: Compress::new(flate2::Compression::fast(), true),
+            }
+        )
     }
 }
 
