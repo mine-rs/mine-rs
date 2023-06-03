@@ -42,12 +42,11 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
 
     pub fn enable_encryption(
         &mut self,
-        read_key: &[u8],
-        write_key: &[u8],
+        key: &[u8],
     ) -> Result<(), InvalidLength> {
-        self.read_half.enable_encryption(read_key)?;
+        self.read_half.enable_encryption(key)?;
         self.write_half
-            .enable_encryption(cfb8::Encryptor::new_from_slices(write_key, write_key)?);
+            .enable_encryption(cfb8::Encryptor::new_from_slices(key, key)?);
         Ok(())
     }
 }
