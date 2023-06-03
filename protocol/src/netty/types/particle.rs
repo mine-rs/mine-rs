@@ -18,7 +18,7 @@ macro_rules! particle_versions {
             $(Vibration => $vibration_id:literal $(,)?)?
         }
     ),* $(,)?) => {$(
-        #[derive(ToStatic)]
+        #[derive(ToStatic, Debug)]
         $(#[$($attr)*])*
         pub struct $particle<'a, Slot> {
             id: i32,
@@ -201,7 +201,7 @@ particle_versions! {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub enum ParticleData<'a, Slot> {
     /// The ID of the block state.
     Block(i32),
@@ -223,7 +223,7 @@ pub enum ParticleData<'a, Slot> {
     Vibration(Vibration<'a>),
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Vibration<'a> {
     source: VibrationSource<'a>,
     /// The amount of ticks it takes for the vibration to travel from its
@@ -232,7 +232,7 @@ pub struct Vibration<'a> {
     ticks: i32,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub enum VibrationSource<'a> {
     /// vibration source "minecraft:block"
     Block { position: Position441 },
@@ -293,7 +293,7 @@ impl<'a> Encode for VibrationSource<'a> {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Color {
     /// Red value, 0.0..=1.0
     red: f32,

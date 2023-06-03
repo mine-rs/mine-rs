@@ -3,13 +3,13 @@ use ::miners_encoding::{attrs::StringUuid, decode, encode, Decode, Encode};
 use std::{borrow::Cow, str::FromStr};
 use uuid::Uuid;
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Disconnect0<'a> {
     // chat most likely, for sure starting pv13
     pub reason: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EncryptionRequest0<'a> {
     pub server_id: Cow<'a, str>,
     #[encoding(counted = "u16")]
@@ -18,20 +18,20 @@ pub struct EncryptionRequest0<'a> {
     pub verify_token: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EncryptionRequest19<'a> {
     pub server_id: Cow<'a, str>,
     pub public_key: Cow<'a, [u8]>,
     pub verify_token: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Success0<'a> {
     pub uuid: StringUuid,
     pub username: Cow<'a, str>,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct Success5<'a> {
     // stringuuid
     pub uuid: Option<Uuid>,
@@ -65,7 +65,7 @@ impl<'a> Encode for Success5<'a> {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SetCompression27 {
     #[encoding(varint)]
     pub threshold: i32,

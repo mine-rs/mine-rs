@@ -102,7 +102,7 @@ fn slot0() {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub enum Slot346<'a> {
     Empty,
     Item {
@@ -140,7 +140,7 @@ impl<'a> Encode for Slot346<'a> {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "bool")]
 pub enum Slot402<'a> {
     #[encoding(case = "false")]

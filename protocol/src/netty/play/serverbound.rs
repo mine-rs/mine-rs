@@ -5,44 +5,44 @@ use ::miners_encoding::{decode, encode, Decode, Encode};
 use std::borrow::Cow;
 use uuid::Uuid;
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct KeepAlive0 {
     pub id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct KeepAlive7 {
     #[encoding(varint)]
     pub id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ChatMessage0<'a> {
     // TODO: add ChatMessage json thing
     pub message: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UseEntity0 {
     pub target_id: i32,
     pub mouse: i8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UseEntity7 {
     #[encoding(varint)]
     pub target_id: i32,
     pub mouse: i8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UseEntity33 {
     #[encoding(varint)]
     pub target_id: i32,
     pub kind: UseEntityKind33,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(varint)]
 pub enum UseEntityKind33 {
     #[encoding(case = "0")]
@@ -55,12 +55,12 @@ pub enum UseEntityKind33 {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Player0 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerPosition0 {
     pub x: f64,
     pub y: f64,
@@ -70,7 +70,7 @@ pub struct PlayerPosition0 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerPosition10 {
     pub x: f64,
     pub y: f64,
@@ -78,14 +78,14 @@ pub struct PlayerPosition10 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerLook0 {
     pub yaw: f32,
     pub pitch: f32,
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerPositionAndLook0 {
     pub x: f64,
     pub y: f64,
@@ -97,7 +97,7 @@ pub struct PlayerPositionAndLook0 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerPositionAndLook10 {
     pub x: f64,
     pub y: f64,
@@ -118,7 +118,7 @@ pub struct PlayerPositionAndLook10 {
 /// Offset -Y  +Y  -Z  +Z  -X  +X
 ///
 /// In 1.7.3, when a player opens a door with left click the server receives Packet 0xE+start digging and opens the door.
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub enum PlayerDigging0 {
     Started {
         x: i32,
@@ -220,7 +220,7 @@ impl Encode for PlayerDigging0 {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub enum PlayerDigging6 {
     Started {
         location: Position6,
@@ -295,7 +295,7 @@ impl Encode for PlayerDigging6 {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum DiggingAction0 {
     Started = 0,
@@ -307,7 +307,7 @@ pub enum DiggingAction0 {
     FinishRightClick,
 }
 
-#[derive(Encoding, ToStatic, Clone, Copy)]
+#[derive(Encoding, ToStatic, Clone, Copy, Debug)]
 #[encoding(from = "u8")]
 pub enum BlockFace0 {
     NegY = 0,
@@ -318,7 +318,7 @@ pub enum BlockFace0 {
     PosX,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // In normal operation (ie placing a block), this packet is sent once, with the values set normally.
 //
 // This packet has a special case where X, Y, Z, and Direction are all -1. (Note that Y is unsigned so set to 255.) This special packet indicates that the currently held item for the player should have its state updated such as eating food, shooting bows, using buckets, etc.
@@ -333,29 +333,29 @@ pub struct PlayerBlockPlacement0 {
     // TODO: WTF
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerBlockPlacement6 {
     pub location: Position6,
     // TODO: WTF (see above)
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct HeldItemChange0 {
     /// The slot which the player has selected (0-8)
     pub slot: u16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Animation0 {
     pub entity_id: i32,
     animation: super::AnimationId0,
 }
 
 /// Sent when the player's arm swings
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Animation7 {}
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EntityAction0 {
     pub entity_id: i32,
     pub action: EntityAction,
@@ -363,7 +363,7 @@ pub struct EntityAction0 {
     pub jump_boost: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EntityAction7 {
     #[encoding(varint)]
     pub entity_id: i32,
@@ -373,7 +373,7 @@ pub struct EntityAction7 {
     pub jump_boost: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum EntityAction {
     Crouch = 1,
@@ -383,20 +383,20 @@ pub enum EntityAction {
     StopSprinting,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SteerVehicle0 {
     pub sideways: f32,
     pub forward: f32,
     pub jump: bool,
     pub unmount: bool,
 }
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SteerVehicle7 {
     pub sideways: f32,
     pub forward: f32,
     pub flags: SteerVehicleFlags7,
 }
-#[derive(Bitfield, ToStatic)]
+#[derive(Bitfield, ToStatic, Debug)]
 #[encoding(typ = "u8", reverse)]
 pub struct SteerVehicleFlags7 {
     #[encoding(bool)]
@@ -405,13 +405,13 @@ pub struct SteerVehicleFlags7 {
     pub unmount: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct CloseWindow0 {
     /// This is the id of the window that was closed. 0 for inventory.
     pub window_id: u8,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct ClickWindow0 {
     pub window_id: u8,
     pub action: ClickAction0,
@@ -559,7 +559,7 @@ impl Encode for ClickWindow0 {
     }
 }
 
-#[derive(ToStatic, Clone, Copy)]
+#[derive(ToStatic, Clone, Copy, Debug)]
 pub enum ClickAction0 {
     Click {
         button: MouseButton,
@@ -586,13 +586,13 @@ pub enum ClickAction0 {
     },
 }
 
-#[derive(ToStatic, Clone, Copy)]
+#[derive(ToStatic, Clone, Copy, Debug)]
 pub enum MouseButton {
     Left,
     Right,
 }
 
-#[derive(ToStatic, Clone, Copy)]
+#[derive(ToStatic, Clone, Copy, Debug)]
 pub enum NumberKey {
     Key1 = 0,
     Key2,
@@ -605,7 +605,7 @@ pub enum NumberKey {
     Key9,
 }
 
-#[derive(ToStatic, Clone, Copy)]
+#[derive(ToStatic, Clone, Copy, Debug)]
 pub enum DropKind {
     Q { slot: i16 },
     CtrlQ { slot: i16 },
@@ -613,35 +613,35 @@ pub enum DropKind {
     RightNoOp,
 }
 
-#[derive(ToStatic, Clone, Copy)]
+#[derive(ToStatic, Clone, Copy, Debug)]
 pub enum DragChange {
     Start,
     Add { slot: i16 },
     End,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ConfirmTransaction0 {
     pub window_id: u8,
     pub action_id: i16,
     pub accepted: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct CreativeInventoryAction0 {
     pub slot: u16,
     // TODO: slot type
     // item: Slot
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EnchantItem0 {
     pub window_id: u8,
     /// The position of the enchantment on the enchantment table window, starting with 0 as the topmost one.
     pub enchantment: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateSign0<'a> {
     pub x: i32,
     pub y: i16,
@@ -652,7 +652,7 @@ pub struct UpdateSign0<'a> {
     pub line4: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateSign6<'a> {
     pub location: Position6,
     pub line1: Cow<'a, str>,
@@ -661,7 +661,7 @@ pub struct UpdateSign6<'a> {
     pub line4: Cow<'a, str>,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct PlayerAbilities0 {
     pub invulnerable: bool,
     pub flying: bool,
@@ -699,18 +699,18 @@ impl Encode for PlayerAbilities0 {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct TabComplete0<'a> {
     pub text: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct TabComplete37<'a> {
     pub text: Cow<'a, str>,
     pub targeted_block: Option<Position6>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ClientSettings0<'a> {
     pub locale: Cow<'a, str>,
     // TODO: find out exactly when this field changed to the pv6's version of it
@@ -725,7 +725,7 @@ pub struct ClientSettings0<'a> {
     pub show_cape: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ViewDistance0 {
     Far = 0,
@@ -734,7 +734,7 @@ pub enum ViewDistance0 {
     Tiny,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ClientSettings6<'a> {
     pub locale: Cow<'a, str>,
     /// Client-side render distance, in chunks
@@ -747,7 +747,7 @@ pub struct ClientSettings6<'a> {
     pub difficulty: DisplayedSkinParts6,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ChatMode6 {
     Enabled = 0,
@@ -755,7 +755,7 @@ pub enum ChatMode6 {
     Hidden,
 }
 
-#[derive(Bitfield, ToStatic)]
+#[derive(Bitfield, ToStatic, Debug)]
 #[encoding(typ = "u8", reverse)]
 pub struct DisplayedSkinParts6 {
     #[encoding(bool)]
@@ -774,7 +774,7 @@ pub struct DisplayedSkinParts6 {
     pub hat: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ClientStatus0 {
     Respawn = 0,
@@ -782,7 +782,7 @@ pub enum ClientStatus0 {
     InventoryAchievement,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
     pub channel: Cow<'a, str>,
@@ -790,14 +790,14 @@ pub struct PluginMessage0<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage29<'a> {
     pub channel: Cow<'a, str>,
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage32<'a> {
     pub channel: Cow<'a, str>,
@@ -805,18 +805,18 @@ pub struct PluginMessage32<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Spectate17 {
     pub target_player: Uuid,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ResourcePackStatus32<'a> {
     pub hash: Cow<'a, str>,
     pub result: ResourcePackStatusResult32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(varint)]
 pub enum ResourcePackStatusResult32 {
     SuccessfullyLoaded = 0,

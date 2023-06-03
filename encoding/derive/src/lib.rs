@@ -141,7 +141,7 @@ pub fn bitfield(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let BitfieldInput {
         ident,
         // todo! generics
-        generics,
+        generics: _,
         data,
         typ,
         reverse,

@@ -7,7 +7,7 @@ pub mod serverbound;
 
 use crate::netty::types::entity_metadata::*;
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum AnimationId0 {
     None = 0,
@@ -22,7 +22,7 @@ pub enum AnimationId0 {
     Uncrouch,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum Difficulty0 {
     Peaceful = 0,

@@ -11,7 +11,7 @@ use ::miners_encoding::{
 use std::borrow::Cow;
 use uuid::Uuid;
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// The server will frequently send out a keep-alive, each containing a random
 /// ID. The client must respond with the same payload
 /// (see [`serverbound::KeepAlive0`][ka0]/[`serverbound::KeepAlive7`][ka7]).
@@ -29,7 +29,7 @@ pub struct KeepAlive0 {
     pub id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// The server will frequently send out a keep-alive, each containing a random
 /// ID. The client must respond with the same payload
 /// (see [`serverbound::KeepAlive7`][ka7]). If the
@@ -46,7 +46,7 @@ pub struct KeepAlive32 {
     pub id: i32,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 /// Sent after the Login Sequence
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Join_Game)
@@ -99,7 +99,7 @@ impl Encode for JoinGame0 {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 /// Sent after the Login Sequence
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5048#Join_Game)
@@ -158,7 +158,7 @@ impl Encode for JoinGame1<'_> {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 /// Sent after the Login Sequence
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5947#Join_Game)
@@ -220,7 +220,7 @@ impl Encode for JoinGame29<'_> {
     }
 }
 
-#[derive(Encoding, ToStatic, Clone, Copy)]
+#[derive(Encoding, ToStatic, Clone, Copy, Debug)]
 #[encoding(from = "u8")]
 pub enum GameMode0 {
     Survival = 0,
@@ -230,7 +230,7 @@ pub enum GameMode0 {
 
 pub use super::Difficulty0;
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "i8")]
 pub enum Dimension0 {
     Nether = -1,
@@ -238,7 +238,7 @@ pub enum Dimension0 {
     End,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Chat Message
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Chat_Message)
@@ -248,7 +248,7 @@ pub struct ChatMessage0<'a> {
     pub message: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Chat/System Message
 ///
 ///  Identifying the difference between Chat/System Message is important as it
@@ -267,7 +267,7 @@ pub struct ChatMessage6<'a> {
     pub position: ChatMessagePosition6,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ChatMessagePosition6 {
     Chat = 0,
@@ -275,7 +275,7 @@ pub enum ChatMessagePosition6 {
     Hotbar,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Time Update
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Time_Update)
@@ -292,7 +292,7 @@ pub struct TimeUpdate0 {
     pub time_of_day: i64,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Equipment
 ///
 /// Changes the visible Equipment of an Entity, for example the held item or
@@ -306,7 +306,7 @@ pub struct EntityEquipment0<'a> {
     pub item: Slot0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Equipment
 ///
 /// Changes the visible Equipment of an Entity, for example the held item or
@@ -321,7 +321,7 @@ pub struct EntityEquipment7<'a> {
     pub item: Slot0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u16")]
 pub enum EquipmentSlot0 {
     Hand = 0,
@@ -331,7 +331,7 @@ pub enum EquipmentSlot0 {
     Helmet,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Equipment
 ///
 /// Changes the visible Equipment of an Entity, for example the held item or
@@ -346,7 +346,7 @@ pub struct EntityEquipment49<'a> {
     pub item: Slot0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum EquipmentSlot49 {
     Hand = 0,
@@ -357,7 +357,7 @@ pub enum EquipmentSlot49 {
     Helmet,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Position
 ///
 /// Sent by the server after login to specify the coordinates of the spawn
@@ -390,7 +390,7 @@ pub struct SpawnPosition6 {
     pub y: i16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Update Health
 ///
 /// Sent by the server to update/set the health of the player it is sent to.
@@ -419,7 +419,7 @@ pub struct UpdateHealth0 {
     pub saturation: f32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Update Health
 ///
 /// Sent by the server to update/set the health of the player it is sent to.
@@ -449,7 +449,7 @@ pub struct UpdateHealth7 {
     pub saturation: f32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Respawn
 ///
 /// To change the player's dimension (overworld/nether/end), send them a
@@ -465,7 +465,7 @@ pub struct Respawn0 {
     pub gamemode: GameMode0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Respawn
 ///
 /// To change the player's dimension (overworld/nether/end), send them a
@@ -485,7 +485,7 @@ pub struct Respawn1<'a> {
     pub level_type: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Synchronize Player Position
 ///
 /// Updates the player's position on the server. This packet will also close
@@ -523,7 +523,7 @@ pub struct PositionAndLook0 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Synchronize Player Position
 ///
 /// Updates the player's position on the server. This packet will also close
@@ -573,7 +573,7 @@ pub struct PositionAndLook6 {
     pub relativity: PositionAndLookBitfield6,
 }
 
-#[derive(Bitfield, ToStatic)]
+#[derive(Bitfield, ToStatic, Debug)]
 #[encoding(typ = "u8", reverse)]
 pub struct PositionAndLookBitfield6 {
     #[encoding(bool)]
@@ -605,7 +605,7 @@ fn position_and_look_bitfield6() {
     assert_eq!(&cursor[..], &val[..])
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Held Item Change
 ///
 /// Sent to change the player's slot selection.
@@ -617,7 +617,7 @@ pub struct HeldItemChange0 {
     pub slot: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Use Bed
 ///
 /// This packet tells that a player goes to bed.
@@ -638,7 +638,7 @@ pub struct UseBed0 {
     pub z: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Use Bed
 ///
 /// This packet tells that a player goes to bed.
@@ -655,7 +655,7 @@ pub struct UseBed6 {
     pub location: Position6,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Use Bed
 ///
 /// This packet tells that a player goes to bed.
@@ -673,7 +673,7 @@ pub struct UseBed7 {
     pub location: Position6,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Animation
 ///
 /// Sent whenever an entity should change animation.
@@ -686,7 +686,7 @@ pub struct Animation0 {
     pub animation: super::AnimationId0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Player
 ///
 /// This packet is sent by the server when a player comes into visible range,
@@ -729,7 +729,7 @@ pub struct SpawnPlayer0<'a> {
     pub metadata: PackedEntityMetadata0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Player
 ///
 /// This packet is sent by the server when a player comes into visible range,
@@ -773,7 +773,7 @@ pub struct SpawnPlayer5<'a> {
     pub metadata: PackedEntityMetadata0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Player
 ///
 /// This packet is sent by the server when a player comes into visible range,
@@ -813,7 +813,7 @@ pub struct SpawnPlayer19<'a> {
     pub metadata: PackedEntityMetadata0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Player
 ///
 /// This packet is sent by the server when a player comes into visible range,
@@ -850,14 +850,14 @@ pub struct SpawnPlayer49<EntityMetadata> {
     pub metadata: EntityMetadata,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerProperty<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
     pub signature: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Collect Item
 ///
 /// Sent when an entity collects an item.
@@ -881,7 +881,7 @@ pub struct CollectItem0 {
     pub collector_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Collect Item
 ///
 /// Sent when an entity collects an item.
@@ -910,7 +910,7 @@ pub struct CollectItem7 {
     pub collector_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Object
 ///
 /// Sent by the server when a vehicle or other object is created.
@@ -938,7 +938,7 @@ pub struct SpawnObject0 {
     pub data: ObjectData0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ObjectKind0 {
     #[encoding(case = "1")]
@@ -980,7 +980,6 @@ pub enum ObjectKind0 {
     DragonFireball,
 }
 
-#[derive(ToStatic)]
 /// Object Data
 ///
 /// Special Data type for Additional Data for Objects in pv0..=pv48.
@@ -991,6 +990,7 @@ pub enum ObjectKind0 {
 /// ignored.
 ///
 /// [wiki.vg](https://wiki.vg/Object_Data)
+#[derive(ToStatic, Debug)]
 pub enum ObjectData0 {
     ZeroOrLess(i32),
     Extra { value: i32, x: i16, y: i16, z: i16 },
@@ -1039,7 +1039,7 @@ impl Encode for ObjectData0 {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum EntityKind0 {
     Mob = 48,
     Monster,
@@ -1078,7 +1078,7 @@ pub enum EntityKind0 {
     Villager = 120,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Mob
 ///
 /// Sent by the server when a Mob Entity is Spawned.
@@ -1113,7 +1113,7 @@ pub struct SpawnMob0<'a> {
     pub metadata: PackedEntityMetadata0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Painting
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Spawn_Painting)
@@ -1129,7 +1129,7 @@ pub struct SpawnPainting0<'a> {
     pub z: i32,
     pub direction: Direction0,
 }
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Painting
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5408#Spawn_Painting)
@@ -1144,7 +1144,7 @@ pub struct SpawnPainting8<'a> {
     pub direction: Direction0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u32")]
 pub enum Direction0 {
     NegZ = 0,
@@ -1153,7 +1153,7 @@ pub enum Direction0 {
     PosX,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Spawn Experience Orb
 ///
 /// Spawns one or more experience orbs.
@@ -1173,7 +1173,7 @@ pub struct SpawnExpOrb0 {
     pub count: i16,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 /// Entity Velocity
 ///
 /// Sets the Velocity of an Entity
@@ -1211,7 +1211,7 @@ impl Encode for EntityVelocity0 {
         Ok(())
     }
 }
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 /// Entity Velocity
 ///
 /// Sets the Velocity of an Entity
@@ -1249,7 +1249,7 @@ impl Encode for EntityVelocity7 {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Destroy Entities
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Destroy_Entities)
@@ -1259,7 +1259,7 @@ pub struct DestroyEntities0 {
     pub entities: Vec<i32>,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 /// Destroy Entities
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Destroy_Entities)
@@ -1286,7 +1286,7 @@ impl Encode for DestroyEntities7 {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update/Init (No Move, No Look)
 ///
 /// This packet may be used to initialize an entity.
@@ -1303,7 +1303,7 @@ pub struct Entity0 {
     pub entity_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update/Init (No Move, No Look)
 ///
 /// This packet may be used to initialize an entity.
@@ -1321,7 +1321,7 @@ pub struct Entity7 {
     pub entity_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Relative Move)
 ///
 /// Relative entity movement of at most 4 blocks.
@@ -1345,7 +1345,7 @@ pub struct EntityRelativeMove0 {
     pub dz: f32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Relative Move)
 ///
 /// Relative entity movement of at most 4 blocks.
@@ -1370,7 +1370,7 @@ pub struct EntityRelativeMove7 {
     pub dz: f32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Relative Move)
 ///
 /// Relative entity movement of at most 4 blocks.
@@ -1397,7 +1397,7 @@ pub struct EntityRelativeMove22 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Look)
 ///
 /// This packet is sent by the server when an entity rotates.
@@ -1410,7 +1410,7 @@ pub struct EntityLook0 {
     pub pitch: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Look)
 ///
 /// This packet is sent by the server when an entity rotates.
@@ -1424,7 +1424,7 @@ pub struct EntityLook7 {
     pub pitch: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Look)
 ///
 /// This packet is sent by the server when an entity rotates.
@@ -1440,7 +1440,7 @@ pub struct EntityLook22 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Relative Move, Look)
 ///
 /// This packet is sent by the server when an entity rotates and moves less
@@ -1467,7 +1467,7 @@ pub struct EntityLookAndRelativeMove0 {
     pub pitch: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Relative Move, Look)
 ///
 /// This packet is sent by the server when an entity rotates and moves less
@@ -1495,7 +1495,7 @@ pub struct EntityLookAndRelativeMove7 {
     pub pitch: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Relative Move, Look)
 ///
 /// This packet is sent by the server when an entity rotates and moves less
@@ -1525,7 +1525,7 @@ pub struct EntityLookAndRelativeMove22 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Absolute Move, Look)
 ///
 /// This packet is sent by the server when an entity moves more than 4 blocks.
@@ -1545,7 +1545,7 @@ pub struct EntityTeleport0 {
     pub pitch: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Absolute Move, Look)
 ///
 /// This packet is sent by the server when an entity moves more than 4 blocks.
@@ -1566,7 +1566,7 @@ pub struct EntityTeleport7 {
     pub pitch: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Absolute Move, Look)
 ///
 /// This packet is sent by the server when an entity moves more than 4 blocks.
@@ -1589,7 +1589,7 @@ pub struct EntityTeleport22 {
     pub on_ground: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Head Look)
 ///
 /// Changes the direction an entity's head is facing.
@@ -1601,7 +1601,7 @@ pub struct EntityHeadLook0 {
     pub head_yaw: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Head Look)
 ///
 /// Changes the direction an entity's head is facing.
@@ -1614,7 +1614,7 @@ pub struct EntityHeadLook7 {
     pub head_yaw: Angle,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Status
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Status)
@@ -1624,7 +1624,7 @@ pub struct EntityStatus0 {
     pub entity_status: Status0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum Status0 {
     EntityHurt = 2,
@@ -1644,7 +1644,7 @@ pub enum Status0 {
     FireworkExplosion,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Attach Entity
 ///
 /// This packet is sent when an entity is attached to another entity.
@@ -1659,7 +1659,7 @@ pub struct AttachEntity0 {
     pub leash: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Metadata
 ///
 /// Updates one or more metadata properties for an existing entity. Any
@@ -1672,7 +1672,7 @@ pub struct EntityMetadata0<'a> {
     pub metadata: PackedEntityMetadata0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Metadata
 ///
 /// Updates one or more metadata properties for an existing entity. Any
@@ -1686,7 +1686,7 @@ pub struct EntityMetadata7<EntityMetadata> {
     pub metadata: EntityMetadata,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Effect
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Entity_Effect)
@@ -1701,7 +1701,7 @@ pub struct EntityEffect0 {
     pub duration: i16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Effect
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Entity_Effect)
@@ -1718,7 +1718,7 @@ pub struct EntityEffect7 {
     pub duration: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Effect
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5422#Entity_Effect)
@@ -1736,7 +1736,7 @@ pub struct EntityEffect10 {
     pub hide_particles: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Remove Entity Effect
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Remove_Entity_Effect)
@@ -1745,7 +1745,7 @@ pub struct RemoveEntityEffect0 {
     pub entity_id: i32,
     pub effect_id: i8,
 }
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Remove Entity Effect
 ///
 /// [wiki.vg](https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5392#Remove_Entity_Effect)
@@ -1756,7 +1756,7 @@ pub struct RemoveEntityEffect7 {
     pub effect_id: i8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Set Experience
 ///
 /// Sent by the server when the client should change experience levels.
@@ -1769,7 +1769,7 @@ pub struct SetExperience0 {
     pub total_exp: i16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Set Experience
 ///
 /// Sent by the server when the client should change experience levels.
@@ -1785,7 +1785,7 @@ pub struct SetExperience7 {
 }
 
 // TODO: Add more documentation on this, maybe a list of known properties
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// Entity Update (Properties)
 ///
 /// Sets attributes on the given entity.
@@ -1803,34 +1803,34 @@ pub struct EntityProperties0<'a> {
     #[encoding(counted = "u32")]
     pub properties: Vec<EntityProperty0<'a>>,
 }
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EntityProperty0<'a> {
     pub key: Cow<'a, str>,
     pub value: f64,
     #[encoding(counted = "u16")]
     pub modifiers: Vec<Modifier0>,
 }
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Modifier0 {
     pub uuid: Uuid,
     pub amount: f64,
     pub operation: ModifierOperation0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EntityProperties7<'a> {
     pub entity_id: i32,
     #[encoding(counted = "u32")]
     pub properties: Vec<EntityProperty7<'a>>,
 }
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct EntityProperty7<'a> {
     pub key: Cow<'a, str>,
     pub value: f64,
     pub modifiers: Vec<Modifier0>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// The mathematical behavior is as follows:
 ///
 ///   - add: Increment X by Amount
@@ -1863,7 +1863,7 @@ pub enum ModifierOperation0 {
     Multiply,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // TODO: make this nice to interact with
 pub struct ChunkData0<'a> {
     pub chunk_x: i32,
@@ -1882,7 +1882,7 @@ pub struct ChunkData0<'a> {
     pub compressed_data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // TODO: make this nice to interact with
 pub struct ChunkData23<'a> {
     pub chunk_x: i32,
@@ -1897,7 +1897,7 @@ pub struct ChunkData23<'a> {
     pub compressed_data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // TODO: make this nice to interact with
 pub struct ChunkData27<'a> {
     pub chunk_x: i32,
@@ -1911,7 +1911,7 @@ pub struct ChunkData27<'a> {
     pub compressed_data: Cow<'a, [u8]>,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct MultiBlockChange0 {
     // varint
     pub chunk_x: i32,
@@ -1955,7 +1955,7 @@ impl Encode for MultiBlockChange0 {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct MultiBlockChange4 {
     pub chunk_x: i32,
     pub chunk_z: i32,
@@ -1997,7 +1997,7 @@ impl Encode for MultiBlockChange4 {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct Record {
     pub block_state: u16,
     pub y: u8,
@@ -2026,21 +2026,21 @@ impl Encode for Record {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct MultiBlockChange25 {
     pub chunk_x: i32,
     pub chunk_z: i32,
     pub records: Vec<Record25>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Record25 {
     pub rel_pos: RecordRelativePosition25,
     #[encoding(varint)]
     pub block_id: i32,
 }
 
-#[derive(Bitfield, ToStatic)]
+#[derive(Bitfield, ToStatic, Debug)]
 pub struct RecordRelativePosition25 {
     #[encoding(bits = 4)]
     pub x: u8,
@@ -2050,7 +2050,7 @@ pub struct RecordRelativePosition25 {
     pub y: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct BlockChange0 {
     pub x: i32,
     pub y: u8,
@@ -2061,7 +2061,7 @@ pub struct BlockChange0 {
     pub block_data: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct BlockChange6 {
     pub location: Position6,
     #[encoding(varint)]
@@ -2069,7 +2069,7 @@ pub struct BlockChange6 {
     pub block_data: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct BlockChange25 {
     pub location: Position6,
     // TODO: global palette block id, maybe separate into id and type?
@@ -2078,7 +2078,7 @@ pub struct BlockChange25 {
     pub block_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct BlockAction0 {
     pub x: i32,
     pub y: i16,
@@ -2090,7 +2090,7 @@ pub struct BlockAction0 {
     pub block_type: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct BlockAction6 {
     pub location: Position6,
     pub action_id: u8,
@@ -2100,7 +2100,7 @@ pub struct BlockAction6 {
     pub block_type: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct BlockBreakAnimation0 {
     #[encoding(varint)]
     pub entity_id: i32,
@@ -2111,7 +2111,7 @@ pub struct BlockBreakAnimation0 {
     pub destroy_stage: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct BlockBreakAnimation6 {
     #[encoding(varint)]
     pub entity_id: i32,
@@ -2120,7 +2120,7 @@ pub struct BlockBreakAnimation6 {
     pub destroy_stage: u8,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct MapChunkBulk0<'a> {
     /// Whether or not the chunk data contains a light nibble array. This is
     /// true in the main world, false in the end + nether
@@ -2163,7 +2163,7 @@ impl<'a> Encode for MapChunkBulk0<'a> {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ChunkMeta0 {
     pub chunk_x: i32,
     pub chunk_z: i32,
@@ -2171,7 +2171,7 @@ pub struct ChunkMeta0 {
     pub add_bitmap: u16,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct MapChunkBulk23<'a> {
     /// Whether or not the chunk data contains a light nibble array. This is
     /// true in the main world, false in the end + nether
@@ -2215,14 +2215,14 @@ impl<'a> Encode for MapChunkBulk23<'a> {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ChunkMeta23 {
     pub chunk_x: i32,
     pub chunk_z: i32,
     pub primary_bitmap: u16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct MapChunkBulk27<'a> {
     /// Whether or not the chunk data contains a light nibble array. This is
     /// true in the main world, false in the end + nether
@@ -2233,7 +2233,7 @@ pub struct MapChunkBulk27<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Explosion0 {
     pub x: f32,
     pub y: f32,
@@ -2246,14 +2246,14 @@ pub struct Explosion0 {
     pub motion_z: f32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ExplosionRecord {
     pub dx: i8,
     pub dy: i8,
     pub dz: i8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // TODO: more detailed data using #[separated]
 pub struct Effect0 {
     pub effect_id: i32,
@@ -2268,7 +2268,7 @@ pub struct Effect0 {
     pub disable_rel_volume: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // TODO: see above
 pub struct Effect6 {
     pub effect_id: i32,
@@ -2277,7 +2277,7 @@ pub struct Effect6 {
     pub disable_rel_volume: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SoundEffect0<'a> {
     pub effect_id: Cow<'a, str>,
     // TODO: relative? fixed point?
@@ -2294,7 +2294,7 @@ pub struct SoundEffect0<'a> {
     pub category: SoundCategory0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum SoundCategory0 {
     Master = 0,
@@ -2307,7 +2307,7 @@ pub enum SoundCategory0 {
     Players,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SoundEffect1<'a> {
     pub effect_id: Cow<'a, str>,
     // TODO: relative? fixed point?
@@ -2323,7 +2323,7 @@ pub struct SoundEffect1<'a> {
     pub pitch: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Particle0<'a> {
     // TODO: specific strings into enum
     pub name: Cow<'a, str>,
@@ -2340,7 +2340,7 @@ pub struct Particle0<'a> {
     pub number: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Particle17<'a> {
     // TODO: specific strings into enum
     pub name: Cow<'a, str>,
@@ -2361,7 +2361,7 @@ pub struct Particle17<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Particle29<'a> {
     // TODO: specific strings into enum
     pub name: Cow<'a, str>,
@@ -2384,14 +2384,14 @@ pub struct Particle29<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-// #[derive(Encoding, ToStatic)]
+// #[derive(Encoding, ToStatic, Debug)]
 // struct ChangeGameState0 {
 //     reason: GameStateChangeReason,
 // }
 
-// #[derive(Encoding, ToStatic)]
+// #[derive(Encoding, ToStatic, Debug)]
 // #[encoding(from = "u8")]
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub enum ChangeGameState0 {
     // #[encoding(case = "0")]
     InvalidBed,
@@ -2407,7 +2407,7 @@ pub enum ChangeGameState0 {
     FadeTime(f32),
 }
 
-#[derive(Encoding, ToStatic, Clone, Copy)]
+#[derive(Encoding, ToStatic, Clone, Copy, Debug)]
 #[encoding(from = "u8")]
 pub enum DemoMessage0 {
     WelcomeToDemo = 0,
@@ -2467,7 +2467,7 @@ impl Encode for ChangeGameState0 {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SpawnGlobalEntity0 {
     #[encoding(varint)]
     pub entity_id: i32,
@@ -2481,7 +2481,7 @@ pub struct SpawnGlobalEntity0 {
     pub z: f64,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct OpenWindow0<'a> {
     pub window_id: u8,
     pub kind: InventoryKind0,
@@ -2560,7 +2560,7 @@ impl<'a> Encode for OpenWindow0<'a> {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct OpenWindow6<'a> {
     pub window_id: u8,
     pub kind: InventoryKind6,
@@ -2629,8 +2629,8 @@ impl<'a> Encode for OpenWindow6<'a> {
     }
 }
 
-// #[derive(Encoding, ToStatic)]
-#[derive(ToStatic)]
+// #[derive(Encoding, ToStatic, Debug)]
+#[derive(ToStatic, Debug)]
 // TODO: very good place for #[separate]
 pub enum InventoryKind0 {
     /// Chest, large chest, or minecart with chest
@@ -2653,8 +2653,8 @@ pub enum InventoryKind0 {
     },
 }
 
-// #[derive(Encoding, ToStatic)]
-#[derive(ToStatic)]
+// #[derive(Encoding, ToStatic, Debug)]
+#[derive(ToStatic, Debug)]
 // TODO: very good place for #[separate]
 pub enum InventoryKind6 {
     /// Chest, large chest, or minecart with chest
@@ -2677,13 +2677,13 @@ pub enum InventoryKind6 {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct CloseWindow0 {
     /// This is the id of the window that was closed. 0 for inventory.
     pub window_id: u8,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SetSlot0 {
     /// The window which is being updated. 0 for player inventory. Note that
     /// all known window types include the player inventory. This packet will
@@ -2698,7 +2698,7 @@ pub struct SetSlot0 {
     // data: Slot
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct WindowItems0 {
     /// The id of window which items are being sent for. 0 for player inventory.
     pub window_id: u8,
@@ -2707,7 +2707,7 @@ pub struct WindowItems0 {
     // slots: Vec<Slot>
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 /// see <https://wiki.vg/index.php?title=Pre-release_protocol&oldid=5007#Window_Property>
 pub struct WindowProperty0 {
     pub window_id: u8,
@@ -2715,14 +2715,14 @@ pub struct WindowProperty0 {
     pub value: u16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ConfirmTransaction0 {
     pub window_id: u8,
     pub action_number: i16,
     pub accepted: bool,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateSign0<'a> {
     pub x: i32,
     pub y: i16,
@@ -2733,7 +2733,7 @@ pub struct UpdateSign0<'a> {
     pub line4: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateSign6<'a> {
     pub location: Position6,
     pub line1: Cow<'a, str>,
@@ -2742,7 +2742,7 @@ pub struct UpdateSign6<'a> {
     pub line4: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Maps0 {
     #[encoding(varint)]
     pub item_damage: i32,
@@ -2762,7 +2762,7 @@ pub struct Maps0 {
 //     MapScale(u8)
 // }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateBlockEntity0 {
     pub x: i32,
     pub y: i16,
@@ -2776,7 +2776,7 @@ pub struct UpdateBlockEntity0 {
     // data: Nbt
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateBlockEntity6 {
     pub location: Position6,
     /// The type of update to perform
@@ -2788,7 +2788,7 @@ pub struct UpdateBlockEntity6 {
     // data: Nbt
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SignEditorOpen0 {
     pub x: i32,
     pub y: i32,
@@ -2805,12 +2805,12 @@ pub struct SignEditorOpen6 {
     pub y: i16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Statistics0<'a> {
     pub entries: Vec<Statistic0<'a>>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Statistic0<'a> {
     pub name: Cow<'a, str>,
     #[encoding(varint)]
@@ -2818,7 +2818,7 @@ pub struct Statistic0<'a> {
     pub amount: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListItem0<'a> {
     /// Supports chat colouring, limited to 16 characters.
     pub name: Cow<'a, str>,
@@ -2828,7 +2828,7 @@ pub struct PlayerListItem0<'a> {
     pub ping: i16,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListItem7<'a> {
     /// Supports chat colouring, limited to 16 characters.
     pub name: Cow<'a, str>,
@@ -2839,7 +2839,7 @@ pub struct PlayerListItem7<'a> {
     pub ping: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum PlayerListItem17<'a> {
     #[encoding(case = "0")]
     AddPlayers(Vec<PlayerListAddPlayer17<'a>>),
@@ -2847,7 +2847,7 @@ pub enum PlayerListItem17<'a> {
     UpdateLatency(Vec<PlayerListUpdateLatency17>),
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListAddPlayer17<'a> {
     pub uuid: Uuid,
     pub name: Cow<'a, str>,
@@ -2856,20 +2856,20 @@ pub struct PlayerListAddPlayer17<'a> {
     pub ping: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListUpdateGamemode17 {
     pub uuid: Uuid,
     pub gamemode: GameMode17,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListUpdateLatency17 {
     pub uuid: Uuid,
     #[encoding(varint)]
     pub ping: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum PlayerListItem19<'a> {
     #[encoding(case = "0")]
     AddPlayers(Vec<PlayerListAddPlayer19<'a>>),
@@ -2878,7 +2878,7 @@ pub enum PlayerListItem19<'a> {
     RemovePlayers(Vec<Uuid>),
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum PlayerListItem28<'a> {
     #[encoding(case = "0")]
     AddPlayers(Vec<PlayerListAddPlayer28<'a>>),
@@ -2888,7 +2888,7 @@ pub enum PlayerListItem28<'a> {
     RemovePlayers(Vec<Uuid>),
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListAddPlayer19<'a> {
     pub uuid: Uuid,
     pub name: Cow<'a, str>,
@@ -2898,7 +2898,7 @@ pub struct PlayerListAddPlayer19<'a> {
     pub ping: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListAddPlayer28<'a> {
     pub uuid: Uuid,
     pub name: Cow<'a, str>,
@@ -2910,27 +2910,27 @@ pub struct PlayerListAddPlayer28<'a> {
     pub display_name: Option<Cow<'a, str>>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListUpdateDisplayName28 {
     pub uuid: Uuid,
     pub display_name: Option<Uuid>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerProperty19<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
     pub signature: Option<Cow<'a, str>>,
 }
 
-#[derive(Encoding, ToStatic, Clone, Copy)]
+#[derive(Encoding, ToStatic, Clone, Copy, Debug)]
 pub enum GameMode17 {
     Survival = 0,
     Creative,
     Adventure,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct PlayerAbilities0 {
     pub invulnerable: bool,
     pub flying: bool,
@@ -2968,19 +2968,19 @@ impl Encode for PlayerAbilities0 {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct TabComplete0<'a> {
     /// One eligible command
     pub matches: Vec<Cow<'a, str>>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ScoreboardObjective0<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
     pub action: ScoreboardAction0,
 }
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ScoreboardAction0 {
     #[encoding(case = "0")]
@@ -2989,14 +2989,14 @@ pub enum ScoreboardAction0 {
     Update,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ScoreboardObjective12<'a> {
     pub name: Cow<'a, str>,
     pub value: Cow<'a, str>,
     pub action: ScoreboardAction0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ScoreboardObjectiveAction12<'a> {
     #[encoding(case = "0")]
@@ -3013,7 +3013,7 @@ pub enum ScoreboardObjectiveAction12<'a> {
 
 // TODO: check that there aren't any other cases in later supported protocol versions
 // support up to pv66
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "&str")]
 pub enum ScoreboardObjectiveKind12 {
     #[encoding(case = "\"integer\"")]
@@ -3022,14 +3022,14 @@ pub enum ScoreboardObjectiveKind12 {
     Hearts,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateScore0<'a> {
     /// The name of the score to be updated or removed
     pub name: Cow<'a, str>,
     pub action: UpdateScoreAction0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum UpdateScoreAction0<'a> {
     #[encoding(case = "0")]
@@ -3042,14 +3042,14 @@ pub enum UpdateScoreAction0<'a> {
     Remove,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateScore7<'a> {
     /// The name of the score to be updated or removed
     pub name: Cow<'a, str>,
     pub action: UpdateScoreAction7<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum UpdateScoreAction7<'a> {
     #[encoding(case = "0")]
@@ -3063,14 +3063,14 @@ pub enum UpdateScoreAction7<'a> {
     Remove,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct UpdateScore21<'a> {
     /// The name of the score to be updated or removed
     pub name: Cow<'a, str>,
     pub action: UpdateScoreAction21<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum UpdateScoreAction21<'a> {
     #[encoding(case = "0")]
@@ -3087,13 +3087,13 @@ pub enum UpdateScoreAction21<'a> {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct DisplayScoreboard0<'a> {
     pub position: ScoreboardPosition,
     pub name: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum ScoreboardPosition {
     List = 0,
@@ -3101,13 +3101,13 @@ pub enum ScoreboardPosition {
     BelowName,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Teams0<'a> {
     pub name: Cow<'a, str>,
     pub action: TeamAction0<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum TeamAction0<'a> {
     #[encoding(case = "0")]
     Create {
@@ -3135,13 +3135,13 @@ pub enum TeamAction0<'a> {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Teams7<'a> {
     pub name: Cow<'a, str>,
     pub action: TeamAction7<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum TeamAction7<'a> {
     #[encoding(case = "0")]
     Create {
@@ -3166,13 +3166,13 @@ pub enum TeamAction7<'a> {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Teams11<'a> {
     pub name: Cow<'a, str>,
     pub action: TeamAction11<'a>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum TeamAction11<'a> {
     #[encoding(case = "0")]
     Create {
@@ -3203,7 +3203,7 @@ pub enum TeamAction11<'a> {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum TeamFriendlyFire {
     Off = 0,
@@ -3211,7 +3211,7 @@ pub enum TeamFriendlyFire {
     FriendliesVisible = 3,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "&str")]
 pub enum NameTagVisibility11 {
     #[encoding(case = "\"always\"")]
@@ -3224,7 +3224,7 @@ pub enum NameTagVisibility11 {
     Never,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage0<'a> {
     pub channel: Cow<'a, str>,
@@ -3232,14 +3232,14 @@ pub struct PluginMessage0<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage29<'a> {
     pub channel: Cow<'a, str>,
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // https://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/
 pub struct PluginMessage32<'a> {
     pub channel: Cow<'a, str>,
@@ -3247,18 +3247,18 @@ pub struct PluginMessage32<'a> {
     pub data: Cow<'a, [u8]>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Disconnect0<'a> {
     // chatcomponent, at least starting pv13
     pub reason: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ServerDifficulty6 {
     pub difficulty: Difficulty0,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "i32")]
 pub enum CombatEvent7<'a> {
     #[encoding(case = "0")]
@@ -3276,7 +3276,7 @@ pub enum CombatEvent7<'a> {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum CombatEvent8<'a> {
     #[encoding(case = "0")]
@@ -3294,13 +3294,13 @@ pub enum CombatEvent8<'a> {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Camera9 {
     #[encoding(varint)]
     pub entity_id: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum WorldBorder15 {
     #[encoding(case = "0")]
     SetSize {
@@ -3322,7 +3322,7 @@ pub enum WorldBorder15 {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum WorldBorder16 {
     #[encoding(case = "0")]
     SetSize {
@@ -3355,7 +3355,7 @@ pub enum WorldBorder16 {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum WorldBorder17 {
     #[encoding(case = "0")]
     SetSize {
@@ -3400,7 +3400,7 @@ pub enum WorldBorder17 {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub enum WorldBorder32 {
     #[encoding(case = "0")]
     SetSize {
@@ -3445,7 +3445,7 @@ pub enum WorldBorder32 {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum Title18<'a> {
     #[encoding(case = "0")]
@@ -3465,19 +3465,19 @@ pub enum Title18<'a> {
     },
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SetCompression27 {
     #[encoding(varint)]
     pub threshold: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct PlayerListHeaderAndFooter28<'a> {
     pub header: Cow<'a, str>,
     pub footer: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct ResourcePackSend32<'a> {
     pub url: Cow<'a, str>,
     /// A 40 character hexadecimal and lowercase SHA-1 hash of the resource
@@ -3488,7 +3488,7 @@ pub struct ResourcePackSend32<'a> {
     pub hash: Cow<'a, str>,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct SetCoolDown48 {
     /// it's not clear if this field is cooldown
     /// or item id

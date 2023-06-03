@@ -10,7 +10,7 @@ parsing_tree! {
     }
 }
 handshaking_sb_custom! {
-    #[derive(ToStatic)]
+    #[derive(ToStatic, Debug)]
     pub enum SbHandshaking<'a> {
         #(#PacketName(#PacketTypeLt),)
     }

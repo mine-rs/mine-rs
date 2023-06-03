@@ -1,4 +1,4 @@
-#[derive(Bitfield, ToStatic, Clone, Copy)]
+#[derive(Bitfield, ToStatic, Clone, Copy, Debug)]
 // TODO: figure out when position changed, this might be the new version
 // the old one had z and y swapped compared to the current one
 // was changed in pv442
@@ -53,7 +53,7 @@ fn position6() {
     }
 }
 
-#[derive(Bitfield, ToStatic, Clone, Copy)]
+#[derive(Bitfield, ToStatic, Clone, Copy, Debug)]
 pub struct Position441 {
     #[encoding(bits = "26")]
     pub x: i32,

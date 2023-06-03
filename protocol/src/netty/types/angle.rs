@@ -1,7 +1,7 @@
 use crate::*;
 use std::io::{Cursor, Write};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
 pub struct Angle(pub(crate) u8);
 

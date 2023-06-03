@@ -12,7 +12,7 @@ use super::slot::*;
 const DUPLICATE_METADATA_INDEX: &str = "duplicate index in EntityMetadata";
 
 /// The first EntityMetadata
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct PackedEntityMetadata0<'a> {
     inner: BTreeMap<u8, Value0<'a>>,
 }
@@ -55,7 +55,7 @@ pub type EntityMetadataS74<'a> =
 pub type EntityMetadata759<'a> =
     EntityMetadata<Value353<'a, Slot402<'a>, Position441, Particle759<'a, Slot402<'a>>>>;
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub enum Value0<'a> {
     Byte(i8),
     Short(i16),
@@ -126,7 +126,7 @@ impl<'a> Encode for PackedEntityMetadata0<'a> {
     }
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 pub struct EntityMetadata<Value> {
     inner: BTreeMap<u8, Value>,
 }
@@ -165,10 +165,10 @@ where
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Chat<'a>(Cow<'a, str>);
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum Value57<'a, Slot> {
     #[encoding(case = "0")]
@@ -188,7 +188,7 @@ pub enum Value57<'a, Slot> {
     Nbt(Compound<'a>),
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum Value353<'a, Slot, Position, Particle> {
     #[encoding(case = "0")]
@@ -224,21 +224,21 @@ pub enum Value353<'a, Slot, Position, Particle> {
     PaintingVariant(#[encoding(varint)] i32),
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct IntPosition {
     x: i32,
     y: i32,
     z: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct Rotation {
     pitch: f32,
     yaw: f32,
     roll: f32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct VillagerData {
     #[encoding(varint)]
     kind: i32,
@@ -248,7 +248,7 @@ pub struct VillagerData {
     level: i32,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // #[varint]
 // technically varint but no values greater than u7
 #[encoding(from = "u8")]
@@ -262,7 +262,7 @@ pub enum Pose {
     Dying,
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 // #[varint]
 // technically a varint but can only assume byte values
 #[encoding(from = "u8")]
@@ -275,7 +275,7 @@ pub enum Direction {
     East,
 }
 
-#[derive(ToStatic)]
+#[derive(ToStatic, Debug)]
 // `id << 4 | data`, varint
 // global palette, 0 means absent
 pub struct BlockId {
@@ -308,7 +308,7 @@ impl Encode for BlockId {
     }
 }
 
-#[derive(Encoding, ToStatic)]
+#[derive(Encoding, ToStatic, Debug)]
 pub struct GlobalPos<'a, Position> {
     dimension: Cow<'a, str>,
     position: Position,

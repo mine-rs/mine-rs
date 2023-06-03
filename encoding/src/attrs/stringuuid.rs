@@ -1,7 +1,7 @@
 use crate::*;
 use uuid::Uuid;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct StringUuid(pub(crate) Option<Uuid>);
 
 impl From<Uuid> for StringUuid {
