@@ -1894,7 +1894,7 @@ pub struct ChunkData23<'a> {
     /// Bitmask with 1 for every 16x16x16 section which data follows in the compressed data.
     pub primary_bitmap: u16,
     #[encoding(counted = "u32")]
-    pub compressed_data: Cow<'a, [u8]>,
+    pub compressed_data: Cow<'a, [u8]>, //TODO: Verify if the data is compressed in pv23 or not and change naming to `data` if not.
 }
 
 #[derive(Encoding, ToStatic, Debug)]
@@ -1908,7 +1908,7 @@ pub struct ChunkData27<'a> {
     pub continuous: bool,
     /// Bitmask with 1 for every 16x16x16 section which data follows in the compressed data.
     pub primary_bitmap: u16,
-    pub compressed_data: Cow<'a, [u8]>,
+    pub data: Cow<'a, [u8]>,
 }
 
 #[derive(ToStatic, Debug)]
