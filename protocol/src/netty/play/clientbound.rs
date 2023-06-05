@@ -166,7 +166,7 @@ impl Encode for JoinGame1<'_> {
 pub struct JoinGame29<'a> {
     /// Entity ID of the Player
     pub entity_id: i32,
-    pub hardcore: bool,
+    //pub hardcore: bool
     pub gamemode: GameMode0,
     pub dimension: Dimension0,
     pub difficulty: Difficulty0,
