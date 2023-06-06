@@ -33,6 +33,11 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
         (self.read_half, self.write_half)
     }
 
+    pub fn enable_compression(&mut self, threshold: i32) {
+        self.write_half.enable_compression(threshold);
+        self.read_half.enable_compression();
+    }
+
     // pub fn set_compression(&mut self, threshold: i32, compression: flate2::Compression) {
     //     self.write_half
     //         .compression

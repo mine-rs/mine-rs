@@ -31,7 +31,7 @@ impl<W> WriteHalf<W> {
         self.writer.enable_encryption(encryptor)
     }
 
-    pub fn enable_compression(&mut self, threshold: i32) {
+    pub(super) fn enable_compression(&mut self, threshold: i32) {
         self.compression = Some(
             Compression {
                 threshold: threshold as u32, // TODO: Fix this to not use as casts
