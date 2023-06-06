@@ -209,7 +209,7 @@ impl Encode for JoinGame29<'_> {
             GameMode0::Survival => 0,
             GameMode0::Creative => 1,
             GameMode0::Adventure => 2,
-        } & ((self.hardcore as u8) << 3))
+        } | ((self.hardcore as u8) << 3))
             .encode(writer)?;
         self.dimension.encode(writer)?;
         self.difficulty.encode(writer)?;
