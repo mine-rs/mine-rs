@@ -3,7 +3,7 @@ use std::task::Poll;
 use std::{fmt::Display, io};
 
 use crate::encoding::EncodedData;
-use crate::helpers::{encrypt, AsyncCancelled};
+use crate::helpers::{AsyncCancelled, decrypt};
 #[cfg(feature = "workpool")]
 use crate::DEFAULT_UNBLOCK_THRESHOLD;
 
@@ -43,7 +43,7 @@ pub struct ReadHalf<R> {
 
 pub struct Reader<R> {
     reader: R,
-    decryptor: Option<Option<Box<cfb8::Encryptor<aes::Aes128>>>>,
+    decryptor: Option<Option<Box<cfb8::Decryptor<aes::Aes128>>>>,
     #[cfg(feature = "workpool")]
     unblock_threshold: u32,
 }
@@ -64,7 +64,7 @@ where
                 let taken_buf = std::mem::take(buf);
                 // SAFETY: this is safe as we are specifying a length that was just written
                 let (taken_buf, mutated_decryptor) = unsafe {
-                    crate::workpool::request_partial_encryption(taken_buf, len as usize, decryptor)
+                    crate::workpool::request_partial_decryption(taken_buf, len as usize, decryptor)
                         .await
                         .await
                         .unwrap()
@@ -72,11 +72,11 @@ where
                 *buf = taken_buf;
                 mutated_decryptor
             } else {
-                encrypt(&mut buf[slice_start..], &mut decryptor);
+                decrypt(&mut buf[slice_start..], &mut decryptor);
                 decryptor
             };
             #[cfg(not(feature = "workpool"))]
-            encrypt(&mut buf[slice_start..], &mut decryptor);
+            decrypt(&mut buf[slice_start..], &mut decryptor);
             self.decryptor = Some(Some(decryptor));
         }
         Ok(())
@@ -95,7 +95,7 @@ impl<R: AsyncRead + Unpin> AsyncRead for Reader<R> {
             Some(decryptor) => {
                 let mut decryptor = decryptor.take().ok_or(AsyncCancelled)?;
                 let n = ready!(Pin::new(&mut this.reader).poll_read(cx, buf))?;
-                encrypt(buf, &mut decryptor);
+                decrypt(buf, &mut decryptor);
                 this.decryptor = Some(Some(decryptor));
                 Poll::Ready(Ok(n))
             }
@@ -128,7 +128,7 @@ impl<R> ReadHalf<R> {
     }
 
     pub(super) fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
-        self.reader.decryptor = Some(Some(cfb8::Encryptor::new_from_slices(key, key)?.into()));
+        self.reader.decryptor = Some(Some(cfb8::Decryptor::new_from_slices(key, key)?.into()));
         Ok(())
     }
 

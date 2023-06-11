@@ -18,6 +18,12 @@ pub(crate) mod helpers {
         aes::cipher::BlockEncryptMut::encrypt_blocks_inout_mut(encryptor, chunks);
     }
 
+    pub(crate) fn decrypt(data: &mut [u8], decryptor: &mut cfb8::Decryptor<aes::Aes128>) {
+        let (chunks, rest) = aes::cipher::inout::InOutBuf::from(data).into_chunks();
+        debug_assert!(rest.is_empty());
+        aes::cipher::BlockDecryptMut::decrypt_blocks_inout_mut(decryptor, chunks);
+    }
+
     pub(crate) fn varint_slice(mut num: u32, buf: &mut [u8; 5]) -> &mut [u8] {
         for i in 0..5 {
             let next_val = num >> 7;
