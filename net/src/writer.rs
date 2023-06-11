@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 
 use futures_lite::{AsyncWrite, AsyncWriteExt};
 
@@ -47,6 +47,7 @@ where
         self.inner.write_all(&*var_slice).await
     }
     pub async fn write<'packed>(&mut self, mut data: PackedData<'packed>) -> io::Result<()> {
+        self.write_varint(data.len()).await?;
         if let Some(encryptor) = &mut self.encryptor {
             let mut encryptor = encryptor.take().ok_or(crate::helpers::AsyncCancelled)?;
             #[cfg(feature = "workpool")]
@@ -68,11 +69,40 @@ where
             encrypt(data.get_mut(), &mut encryptor);
             self.encryptor = Some(Some(encryptor));
         }
-        self.write_varint(data.len()).await?;
         self.inner.write_all(data.get()).await?;
         Ok(())
     }
     pub async fn flush(&mut self) -> io::Result<()> {
         self.inner.flush().await
+    }
+}
+
+impl<W> Writer<W>
+where
+    W: Write + Unpin,
+{
+    fn swrite_varint(&mut self, int: u32) -> io::Result<()> {
+        let mut var_buf = [0u8; 5];
+        let var_slice = varint_slice(int, &mut var_buf);
+        if let Some(encryptor) = &mut self.encryptor {
+            let mut encryptor = encryptor.take().ok_or(crate::helpers::AsyncCancelled)?;
+            encrypt(var_slice, &mut encryptor);
+            self.encryptor = Some(Some(encryptor))
+        }
+        self.inner.write_all(&*var_slice)
+    }
+    pub fn swrite<'packed>(&mut self, mut data: PackedData<'packed>) -> io::Result<()> {
+        self.swrite_varint(data.len())?;
+        if let Some(encryptor) = &mut self.encryptor {
+            let mut encryptor = encryptor.take().ok_or(crate::helpers::AsyncCancelled)?;
+
+            encrypt(data.get_mut(), &mut encryptor);
+            self.encryptor = Some(Some(encryptor));
+        }
+        self.inner.write_all(data.get())?;
+        Ok(())
+    }
+    pub fn sflush(&mut self) -> io::Result<()> {
+        self.inner.flush()
     }
 }
