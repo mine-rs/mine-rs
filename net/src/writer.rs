@@ -53,10 +53,9 @@ where
             #[cfg(feature = "workpool")]
             let encryptor = if data.len() >= self.unblock_threshold {
                 let taken_buf = std::mem::take(data.0);
-                let encryptor_clone = encryptor.clone();
 
                 let (taken_buf, mutated_encryptor) =
-                    crate::workpool::request_encryption(taken_buf, encryptor_clone)
+                    crate::workpool::request_encryption(taken_buf, encryptor)
                         .await
                         .await
                         .expect("encryption task was terminated?");
