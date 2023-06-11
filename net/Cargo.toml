@@ -19,7 +19,7 @@ parking_lot = { version = "0.12.1", optional = true }
 futures-channel = { version = "0.3.24", optional = true }
 
 [features]
-default = ["workpool"]
+default = []
 #packet = ["encoding", "dep:miners-packet"]
 #encoding = ["dep:miners-encoding"]
 workpool = ["dep:once_cell", "dep:parking_lot", "dep:futures-channel"]

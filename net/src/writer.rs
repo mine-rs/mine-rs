@@ -2,7 +2,6 @@ use std::io;
 
 use futures_lite::{AsyncWrite, AsyncWriteExt};
 
-use crate::DEFAULT_UNBLOCK_THRESHOLD;
 use crate::{
     helpers::{encrypt, varint_slice},
     packing::PackedData,
@@ -21,7 +20,7 @@ impl<W> Writer<W> {
             encryptor: None,
             inner,
             #[cfg(feature = "workpool")]
-            unblock_threshold: DEFAULT_UNBLOCK_THRESHOLD,
+            unblock_threshold: crate::DEFAULT_UNBLOCK_THRESHOLD,
         }
     }
     #[cfg(feature = "workpool")]
