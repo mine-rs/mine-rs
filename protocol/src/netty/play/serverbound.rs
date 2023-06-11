@@ -376,11 +376,13 @@ pub struct EntityAction7 {
 #[derive(Encoding, ToStatic, Debug)]
 #[encoding(from = "u8")]
 pub enum EntityAction {
-    Crouch = 1,
+    Crouch = 0,
     Uncrouch,
     LeaveBed,
     StartSprinting,
     StopSprinting,
+    JumpWithHorse,
+    OpenHorseInventory,
 }
 
 #[derive(Encoding, ToStatic, Debug)]
