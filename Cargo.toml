@@ -60,4 +60,5 @@ members = [
   "to_static",
   "to_static/derive",
   "version",
+  "data"
 ]
