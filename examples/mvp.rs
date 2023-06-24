@@ -8,7 +8,6 @@ use async_std::io::ReadExt;
 use async_std::net::TcpStream;
 use async_std::sync::Mutex;
 use async_std::task::{sleep, spawn};
-use miners_level::chunk::ChunkColumn47;
 use futures_lite::io::{BufReader, BufWriter};
 use isahc::http::StatusCode;
 use miners::encoding::attrs::StringUuid;
@@ -31,6 +30,7 @@ use miners::{
     net::encoding::Encoder, protocol::netty::handshaking::serverbound::Handshake0,
     version::ProtocolVersion,
 };
+use miners_level::chunk::ChunkColumn47;
 use num_bigint::BigInt;
 use rsa::pkcs8::Document;
 use rsa::rand_core::OsRng;
@@ -106,7 +106,7 @@ async fn accept(
                 pub_key,
                 chunk,
                 offline,
-                compression
+                compression,
             )
             .await
             .unwrap();

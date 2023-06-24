@@ -45,10 +45,7 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Connection<R, W> {
     //     self.read_half.compression = Some(Vec::with_capacity(INITIAL_BUF_SIZE));
     // }
 
-    pub fn enable_encryption(
-        &mut self,
-        key: &[u8],
-    ) -> Result<(), InvalidLength> {
+    pub fn enable_encryption(&mut self, key: &[u8]) -> Result<(), InvalidLength> {
         self.read_half.enable_encryption(key)?;
         self.write_half
             .enable_encryption(cfb8::Encryptor::new_from_slices(key, key)?);

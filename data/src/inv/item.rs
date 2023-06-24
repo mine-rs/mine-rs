@@ -1,5 +1,5 @@
-use std::{fmt::Debug, marker::PhantomData};
 use crate::Result;
+use std::{fmt::Debug, marker::PhantomData};
 
 use super::enchant::Enchant;
 

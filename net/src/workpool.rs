@@ -6,11 +6,16 @@ use std::{
 use futures_channel::oneshot::Sender;
 use parking_lot::Mutex;
 
-use crate::helpers::{encrypt, decrypt};
+use crate::helpers::{decrypt, encrypt};
 
 #[allow(clippy::type_complexity)]
 static ENCRYPTION_WORKQUEUE: once_cell::sync::Lazy<
-    Mutex<VecDeque<((Vec<u8>, usize, Box<cfb8::Encryptor<aes::Aes128>>), Sender<(Vec<u8>, Box<cfb8::Encryptor<aes::Aes128>>)>)>>,
+    Mutex<
+        VecDeque<(
+            (Vec<u8>, usize, Box<cfb8::Encryptor<aes::Aes128>>),
+            Sender<(Vec<u8>, Box<cfb8::Encryptor<aes::Aes128>>)>,
+        )>,
+    >,
 > = once_cell::sync::Lazy::new(|| Mutex::new(VecDeque::new()));
 static ENCRYPTION_MAX_THREADCOUNT: once_cell::sync::Lazy<usize> =
     once_cell::sync::Lazy::new(|| {
@@ -28,7 +33,12 @@ static ENCRYPTION_WORKTHREADS_CONDVAR: parking_lot::Condvar = parking_lot::Condv
 
 #[allow(clippy::type_complexity)]
 static DECRYPTION_WORKQUEUE: once_cell::sync::Lazy<
-    Mutex<VecDeque<((Vec<u8>, usize, Box<cfb8::Decryptor<aes::Aes128>>), Sender<(Vec<u8>, Box<cfb8::Decryptor<aes::Aes128>>)>)>>,
+    Mutex<
+        VecDeque<(
+            (Vec<u8>, usize, Box<cfb8::Decryptor<aes::Aes128>>),
+            Sender<(Vec<u8>, Box<cfb8::Decryptor<aes::Aes128>>)>,
+        )>,
+    >,
 > = once_cell::sync::Lazy::new(|| Mutex::new(VecDeque::new()));
 static DECRYPTION_MAX_THREADCOUNT: once_cell::sync::Lazy<usize> =
     once_cell::sync::Lazy::new(|| {

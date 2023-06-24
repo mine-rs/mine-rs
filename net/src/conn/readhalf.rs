@@ -3,7 +3,7 @@ use std::task::Poll;
 use std::{fmt::Display, io};
 
 use crate::encoding::EncodedData;
-use crate::helpers::{AsyncCancelled, decrypt};
+use crate::helpers::{decrypt, AsyncCancelled};
 #[cfg(feature = "workpool")]
 use crate::DEFAULT_UNBLOCK_THRESHOLD;
 

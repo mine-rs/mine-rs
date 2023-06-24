@@ -1,5 +1,5 @@
-use std::fmt::Debug;
 use crate::Result;
+use std::fmt::Debug;
 
 pub struct EnchantCost {
     pub a: i8,
