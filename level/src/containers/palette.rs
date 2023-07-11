@@ -1,4 +1,4 @@
-use miners::encoding::{attrs::Var, Decode, Encode};
+use miners_encoding::{attrs::Var, Decode, Encode};
 
 use super::bitpack::{
     byteorder::{BigEndian, NativeEndian},
@@ -63,13 +63,13 @@ macro_rules! impl_encoding_for_biome_endian {
             fn encode(
                 &self,
                 writer: &mut impl std::io::Write,
-            ) -> miners::encoding::encode::Result<()> {
+            ) -> miners_encoding::encode::Result<()> {
                 #[inline]
                 fn encode_indirect<const N: usize>(
                     writer: &mut impl std::io::Write,
                     palette: &LinearPalette,
                     data: &PackedBits<N, $endian>,
-                ) -> miners::encoding::encode::Result<()> {
+                ) -> miners_encoding::encode::Result<()> {
                     (palette.bits as u8).encode(writer)?; // write the amount of bits
                     Var::<i32>::from(palette.values.len() as i32).encode(writer)?; // write the length of the palette array
 
@@ -99,7 +99,7 @@ macro_rules! impl_encoding_for_biome_endian {
         impl<'dec, const N: usize> Decode<'dec> for BiomePaletteContainer<N, $endian> {
             fn decode(
                 cursor: &mut std::io::Cursor<&'dec [u8]>,
-            ) -> miners::encoding::decode::Result<Self> {
+            ) -> miners_encoding::decode::Result<Self> {
                 let bits = u8::decode(cursor)?;
                 Ok(Self {
                     palette: match bits {
@@ -128,7 +128,7 @@ macro_rules! impl_encoding_for_biome_endian {
                             }
                         }
                         _ => {
-                            return Err(miners::encoding::decode::Error::Custom(
+                            return Err(miners_encoding::decode::Error::Custom(
                                 "invalid amount of bits for palette container!",
                             ));
                         }
@@ -249,13 +249,13 @@ macro_rules! impl_encoding_for_state_endian {
             fn encode(
                 &self,
                 writer: &mut impl std::io::Write,
-            ) -> miners::encoding::encode::Result<()> {
+            ) -> miners_encoding::encode::Result<()> {
                 #[inline]
                 fn encode_indirect<const N: usize>(
                     writer: &mut impl std::io::Write,
                     palette: &LinearPalette,
                     data: &PackedBits<N, $endian>,
-                ) -> miners::encoding::encode::Result<()> {
+                ) -> miners_encoding::encode::Result<()> {
                     (palette.bits as u8).encode(writer)?; // write the amount of bits
                     Var::<i32>::from(palette.values.len() as i32).encode(writer)?; // write the length of the palette array
 
@@ -293,7 +293,7 @@ macro_rules! impl_encoding_for_state_endian {
         impl<'dec, const N: usize> Decode<'dec> for StatePaletteContainer<N, $endian> {
             fn decode(
                 cursor: &mut std::io::Cursor<&'dec [u8]>,
-            ) -> miners::encoding::decode::Result<Self> {
+            ) -> miners_encoding::decode::Result<Self> {
                 let bits = u8::decode(cursor)?;
                 Ok(Self {
                     palette: match bits {
@@ -350,7 +350,7 @@ macro_rules! impl_encoding_for_state_endian {
                             }
                         }
                         _ => {
-                            return Err(miners::encoding::decode::Error::Custom(
+                            return Err(miners_encoding::decode::Error::Custom(
                                 "invalid amount of bits for palette container!",
                             ));
                         }

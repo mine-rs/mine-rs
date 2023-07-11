@@ -1,21 +1,26 @@
-pub trait Block {
-    fn id() -> u16;
-    fn display_name() -> &'static str;
-    fn name() -> &'static str;
-    fn hardness() -> f32;
-    fn stack_size() -> u8;
-    fn diggable() -> bool;
-    fn bounding_box() -> (); //TODO: add return value
-    fn drops() -> (); //TODO: add return value
-    fn transparent() -> bool;
-    fn emit_ligth() -> u8;
-    fn filter_light() -> u8;
-    fn material() -> Option<&'static str>;
-    fn harvest_tools() -> Option<()>; //TODO: add return value
-    fn variations() -> Option<()>; //TODO: add return value
-    fn states() -> Option<()>; //TODO: add return value
-    fn min_state_id() -> Option<u16>;
-    fn max_state_id() -> Option<u16>;
-    fn default_state() -> Option<u16>;
-    fn resistance() -> Option<f32>;
+pub trait Block: Copy {
+    fn id(self) -> u16;
+    fn from_id(id: u16) -> Option<Self>;
+
+    fn display_name(self) -> &'static str;
+
+    fn name(self) -> &'static str;
+    fn from_name(name: &str) -> Option<Self>;
+
+    fn hardness(self) -> Option<f64>;
+    fn stack_size(self) -> u8;
+    fn diggable(self) -> bool;
+    fn bounding_box(self) -> (); //TODO: add return value
+    fn drops(self) -> (); //TODO: add return value
+    fn transparent(self) -> bool;
+    fn emit_light(self) -> u8;
+    fn filter_light(self) -> u8;
+    fn material(self) -> Option<&'static str>;
+    fn harvest_tools(self) -> Option<()>; //TODO: add return value
+    fn variations(self) -> Option<()>; //TODO: add return value
+    fn states(self) -> Option<()>; //TODO: add return value
+    fn min_state_id(self) -> Option<u16>;
+    fn max_state_id(self) -> Option<u16>;
+    fn default_state(self) -> Option<u16>;
+    fn resistance(self) -> Option<f32>;
 }

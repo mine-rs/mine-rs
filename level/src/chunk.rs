@@ -1,7 +1,8 @@
 use std::ptr::NonNull;
 
 use bumpalo::Bump;
-use miners::{encoding::Encode, nbt::List};
+use miners_encoding::Encode;
+use miners_nbt::List;
 
 use crate::containers::{Block47, BlockArray47, ByteArray, HalfByteArray, ReadContainer};
 
@@ -122,7 +123,7 @@ mod util {
                 skylight: bool,
                 bitmask: u16,
                 $(add: util::void_t!($marker, u16))?
-            ) -> miners::encoding::decode::Result<Self> {
+            ) -> miners_encoding::decode::Result<Self> {
                 let mut size = 256;
                 let mut exists = [false; 16];
                 $(let mut add_array = util::void!($marker, [false; 16]);)?
@@ -139,7 +140,7 @@ mod util {
                     let slice = cursor
                         .get_ref()
                         .get(pos..pos + size as usize)
-                        .ok_or(miners::encoding::decode::Error::UnexpectedEndOfSlice)?;
+                        .ok_or(miners_encoding::decode::Error::UnexpectedEndOfSlice)?;
                     cursor.set_position((pos + size) as u64);
                     debug_assert_eq!(slice.len(), size);
                     slice
@@ -264,7 +265,7 @@ unsafe impl Send for ChunkColumn0 {}
 
 impl Encode for ChunkColumn0 {
     // This implementation only writes the chunk data, not the metadata.
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         // TODO: add a way for the user to specify the compression level.
         let mut compression = flate2::write::ZlibEncoder::new(writer, flate2::Compression::fast());
         for section in self.sections.iter().flatten() {
@@ -491,7 +492,7 @@ unsafe impl Sync for ChunkColumn47 {}
 unsafe impl Send for ChunkColumn47 {}
 
 impl Encode for ChunkColumn47 {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         for section in self.sections.iter().flatten() {
             section.blocks().encode(writer)?
         }
@@ -545,7 +546,7 @@ impl ChunkColumn47 {
     util::from_reader_fn!(ChunkSection47, BlockArray47<4096>);
 
     /// Parses 1.8 anvil chunk nbt data into a `ChunkColumn49`. This function does not take an entire region file as input, but one of the chunks contained within.
-    pub fn from_nbt(nbt: &miners::nbt::Compound, skylight: bool) -> Option<Self> {
+    pub fn from_nbt(nbt: &miners_nbt::Compound, skylight: bool) -> Option<Self> {
         //TODO: Return Result and not Option.
         let nbt = nbt.get("Level")?.as_compound()?;
 
@@ -776,10 +777,8 @@ mod tests {
     mod pv49 {
         use std::io::Cursor;
 
-        use miners::{
-            encoding::{Decode, Encode},
-            nbt,
-        };
+        use miners_encoding::{Encode, Decode};
+        use miners_nbt as nbt;
 
         use crate::chunk::ChunkColumn47;
 

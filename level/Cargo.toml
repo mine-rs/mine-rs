@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1.0.37"
-miners = { git = "https://github.com/mine-rs/mine-rs" }
 flate2 = "1.0.25"
 bumpalo = "3.13.0"
+miners-nbt = { path = "../nbt", version = "0.0.0-beta.0" }
+miners-encoding = { path = "../encoding", version = "0.0.0-beta.0" }

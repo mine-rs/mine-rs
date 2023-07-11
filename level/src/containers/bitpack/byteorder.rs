@@ -1,4 +1,4 @@
-use miners::encoding::{Decode, Encode};
+use miners_encoding::{Decode, Encode};
 
 /// # Safety
 /// This trait is safe to implement as long as the struct has the same data layout as `u64`
@@ -49,13 +49,13 @@ unsafe impl ByteOrderedU64 for BigEndian {
 pub struct NativeEndian(u64);
 
 impl Encode for NativeEndian {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         u64::encode(&self.0, writer)
     }
 }
 
 impl<'dec> Decode<'dec> for NativeEndian {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners::encoding::decode::Result<Self> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners_encoding::decode::Result<Self> {
         Ok(Self(u64::decode(cursor)?))
     }
 }

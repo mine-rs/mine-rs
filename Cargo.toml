@@ -17,6 +17,8 @@ encoding = ["dep:miners-encoding"]
 to_static_derive = ["dep:miners-to-static-derive", "to_static"]
 to_static = ["dep:miners-to-static", "miners-nbt?/to_static"]
 version = ["dep:miners-version"]
+data = ["dep:miners-data"]
+level = ["dep:miners-level"]
 
 [dependencies]
 miners-net = { path = "net", version = "0.0.0-beta.0", optional = true }
@@ -30,6 +32,8 @@ miners-encoding = { path = "encoding", version = "0.0.0-beta.0", optional = true
 miners-to-static-derive = { path = "to_static/derive", version = "0.0.0-beta.0", optional = true }
 miners-to-static = { path = "to_static", version = "0.0.0-beta.0", optional = true }
 miners-version = { path = "version", version = "0.0.0-beta.0", optional = true }
+miners-data = { path = "data", version = "0.0.0-beta.0", optional = true }
+miners-level = { path = "level", version = "0.0.0-beta.0", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0.71"
@@ -38,7 +42,7 @@ chrono = "0.4.23"
 miners-level = { path = "level" }
 futures-lite = "1.13.0"
 isahc = { version = "1.7.2", features = ["json"] }
-miners = { git = "https://github.com/mine-rs/mine-rs" }
+#miners = { git = "https://github.com/mine-rs/mine-rs" }
 num-bigint = "0.4.3"
 rand = "0.8.5"
 rsa = "0.9.2"

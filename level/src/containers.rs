@@ -1,6 +1,6 @@
 use std::{fmt::Debug, mem::transmute};
 
-use miners::encoding::{Decode, Encode};
+use miners_encoding::{Decode, Encode};
 
 pub mod bitpack;
 pub mod palette;
@@ -95,13 +95,13 @@ impl<'a, const N: usize> From<&'a mut BlockArray47<N>> for &'a mut [u8; N] {
 }
 
 impl<const N: usize> Encode for BlockArray47<N> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         writer.write_all(self.as_ref()).map_err(From::from)
     }
 }
 
 impl<'dec, const N: usize> Decode<'dec> for &BlockArray47<N> {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners::encoding::decode::Result<Self> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners_encoding::decode::Result<Self> {
         let slice = decode_slice::<N>(cursor)?;
         // SAFETY: This is safe because we created the ptr from a slice that we know has a len of RLEN
         let data: &[u8; N] = unsafe { &*(slice.as_ptr().cast() as *const [u8; N]) };
@@ -194,13 +194,13 @@ impl<'a, const N: usize> From<&'a mut ByteArray<N>> for &'a mut [u8; N] {
 }
 
 impl<const N: usize> Encode for ByteArray<N> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         writer.write_all(self.0.as_ref()).map_err(From::from)
     }
 }
 
 impl<'dec, const N: usize> Decode<'dec> for &ByteArray<N> {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners::encoding::decode::Result<Self> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners_encoding::decode::Result<Self> {
         let slice = decode_slice::<N>(cursor)?;
         // SAFETY: This is safe because we created the ptr from a slice that we know has a len of RLEN
         let data: &[u8; N] = unsafe { &*(slice.as_ptr().cast() as *const [u8; N]) };
@@ -227,12 +227,12 @@ unsafe impl<const N: usize> WriteContainer<u8> for ByteArray<N> {
 #[inline]
 fn decode_slice<'dec, const N: usize>(
     cursor: &mut std::io::Cursor<&'dec [u8]>,
-) -> miners::encoding::decode::Result<&'dec [u8]> {
+) -> miners_encoding::decode::Result<&'dec [u8]> {
     let pos = cursor.position() as usize;
     let slice = cursor
         .get_ref()
         .get(pos..pos + N)
-        .ok_or(miners::encoding::decode::Error::UnexpectedEndOfSlice)?;
+        .ok_or(miners_encoding::decode::Error::UnexpectedEndOfSlice)?;
     cursor.set_position((pos + N) as u64);
     debug_assert_eq!(slice.len(), N);
     Ok(slice)
@@ -309,13 +309,13 @@ impl<'a, const N: usize> TryFrom<&'a [u8]> for &'a HalfByteArray<N> {
 }
 
 impl<const RLEN: usize> Encode for HalfByteArray<RLEN> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         writer.write_all(self.0.as_ref()).map_err(From::from)
     }
 }
 
 impl<'dec, const RLEN: usize> Decode<'dec> for &'dec HalfByteArray<RLEN> {
-    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners::encoding::decode::Result<Self> {
+    fn decode(cursor: &mut std::io::Cursor<&'dec [u8]>) -> miners_encoding::decode::Result<Self> {
         let slice = decode_slice::<RLEN>(cursor)?;
         // SAFETY: This is safe because we created the ptr from a slice that we know has a len of RLEN
         let data: &[u8; RLEN] = unsafe { &*(slice.as_ptr().cast() as *const [u8; RLEN]) };

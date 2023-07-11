@@ -16,6 +16,10 @@ pub use miners_packet as packet;
 pub use miners_protocol as protocol;
 #[cfg(feature = "version")]
 pub use miners_version as version;
+#[cfg(feature = "data")]
+pub use miners_data as data;
+#[cfg(feature = "level")]
+pub use miners_level as level;
 #[cfg(feature = "encoding")]
 #[doc(alias = "miners_encoding")]
 pub mod encoding {

@@ -1,5 +1,5 @@
 use self::byteorder::{BigEndian, NativeEndian};
-use miners::encoding::Encode;
+use miners_encoding::Encode;
 
 pub(crate) mod byteorder;
 
@@ -12,7 +12,7 @@ pub struct PackedBits<const N: usize, B: byteorder::ByteOrderedU64> {
 }
 
 impl<const N: usize> Encode for PackedBits<N, byteorder::NativeEndian> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         for i in &self.data {
             i.encode(writer)?;
         }
@@ -28,7 +28,7 @@ impl<const N: usize> AsRef<[u64]> for PackedBits<N, byteorder::NativeEndian> {
 }
 
 impl<const N: usize> Encode for PackedBits<N, BigEndian> {
-    fn encode(&self, writer: &mut impl std::io::Write) -> miners::encoding::encode::Result<()> {
+    fn encode(&self, writer: &mut impl std::io::Write) -> miners_encoding::encode::Result<()> {
         writer.write_all(self.as_ref()).map_err(From::from)
     }
 }
