@@ -1,4 +1,4 @@
-pub use miners_data_derive::blocks;
+pub use miners_data_derive::*;
 
 pub mod block;
 pub mod inv;

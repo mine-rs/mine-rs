@@ -4,13 +4,13 @@ use std::{fmt::Debug, marker::PhantomData};
 use super::enchant::Enchant;
 
 pub trait Item: Sized + Debug {
-    fn id(&self) -> u16;
-    fn from_id(id: u16) -> Result<Self>;
-    fn name(&self) -> &'static str;
-    fn from_name(name: &str) -> Result<Self>;
-    fn display_name(&self) -> &'static str;
-    fn stack_size(&self) -> u32;
-    fn durability(&self) -> Option<u16>;
+    fn id(self) -> u16;
+    fn from_id(id: u16) -> Option<Self>;
+    fn name(self) -> &'static str;
+    fn from_name(name: &str) -> Option<Self>;
+    fn display_name(self) -> &'static str;
+    fn stack_size(self) -> u8;
+    fn max_durability(self) -> Option<u16>;
 }
 
 #[derive(Debug, Clone, Copy)]
