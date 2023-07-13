@@ -59,7 +59,8 @@ async fn main() {
             &nbt::Nbt::decode(&mut Cursor::new(include_bytes!(
                 "../level/test_data/testchunk.nbt"
             )))
-            .unwrap().data,
+            .unwrap()
+            .data,
             true,
         )
         .unwrap(),

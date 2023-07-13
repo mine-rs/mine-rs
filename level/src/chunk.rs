@@ -777,7 +777,7 @@ mod tests {
     mod pv49 {
         use std::io::Cursor;
 
-        use miners_encoding::{Encode, Decode};
+        use miners_encoding::{Decode, Encode};
         use miners_nbt as nbt;
 
         use crate::chunk::ChunkColumn47;

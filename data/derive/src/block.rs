@@ -14,8 +14,7 @@ pub fn block(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let path = format!("{}/{}", std::env::var("CARGO_MANIFEST_DIR").unwrap(), path);
     let file = std::fs::File::open(path).unwrap();
 
-    let data: Vec<Block> =
-        serde_json::from_reader(file).expect("json should be valid");
+    let data: Vec<Block> = serde_json::from_reader(file).expect("json should be valid");
 
     let mut output = proc_macro2::TokenStream::new();
 
@@ -197,7 +196,7 @@ pub fn block(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
             fn harvest_tools(self) -> Option<()> {
                 todo!()
-            } 
+            }
             fn variations(self) -> Option<()> {
                 todo!()
             }

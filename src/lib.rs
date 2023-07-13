@@ -6,6 +6,10 @@
 pub use miners_auth as auth;
 #[cfg(feature = "chat")]
 pub use miners_chat as chat;
+#[cfg(feature = "data")]
+pub use miners_data as data;
+#[cfg(feature = "level")]
+pub use miners_level as level;
 #[cfg(feature = "nbt")]
 pub use miners_nbt as nbt;
 #[cfg(feature = "net")]
@@ -16,10 +20,6 @@ pub use miners_packet as packet;
 pub use miners_protocol as protocol;
 #[cfg(feature = "version")]
 pub use miners_version as version;
-#[cfg(feature = "data")]
-pub use miners_data as data;
-#[cfg(feature = "level")]
-pub use miners_level as level;
 #[cfg(feature = "encoding")]
 #[doc(alias = "miners_encoding")]
 pub mod encoding {

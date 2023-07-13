@@ -107,6 +107,7 @@ pub fn encoding(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 )]
 struct BitfieldInput {
     ident: syn::Ident,
+    #[allow(dead_code)]
     generics: syn::Generics,
     data: darling::ast::Data<EncodingVariant, BitfieldField>,
 

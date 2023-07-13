@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
-use serde_derive::{Serialize, Deserialize};
-use syn::{Type, LitStr, LitInt};
+use serde_derive::{Deserialize, Serialize};
+use syn::{LitInt, LitStr, Type};
 
 pub fn item(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as Input);
@@ -9,7 +9,7 @@ pub fn item(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let repr = input.repr;
     let path = format!("{}/{}", std::env::var("CARGO_MANIFEST_DIR").unwrap(), path);
     let file = std::fs::File::open(path).unwrap();
-    
+
     let data: Vec<Item> = serde_json::from_reader(file).unwrap();
 
     crate::generate!(
@@ -76,7 +76,7 @@ pub fn item(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             }
         )
     );
-    
+
     quote!(
         #[derive(Debug)]
         #[repr(#repr)]
@@ -128,7 +128,9 @@ pub fn item(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             }
         }
 
-    ).into_token_stream().into()
+    )
+    .into_token_stream()
+    .into()
 }
 
 #[derive(Serialize, Deserialize)]
