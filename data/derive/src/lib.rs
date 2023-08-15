@@ -1,5 +1,6 @@
 mod block;
-mod inv;
+mod item;
+mod enchant;
 
 macro_rules! generate {
     ($data:ident, $i:ident, $( ($property:ident, $q:expr $(, $value:ident, $e:expr)?) ),+) => {
@@ -24,5 +25,10 @@ pub fn block(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
 #[proc_macro]
 pub fn item(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    inv::item(input)
+    item::item(input)
+}
+
+#[proc_macro]
+pub fn enchant(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    enchant::enchant(input)
 }
