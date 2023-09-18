@@ -6,6 +6,7 @@ pub(crate) struct Compression {
     pub(crate) threshold: u32,
     pub(crate) zlib: flate2::Compress,
 }
+
 impl Compression {
     fn do_compress<'compressed, 'encoded, 'packed>(
         &mut self,
@@ -37,6 +38,7 @@ impl Compression {
 
         PackedData(buf, false)
     }
+
     pub(crate) fn maybe_compress<'compressed, 'encoded, 'mutslice>(
         &mut self,
         encoded: EncodedData<'encoded>,
@@ -58,6 +60,7 @@ pub(crate) struct Compressor {
     compression: Compression,
     buf: Vec<u8>,
 }
+
 impl Compressor {
     pub(crate) fn maybe_compress<'compressed, 'encoded, 'mutslice>(
         &'compressed mut self,
@@ -72,16 +75,20 @@ impl Compressor {
 }
 
 pub struct PackedData<'a>(pub(crate) &'a mut Vec<u8>, pub(crate) bool);
+
 impl<'a> PackedData<'a> {
     pub(crate) fn get(&self) -> &[u8] {
         &self.0[self.1 as usize..]
     }
+
     pub(crate) fn get_mut(&mut self) -> &mut [u8] {
         &mut self.0[self.1 as usize..]
     }
+
     pub(crate) fn len(&self) -> u32 {
         self.get().len() as u32
     }
+
     pub fn fork<'fork>(&self, fork_location: &'fork mut Vec<u8>) -> PackedData<'fork> {
         fork_location.clear();
         fork_location.extend_from_slice(self.0);

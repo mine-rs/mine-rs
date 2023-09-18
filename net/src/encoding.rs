@@ -18,16 +18,20 @@ use crate::packing::{Compression, Compressor, PackedData};
 /// mutated under certain circumstances when writing, more specifically
 /// when encrypting. this saves allocations
 pub struct EncodedData<'encoded>(pub(crate) &'encoded mut Vec<u8>);
+
 impl<'encoded> EncodedData<'encoded> {
     pub(crate) fn zero_prefixed(self) -> PackedData<'encoded> {
         PackedData(self.0, false)
     }
+
     pub(crate) fn uncompressed_len(&self) -> u32 {
         self.0.len() as u32 - 1
     }
+
     fn stripped_marker(self) -> PackedData<'encoded> {
         PackedData(self.0, true)
     }
+
     /// Copies the data of an EncodedData reference to a new location,
     /// returning a second one, such "forking" the data
     pub fn fork<'fork>(&self, fork_location: &'fork mut Vec<u8>) -> EncodedData<'fork> {
@@ -35,6 +39,7 @@ impl<'encoded> EncodedData<'encoded> {
         fork_location.extend_from_slice(self.0);
         EncodedData(fork_location)
     }
+
     /// Constructs a new owned accessor to a vector holding packet data
     ///
     /// # Safety
@@ -44,6 +49,7 @@ impl<'encoded> EncodedData<'encoded> {
     pub unsafe fn from_raw(raw: &mut Vec<u8>) -> EncodedData {
         EncodedData(raw)
     }
+
     pub fn to_packet(&self) -> decode::Result<RawPacket> {
         let mut cursor = std::io::Cursor::new(&self.0[1..]);
 
@@ -52,6 +58,7 @@ impl<'encoded> EncodedData<'encoded> {
 
         Ok(RawPacket::new(id, &self.0[pos + 1..]))
     }
+
     pub fn into_packet(self) -> decode::Result<RawPacket<'encoded>> {
         let mut cursor = std::io::Cursor::new(&self.0[1..]);
 
@@ -61,6 +68,7 @@ impl<'encoded> EncodedData<'encoded> {
         Ok(RawPacket::new(id, &self.0[pos + 1..]))
     }
 }
+
 impl<'encoded> EncodedData<'encoded> {
     pub(crate) fn split_pack<'compressed, 'ret>(
         self,
@@ -76,6 +84,7 @@ impl<'encoded> EncodedData<'encoded> {
             None => self.stripped_marker(),
         }
     }
+
     pub(crate) fn pack<'compression, 'ret>(
         self,
         compression: Option<&'compression mut Compressor>,
@@ -95,16 +104,19 @@ impl<'encoded> EncodedData<'encoded> {
 pub struct Encoder {
     encodebuf: Vec<u8>,
 }
+
 impl From<Vec<u8>> for Encoder {
     fn from(encodebuf: Vec<u8>) -> Self {
         Encoder { encodebuf }
     }
 }
+
 impl Encoder {
     pub fn new() -> Self {
         Encoder { encodebuf: vec![] }
     }
 }
+
 impl Encoder {
     pub fn encode(&mut self, id: i32, data: impl Encode) -> encode::Result<EncodedData> {
         self.encodebuf.clear();

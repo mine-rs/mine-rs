@@ -1,6 +1,6 @@
 mod block;
-mod item;
 mod enchant;
+mod item;
 
 macro_rules! generate {
     ($data:ident, $i:ident, $( ($property:ident, $q:expr $(, $value:ident, $e:expr)?) ),+) => {

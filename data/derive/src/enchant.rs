@@ -1,4 +1,4 @@
-use syn::{Type, LitStr};
+use syn::{LitStr, Type};
 
 pub fn enchant(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as Input);
