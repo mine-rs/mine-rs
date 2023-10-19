@@ -3,9 +3,9 @@ use syn::{LitStr, Type};
 pub fn enchant(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as Input);
     let path = input.path;
-    let repr = input.repr;
+    let _repr = input.repr;
     let path = format!("{}/{}", std::env::var("CARGO_MANIFEST_DIR").unwrap(), path);
-    let file = std::fs::File::open(path).unwrap();
+    let _file = std::fs::File::open(path).unwrap();
 
     todo!()
 }

@@ -1,3 +1,4 @@
+// TODO: Integrate BufGuard into this module?
 use std::{
     collections::VecDeque,
     sync::atomic::{AtomicUsize, Ordering},

@@ -12,6 +12,7 @@ use super::INITIAL_BUF_SIZE;
 use aes::cipher::{InvalidLength, KeyIvInit};
 use futures_lite::ready;
 use futures_lite::{AsyncRead, AsyncReadExt};
+use miners_util::bufpool::request_buf;
 
 /// The maximum packet length, 8 MiB
 const MAX_PACKET_LENGTH: u32 = 1024 * 1024 * 8;
@@ -35,9 +36,8 @@ fn verify_len(len: u32) -> std::io::Result<()> {
 /// The reading half of a connection.
 /// Returned from `Connection::split()`
 pub struct ReadHalf<R> {
-    pub(super) compression: Option<Vec<u8>>,
+    pub(super) compression: bool,
     zlib: flate2::Decompress,
-    readbuf: Vec<u8>,
     reader: Reader<R>,
 }
 
@@ -115,9 +115,8 @@ impl Display for PacketLengthTooLarge {
 impl<R> ReadHalf<R> {
     pub(super) fn new(reader: R) -> Self {
         Self {
-            compression: None,
+            compression: false,
             zlib: flate2::Decompress::new(true),
-            readbuf: Vec::with_capacity(INITIAL_BUF_SIZE),
             reader: Reader {
                 reader,
                 decryptor: None,
@@ -133,7 +132,7 @@ impl<R> ReadHalf<R> {
     }
 
     pub(super) fn enable_compression(&mut self) {
-        self.compression = Some(Vec::with_capacity(super::INITIAL_BUF_SIZE))
+        self.compression = true
     }
 
     #[cfg(feature = "workpool")]
@@ -143,14 +142,17 @@ impl<R> ReadHalf<R> {
         self.reader.unblock_threshold = threshold;
     }
 
-    pub fn shrink_to(&mut self, min_capacity: usize) {
-        self.readbuf.clear();
-        self.readbuf.shrink_to(min_capacity);
+    /*
+        pub fn shrink_to(&mut self, min_capacity: usize) {
+        buf.clear();
+        buf.shrink_to(min_capacity);
         if let Some(comp_buf) = &mut self.compression {
             comp_buf.clear();
             comp_buf.shrink_to(min_capacity);
         }
     }
+     */
+
 }
 
 impl<R> ReadHalf<R>
@@ -158,23 +160,26 @@ where
     R: AsyncRead + Unpin,
 {
     pub async fn read_encoded(&mut self) -> io::Result<EncodedData> {
-        self.readbuf.clear();
-        if self.compression.is_none() {
-            // push a zero-byte so we adhere to the encoding buffer structure
-            self.readbuf.push(0);
-        }
         let len = read_varint_async(&mut self.reader).await?;
-        self.reader.read(&mut self.readbuf, len).await?;
+        let mut buf = miners_util::bufpool::request_buf(len as usize);
+        buf.clear();
+        if !self.compression {
+            // push a zero-byte so we adhere to the encoding buffer structure
+            buf.push(0);
+        }
+
+        self.reader.read(&mut buf, len).await?;
         match &mut self.compression {
-            None => Ok(EncodedData(&mut self.readbuf)),
-            Some(_) if self.readbuf[0] == 0 => {
+            false => Ok(EncodedData(buf)),
+            true if buf[0] == 0 => {
                 // compression enabled, prefixed with zero-byte
-                Ok(EncodedData(&mut self.readbuf))
+                Ok(EncodedData(buf))
             }
-            Some(compression_buf) => {
+            true => {
+                let mut compression_buf = request_buf(buf.len());
                 compression_buf.clear();
                 compression_buf.push(0);
-                let mut reader = std::io::Cursor::new(&self.readbuf[..]);
+                let mut reader = std::io::Cursor::new(&buf[..]);
 
                 let uncompressed_len = read_varint(&mut reader)?;
 
@@ -186,7 +191,7 @@ where
                 self.zlib
                     .decompress_vec(
                         &reader.get_ref()[reader.get_ref().len()..],
-                        compression_buf,
+                        &mut compression_buf,
                         flate2::FlushDecompress::Finish,
                     )
                     .ok();

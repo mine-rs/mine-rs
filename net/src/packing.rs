@@ -1,3 +1,5 @@
+use miners_util::bufpool::{request_buf, BufGuard};
+
 use crate::{encoding::EncodedData, helpers::varint_vec};
 
 const ZLIB_BUF_MIN: u32 = 1024;
@@ -10,13 +12,13 @@ pub(crate) struct Compression {
 impl Compression {
     fn do_compress<'compressed, 'encoded, 'packed>(
         &mut self,
-        encoded: EncodedData<'encoded>,
-        buf: &'compressed mut Vec<u8>,
-    ) -> PackedData<'packed>
+        encoded: EncodedData,
+    ) -> PackedData
     where
         'encoded: 'packed,
         'compressed: 'packed,
     {
+        let mut buf = request_buf(encoded.uncompressed_len() as usize);
         buf.clear();
 
         let uncompressed_len = encoded.uncompressed_len();
@@ -28,10 +30,10 @@ impl Compression {
         // note: 5 bytes is the maximum size of the prefixing varint
         buf.reserve(uncompressed_len.max(ZLIB_BUF_MIN + 5) as usize);
 
-        varint_vec(uncompressed_len, buf);
+        varint_vec(uncompressed_len, &mut buf);
 
         self.zlib
-            .compress_vec(&encoded.0[1..], buf, flate2::FlushCompress::Finish)
+            .compress_vec(&encoded.0[1..], &mut buf, flate2::FlushCompress::Finish)
             .ok();
 
         self.zlib.reset();
@@ -41,15 +43,14 @@ impl Compression {
 
     pub(crate) fn maybe_compress<'compressed, 'encoded, 'mutslice>(
         &mut self,
-        encoded: EncodedData<'encoded>,
-        buf: &'compressed mut Vec<u8>,
-    ) -> PackedData<'mutslice>
+        encoded: EncodedData,
+    ) -> PackedData
     where
         'encoded: 'mutslice,
         'compressed: 'mutslice,
     {
         if encoded.uncompressed_len() >= self.threshold {
-            self.do_compress(encoded, buf)
+            self.do_compress(encoded)
         } else {
             encoded.zero_prefixed()
         }
@@ -58,25 +59,24 @@ impl Compression {
 
 pub(crate) struct Compressor {
     compression: Compression,
-    buf: Vec<u8>,
 }
 
 impl Compressor {
     pub(crate) fn maybe_compress<'compressed, 'encoded, 'mutslice>(
         &'compressed mut self,
-        encoded: EncodedData<'encoded>,
-    ) -> PackedData<'mutslice>
+        encoded: EncodedData,
+    ) -> PackedData
     where
         'compressed: 'mutslice,
         'encoded: 'mutslice,
     {
-        self.compression.maybe_compress(encoded, &mut self.buf)
+        self.compression.maybe_compress(encoded)
     }
 }
 
-pub struct PackedData<'a>(pub(crate) &'a mut Vec<u8>, pub(crate) bool);
+pub struct PackedData(pub(crate) BufGuard, pub(crate) bool);
 
-impl<'a> PackedData<'a> {
+impl PackedData {
     pub(crate) fn get(&self) -> &[u8] {
         &self.0[self.1 as usize..]
     }
@@ -89,9 +89,9 @@ impl<'a> PackedData<'a> {
         self.get().len() as u32
     }
 
-    pub fn fork<'fork>(&self, fork_location: &'fork mut Vec<u8>) -> PackedData<'fork> {
+    pub fn fork(&self, mut fork_location: BufGuard) -> PackedData {
         fork_location.clear();
-        fork_location.extend_from_slice(self.0);
+        fork_location.extend_from_slice(&self.0);
         PackedData(fork_location, self.1)
     }
 }

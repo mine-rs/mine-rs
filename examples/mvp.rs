@@ -123,7 +123,7 @@ async fn play(mut read: Reader, write: Writer, version: ProtocolVersion) -> anyh
     spawn(send_keepalive(write.clone(), keepalive_id.clone(), version));
 
     loop {
-        match SbPlay::parse(read.read_encoded().await?.into_packet()?, version)? {
+        match SbPlay::parse(read.read_encoded().await?.to_packet()?, version)? {
             SbPlay::KeepAlive7(packet) => {
                 println!("received keepalive");
                 let packet: KeepAlive7 = packet;
@@ -162,7 +162,7 @@ async fn send_keepalive(
 }
 
 async fn handshake(conn: &mut Conn, version: ProtocolVersion) -> anyhow::Result<NextState0> {
-    match SbHandshaking::parse(conn.read_half.read_encoded().await?.into_packet()?, version)? {
+    match SbHandshaking::parse(conn.read_half.read_encoded().await?.to_packet()?, version)? {
         SbHandshaking::Handshake0(packet) => {
             // This is so rust-analyzer recognises the type.
             let packet: Handshake0 = packet;
@@ -182,7 +182,7 @@ async fn login(
     compression: bool,
 ) -> anyhow::Result<(Reader, Writer)> {
     let username = if let SbLogin::LoginStart0(packet) =
-        SbLogin::parse(conn.read_half.read_encoded().await?.into_packet()?, version)?
+        SbLogin::parse(conn.read_half.read_encoded().await?.to_packet()?, version)?
     {
         let packet: LoginStart0 = packet;
         packet.username.to_string()
@@ -209,7 +209,7 @@ async fn login(
         conn.write_half.flush().await?;
 
         let secret = if let SbLogin::EncryptionResponse19(packet) =
-            SbLogin::parse(conn.read_half.read_encoded().await?.into_packet()?, version)?
+            SbLogin::parse(conn.read_half.read_encoded().await?.to_packet()?, version)?
         {
             let packet: EncryptionResponse19 = packet;
             if &priv_key.decrypt(Pkcs1v15Encrypt, &packet.verify_token)? != &verify_token {

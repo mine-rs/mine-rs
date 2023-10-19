@@ -46,13 +46,14 @@ where
         }
         self.inner.write_all(&*var_slice).await
     }
-    pub async fn write<'packed>(&mut self, mut data: PackedData<'packed>) -> io::Result<()> {
+    pub async fn write<'packed>(&mut self, mut data: PackedData) -> io::Result<()> {
         self.write_varint(data.len()).await?;
         if let Some(encryptor) = &mut self.encryptor {
             let mut encryptor = encryptor.take().ok_or(crate::helpers::AsyncCancelled)?;
             #[cfg(feature = "workpool")]
             let encryptor = if data.len() >= self.unblock_threshold {
-                let taken_buf = std::mem::take(data.0);
+                // TODO: Remove std::mem::take shenanigans as it is no longer necessary with the bufpool.
+                let taken_buf = std::mem::take(&mut data.0 as &mut Vec<u8>);
 
                 let (taken_buf, mutated_encryptor) =
                     crate::workpool::request_encryption(taken_buf, encryptor)
@@ -91,7 +92,7 @@ where
         }
         self.inner.write_all(&*var_slice)
     }
-    pub fn swrite<'packed>(&mut self, mut data: PackedData<'packed>) -> io::Result<()> {
+    pub fn swrite(&mut self, mut data: PackedData) -> io::Result<()> {
         self.swrite_varint(data.len())?;
         if let Some(encryptor) = &mut self.encryptor {
             let mut encryptor = encryptor.take().ok_or(crate::helpers::AsyncCancelled)?;

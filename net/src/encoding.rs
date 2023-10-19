@@ -4,6 +4,7 @@ use {
 };
 
 use miners_packet::RawPacket;
+use miners_util::bufpool::{BufGuard, request_buf};
 
 use crate::packing::{Compression, Compressor, PackedData};
 
@@ -17,10 +18,10 @@ use crate::packing::{Compression, Compressor, PackedData};
 /// It holds a mutable reference because the underlying data is being
 /// mutated under certain circumstances when writing, more specifically
 /// when encrypting. this saves allocations
-pub struct EncodedData<'encoded>(pub(crate) &'encoded mut Vec<u8>);
+pub struct EncodedData<>(pub(crate) BufGuard);
 
-impl<'encoded> EncodedData<'encoded> {
-    pub(crate) fn zero_prefixed(self) -> PackedData<'encoded> {
+impl EncodedData<> {
+    pub(crate) fn zero_prefixed(self) -> PackedData<> {
         PackedData(self.0, false)
     }
 
@@ -28,15 +29,15 @@ impl<'encoded> EncodedData<'encoded> {
         self.0.len() as u32 - 1
     }
 
-    fn stripped_marker(self) -> PackedData<'encoded> {
+    fn stripped_marker(self) -> PackedData {
         PackedData(self.0, true)
     }
 
     /// Copies the data of an EncodedData reference to a new location,
     /// returning a second one, such "forking" the data
-    pub fn fork<'fork>(&self, fork_location: &'fork mut Vec<u8>) -> EncodedData<'fork> {
+    pub fn fork(&self, mut fork_location: BufGuard) -> EncodedData {
         fork_location.clear();
-        fork_location.extend_from_slice(self.0);
+        fork_location.extend_from_slice(&self.0);
         EncodedData(fork_location)
     }
 
@@ -46,7 +47,7 @@ impl<'encoded> EncodedData<'encoded> {
     ///
     /// the caller must ensure that the referenced vector contains valid
     /// data, else a panic might occur, for example when the vector is empty
-    pub unsafe fn from_raw(raw: &mut Vec<u8>) -> EncodedData {
+    pub unsafe fn from_raw(raw: BufGuard) -> EncodedData {
         EncodedData(raw)
     }
 
@@ -59,7 +60,8 @@ impl<'encoded> EncodedData<'encoded> {
         Ok(RawPacket::new(id, &self.0[pos + 1..]))
     }
 
-    pub fn into_packet(self) -> decode::Result<RawPacket<'encoded>> {
+    /*
+        pub fn into_packet<'encoded>(self) -> decode::Result<RawPacket<'encoded>> {
         let mut cursor = std::io::Cursor::new(&self.0[1..]);
 
         let id = miners_encoding::attrs::Var::decode(&mut cursor)?.into_inner();
@@ -67,20 +69,20 @@ impl<'encoded> EncodedData<'encoded> {
 
         Ok(RawPacket::new(id, &self.0[pos + 1..]))
     }
+    */
 }
 
-impl<'encoded> EncodedData<'encoded> {
+impl EncodedData {
     pub(crate) fn split_pack<'compressed, 'ret>(
         self,
         compressor: Option<&mut Compression>,
         buf: &'compressed mut Vec<u8>,
-    ) -> PackedData<'ret>
+    ) -> PackedData
     where
         'compressed: 'ret,
-        'encoded: 'ret,
     {
         match compressor {
-            Some(compression) => compression.maybe_compress(self, buf),
+            Some(compression) => compression.maybe_compress(self),
             None => self.stripped_marker(),
         }
     }
@@ -88,10 +90,9 @@ impl<'encoded> EncodedData<'encoded> {
     pub(crate) fn pack<'compression, 'ret>(
         self,
         compression: Option<&'compression mut Compressor>,
-    ) -> PackedData<'ret>
+    ) -> PackedData
     where
         'compression: 'ret,
-        'encoded: 'ret,
     {
         match compression {
             Some(compression) => compression.maybe_compress(self),
@@ -102,28 +103,28 @@ impl<'encoded> EncodedData<'encoded> {
 
 #[derive(Default)]
 pub struct Encoder {
-    encodebuf: Vec<u8>,
 }
 
 impl From<Vec<u8>> for Encoder {
     fn from(encodebuf: Vec<u8>) -> Self {
-        Encoder { encodebuf }
+        Encoder {}
     }
 }
 
 impl Encoder {
     pub fn new() -> Self {
-        Encoder { encodebuf: vec![] }
+        Encoder {  }
     }
 }
 
 impl Encoder {
     pub fn encode(&mut self, id: i32, data: impl Encode) -> encode::Result<EncodedData> {
-        self.encodebuf.clear();
-        self.encodebuf.push(0);
-        varint_vec(id as u32, &mut self.encodebuf);
-        data.encode(&mut self.encodebuf)?;
-        Ok(EncodedData(&mut self.encodebuf))
+        let mut buf = request_buf(1024); // TODO: Set this to something else, or add a way to request the largest currently held buf to prevent reallocs.
+        buf.clear();
+        buf.push(0);
+        varint_vec(id as u32, &mut buf);
+        data.encode(&mut buf as &mut Vec<u8>)?;
+        Ok(EncodedData(buf))
     }
     pub fn encode_packet<P>(
         &mut self,
@@ -133,10 +134,11 @@ impl Encoder {
     where
         P: miners_packet::Packet,
     {
-        self.encodebuf.clear();
-        self.encodebuf.push(0);
-        match packet.encode_for_version(version, &mut self.encodebuf) {
-            Some(Ok(())) => Some(Ok(EncodedData(&mut self.encodebuf))),
+        let mut buf = request_buf(1024);
+        buf.clear();
+        buf.push(0);
+        match packet.encode_for_version(version, &mut buf as &mut Vec<u8>) {
+            Some(Ok(())) => Some(Ok(EncodedData(buf))),
             Some(Err(e)) => Some(Err(e)),
             None => None,
         }

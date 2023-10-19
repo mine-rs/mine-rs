@@ -43,7 +43,7 @@ impl<W> WriteHalf<W>
 where
     W: AsyncWrite + Unpin,
 {
-    pub async fn write<'encoded>(&mut self, encoded: EncodedData<'encoded>) -> io::Result<()> {
+    pub async fn write<'encoded>(&mut self, encoded: EncodedData) -> io::Result<()> {
         let packed = encoded.split_pack(self.compression.as_mut(), &mut self.compress_buf);
         self.writer.write(packed).await
     }
