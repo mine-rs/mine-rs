@@ -154,7 +154,9 @@ pub fn bitfield(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     let crate_path = crate_path.unwrap_or_else(default_crate_path);
 
-    let darling::ast::Data::Struct(fields) = data else { panic!("enum not supported") };
+    let darling::ast::Data::Struct(fields) = data else {
+        panic!("enum not supported")
+    };
 
     let mut errors = darling::Error::accumulator();
 

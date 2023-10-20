@@ -29,28 +29,34 @@ pub(crate) fn enum_from_variants(
     let variant_count = variants.len();
 
     for variant in variants {
-        let Some(case) = variant.case.or(variant.discriminant).map(|expr|{
-            // update discriminant
-            if let syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Int(int),
-                ..
-            }) = &expr {
-                if let Ok(num) = int.base10_parse::<i128>() {
-                    prev_case = Some(num);
+        let Some(case) = variant
+            .case
+            .or(variant.discriminant)
+            .map(|expr| {
+                // update discriminant
+                if let syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Int(int),
+                    ..
+                }) = &expr
+                {
+                    if let Ok(num) = int.base10_parse::<i128>() {
+                        prev_case = Some(num);
+                    }
                 }
-            }
-            expr
-        }).or_else(||{
-            if let Some(prev) = &mut prev_case {
-                *prev += 1;
-                let lit = proc_macro2::Literal::i128_unsuffixed(*prev);
-                Some(parse_quote!(#lit))
-            } else {
-                let err = darling::Error::custom(crate::NEITHER_CASE_NOR_DISCRIMINANT);
-                errors.push(err.with_span(&variant.ident.span()));
-                None
-            }
-        }) else {
+                expr
+            })
+            .or_else(|| {
+                if let Some(prev) = &mut prev_case {
+                    *prev += 1;
+                    let lit = proc_macro2::Literal::i128_unsuffixed(*prev);
+                    Some(parse_quote!(#lit))
+                } else {
+                    let err = darling::Error::custom(crate::NEITHER_CASE_NOR_DISCRIMINANT);
+                    errors.push(err.with_span(&variant.ident.span()));
+                    None
+                }
+            })
+        else {
             continue;
         };
 

@@ -10,10 +10,7 @@ pub(crate) struct Compression {
 }
 
 impl Compression {
-    fn do_compress<'compressed, 'encoded, 'packed>(
-        &mut self,
-        encoded: EncodedData,
-    ) -> PackedData
+    fn do_compress<'compressed, 'encoded, 'packed>(&mut self, encoded: EncodedData) -> PackedData
     where
         'encoded: 'packed,
         'compressed: 'packed,

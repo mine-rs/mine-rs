@@ -4,7 +4,7 @@ use {
 };
 
 use miners_packet::RawPacket;
-use miners_util::bufpool::{BufGuard, request_buf};
+use miners_util::bufpool::{request_buf, BufGuard};
 
 use crate::packing::{Compression, Compressor, PackedData};
 
@@ -18,10 +18,10 @@ use crate::packing::{Compression, Compressor, PackedData};
 /// It holds a mutable reference because the underlying data is being
 /// mutated under certain circumstances when writing, more specifically
 /// when encrypting. this saves allocations
-pub struct EncodedData<>(pub(crate) BufGuard);
+pub struct EncodedData(pub(crate) BufGuard);
 
-impl EncodedData<> {
-    pub(crate) fn zero_prefixed(self) -> PackedData<> {
+impl EncodedData {
+    pub(crate) fn zero_prefixed(self) -> PackedData {
         PackedData(self.0, false)
     }
 
@@ -102,8 +102,7 @@ impl EncodedData {
 }
 
 #[derive(Default)]
-pub struct Encoder {
-}
+pub struct Encoder {}
 
 impl From<Vec<u8>> for Encoder {
     fn from(encodebuf: Vec<u8>) -> Self {
@@ -113,7 +112,7 @@ impl From<Vec<u8>> for Encoder {
 
 impl Encoder {
     pub fn new() -> Self {
-        Encoder {  }
+        Encoder {}
     }
 }
 
