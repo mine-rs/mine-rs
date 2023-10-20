@@ -1,5 +1,5 @@
 use std::{
-    cell::UnsafeCell,
+    cell::Cell,
     cmp::Ordering,
     mem::ManuallyDrop,
     ops::{Deref, DerefMut},
@@ -13,88 +13,94 @@ static BUFPOOL_MAX_MEMORY: once_cell::sync::Lazy<usize> = once_cell::sync::Lazy:
 });
 
 thread_local! {
-    static BUF_POOL: UnsafeCell<(Vec<Option<Vec<u8>>>, usize)> = UnsafeCell::new((vec![None], 0));
+    static BUFPOOL: Cell<(Vec<Option<Vec<u8>>>, usize)> = Cell::new((vec![None], 0));
 }
 
 pub fn request_buf(req_cap: usize) -> BufGuard {
-    BufGuard::new(BUF_POOL.with(|pool| {
-        let pool = unsafe { pool.get().as_mut().unwrap() };
-        let last = pool.0.len() - 1;
-        for (i, v) in pool.0.iter_mut().enumerate() {
-            match v {
-                Some(u) => {
-                    if u.capacity() >= req_cap {
-                    } else if i == last {
-                        u.reserve(req_cap - u.capacity());
-                        pool.1 -= u.capacity();
-                        return std::mem::take(v).unwrap();
-                    }
+    let mut pool = BUFPOOL.take();
+    let last = pool.0.len() - 1;
+    for (i, v) in pool.0.iter_mut().enumerate() {
+        match v {
+            Some(u) => {
+                if u.capacity() >= req_cap {
+                } else if i == last {
+                    u.reserve(req_cap - u.capacity());
+                    pool.1 -= u.capacity();
+                    let buf = BufGuard::new(std::mem::take(v).unwrap());
+                    BUFPOOL.set(pool);
+                    return buf;
                 }
-                None => continue,
             }
+            None => continue,
         }
-        // No buffers were available.
-        pool.0.push(None);
-        Vec::with_capacity(req_cap)
-    }))
+    }
+    // No buffers were available.
+    pool.0.push(None);
+    BUFPOOL.set(pool);
+    BufGuard::new(Vec::with_capacity(req_cap))
 }
 
 fn reorder_pool() {
-    BUF_POOL.with(|pool| {
-        let pool = unsafe { pool.get().as_mut().unwrap() };
-        pool.0.sort_by(|a, b| {
-            // Order the vec from least to most capacity.
-            match (a, b) {
-                (None, None) | (None, _) | (_, None) => Ordering::Equal,
-                (Some(a), Some(b)) => a.capacity().cmp(&b.capacity()),
-            }
-        })
+    let mut pool = BUFPOOL.take();
+    pool.0.sort_by(|a, b| {
+        // Order the vec from least to most capacity.
+        match (a, b) {
+            (None, None) | (None, _) | (_, None) => Ordering::Equal,
+            (Some(a), Some(b)) => a.capacity().cmp(&b.capacity()),
+        }
     });
+    BUFPOOL.set(pool)
+}
+
+/// Cleans up some memory if usage exceeds maximum.
+fn cleanup(pool: &mut (Vec<Option<Vec<u8>>>, usize)) {
+    let mut j: Option<usize> = None;
+    loop {
+        if !(&pool.1 > &BUFPOOL_MAX_MEMORY) {
+            break;
+        }
+        match j {
+            None => {
+                // Find the largest buffer
+                j = Some(
+                    pool.0
+                        .iter()
+                        .rev()
+                        .enumerate()
+                        .find(|v| if let Some(_) = v.1 { true } else { false })
+                        .unwrap()
+                        .0,
+                );
+                continue;
+            }
+            Some(ref mut j) => {
+                pool.1 -= pool.0[*j].as_ref().unwrap().capacity();
+
+                // We can use swap remove because we remove the largest (and last) buffer (that isn't None) from the vec.
+                pool.0.swap_remove(*j);
+                *j = j.wrapping_sub(1);
+                continue;
+            }
+        }
+    }
 }
 
 fn return_buf(buf: Vec<u8>) {
-    BUF_POOL.with(|pool| {
-        let pool = unsafe { pool.get().as_mut().unwrap() };
-        pool.1 += buf.capacity();
-        for i in &mut pool.0 {
-            if i.is_none() {
-                *i = Some(buf);
-                reorder_pool();
-                let mut j: Option<usize> = None;
-                loop {
-                    if &pool.1 > &BUFPOOL_MAX_MEMORY {
-                        match j {
-                            None => {
-                                // Find the largest buffer
-                                j = Some(
-                                    pool.0
-                                        .iter()
-                                        .rev()
-                                        .enumerate()
-                                        .find(|v| if let Some(_) = v.1 { true } else { false })
-                                        .unwrap()
-                                        .0,
-                                );
-                                continue;
-                            }
-                            Some(ref mut j) => {
-                                pool.1 -= pool.0[*j].as_ref().unwrap().capacity();
-
-                                // We can use swap remove because we remove the largest (and last) buffer (that isn't None) from the vec.
-                                pool.0.swap_remove(*j);
-                                *j = j.wrapping_sub(1);
-                                continue;
-                            }
-                        }
-                    }
-                    break;
-                }
-                return;
-            }
+    let mut pool = BUFPOOL.take();
+    pool.1 += buf.capacity();
+    for i in &mut pool.0 {
+        if i.is_none() {
+            *i = Some(buf);
+            reorder_pool();
+            cleanup(&mut pool);
+            BUFPOOL.set(pool);
+            return;
         }
-        #[cfg(debug)]
-        unreachable!()
-    })
+    }
+    // To prevent a crash, just in case.
+    BUFPOOL.set(pool);
+    #[cfg(debug)]
+    unreachable!();
 }
 
 #[repr(transparent)]
