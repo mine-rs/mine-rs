@@ -16,6 +16,25 @@ thread_local! {
     static BUFPOOL: Cell<(Vec<Option<Vec<u8>>>, usize)> = Cell::new((vec![None], 0));
 }
 
+pub fn request_largest_buf() -> BufGuard {
+    let mut pool = BUFPOOL.take();
+    for v in pool.0.iter_mut().rev() {
+        match v {
+            Some(u) => {
+                pool.1 -= u.capacity();
+                let buf = BufGuard::new(std::mem::take(v).unwrap());
+                BUFPOOL.set(pool);
+                return buf;
+            }
+            None => continue,
+        }
+    }
+    // No buffers were available.
+    pool.0.push(None);
+    BUFPOOL.set(pool);
+    BufGuard::new(Vec::with_capacity(8 * 1024))
+}
+
 pub fn request_buf(req_cap: usize) -> BufGuard {
     let mut pool = BUFPOOL.take();
     let last = pool.0.len() - 1;
@@ -23,6 +42,10 @@ pub fn request_buf(req_cap: usize) -> BufGuard {
         match v {
             Some(u) => {
                 if u.capacity() >= req_cap {
+                    pool.1 -= u.capacity();
+                    let buf = BufGuard::new(std::mem::take(v).unwrap());
+                    BUFPOOL.set(pool);
+                    return buf;
                 } else if i == last {
                     u.reserve(req_cap - u.capacity());
                     pool.1 -= u.capacity();

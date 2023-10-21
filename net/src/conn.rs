@@ -7,8 +7,6 @@ pub use readhalf::ReadHalf;
 // use writehalf::Compression;
 pub use writehalf::WriteHalf;
 
-const INITIAL_BUF_SIZE: usize = 1024;
-
 /// A united connection.
 /// After compression and encryption are set, `Connection` should be split into `ReadHalf` and `WriteHalf`.
 pub struct Connection<R, W> {

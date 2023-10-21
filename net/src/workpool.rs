@@ -91,6 +91,7 @@ pub(crate) async unsafe fn request_partial_encryption(
     recv
 }
 
+/*
 pub async fn request_decryption(
     buf: Vec<u8>,
     dec: Box<cfb8::Decryptor<aes::Aes128>>,
@@ -100,6 +101,7 @@ pub async fn request_decryption(
     // buffers length
     unsafe { request_partial_decryption(buf, len_from_end, dec).await }
 }
+*/
 
 /// # Safety
 ///

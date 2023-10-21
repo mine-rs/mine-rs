@@ -4,12 +4,18 @@ use crate::{encoding::EncodedData, helpers::varint_vec};
 
 const ZLIB_BUF_MIN: u32 = 1024;
 
-pub(crate) struct Compression {
+pub struct Compression {
     pub(crate) threshold: u32,
     pub(crate) zlib: flate2::Compress,
 }
 
 impl Compression {
+    pub fn new(threshold: i32, zlib: flate2::Compress) -> Self {
+        Self {
+            threshold: threshold as u32,
+            zlib,
+        }
+    }
     fn do_compress<'compressed, 'encoded, 'packed>(&mut self, encoded: EncodedData) -> PackedData
     where
         'encoded: 'packed,
@@ -53,24 +59,6 @@ impl Compression {
         }
     }
 }
-
-pub(crate) struct Compressor {
-    compression: Compression,
-}
-
-impl Compressor {
-    pub(crate) fn maybe_compress<'compressed, 'encoded, 'mutslice>(
-        &'compressed mut self,
-        encoded: EncodedData,
-    ) -> PackedData
-    where
-        'compressed: 'mutslice,
-        'encoded: 'mutslice,
-    {
-        self.compression.maybe_compress(encoded)
-    }
-}
-
 pub struct PackedData(pub(crate) BufGuard, pub(crate) bool);
 
 impl PackedData {

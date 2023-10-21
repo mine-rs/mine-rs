@@ -26,10 +26,7 @@ use miners::protocol::netty::play::clientbound::{
 };
 use miners::protocol::netty::play::serverbound::KeepAlive7;
 use miners::protocol::netty::play::SbPlay;
-use miners::{
-    net::encoding::Encoder, protocol::netty::handshaking::serverbound::Handshake0,
-    version::ProtocolVersion,
-};
+use miners::{protocol::netty::handshaking::serverbound::Handshake0, version::ProtocolVersion};
 use miners_level::chunk::ChunkColumn47;
 use num_bigint::BigInt;
 use rsa::pkcs8::Document;
@@ -95,13 +92,11 @@ async fn accept(
     offline: bool,
     compression: bool,
 ) {
-    let mut encoder = Encoder::new();
     match handshake(&mut conn, version).await.unwrap() {
         NextState0::Status => (),
         NextState0::Login => {
             let (read, write) = login(
                 conn,
-                &mut encoder,
                 version,
                 priv_key,
                 pub_key,
@@ -143,7 +138,6 @@ async fn send_keepalive(
     id: Arc<Mutex<i32>>,
     version: ProtocolVersion,
 ) -> anyhow::Result<()> {
-    let mut encoder = Encoder::new();
     loop {
         sleep(Duration::from_secs(15)).await;
         let mut write = write.lock().await;
@@ -153,7 +147,6 @@ async fn send_keepalive(
                 KeepAlive32 {
                     id: *id.lock().await,
                 },
-                &mut encoder,
             )
             .await?;
         write.flush().await?;
@@ -173,7 +166,6 @@ async fn handshake(conn: &mut Conn, version: ProtocolVersion) -> anyhow::Result<
 
 async fn login(
     mut conn: Conn,
-    encoder: &mut Encoder,
     version: ProtocolVersion,
     priv_key: Arc<RsaPrivateKey>,
     pub_key: Arc<Document>,
@@ -202,7 +194,6 @@ async fn login(
                     public_key: pub_key.as_bytes().into(),
                     verify_token: (&verify_token[..]).into(),
                 },
-                encoder,
             )
             .await?;
 
@@ -265,7 +256,7 @@ async fn login(
 
     if compression {
         conn.write_half
-            .write_packet(version, SetCompression27 { threshold: 512 }, encoder)
+            .write_packet(version, SetCompression27 { threshold: 512 })
             .await?;
         conn.write_half.flush().await?;
         conn.enable_compression(512);
@@ -278,7 +269,6 @@ async fn login(
                 username: (&username).into(),
                 uuid,
             },
-            encoder,
         )
         .await
         .unwrap();
@@ -302,7 +292,6 @@ async fn login(
                 level_type: "default".into(),
                 reduced_debug_info: false,
             },
-            encoder,
         )
         .await?;
     write.flush().await?;
@@ -311,7 +300,7 @@ async fn login(
     std::thread::sleep(core::time::Duration::from_secs(2));
 
     write
-        .write_packet(version, SpawnPosition6 { x: 0, z: 0, y: 60 }, encoder)
+        .write_packet(version, SpawnPosition6 { x: 0, z: 0, y: 60 })
         .await?;
     write.flush().await?;
 
@@ -326,7 +315,6 @@ async fn login(
                 flying_speed: 0.05,
                 fov: 0.1,
             },
-            encoder,
         )
         .await?;
 
@@ -349,7 +337,6 @@ async fn login(
                     yaw: false,
                 },
             },
-            encoder,
         )
         .await?;
     write.flush().await?;
@@ -367,7 +354,6 @@ async fn login(
                 primary_bitmap: chunk.primary_bitmap(),
                 data: chunk_data.into(),
             },
-            encoder,
         )
         .await
         .unwrap();

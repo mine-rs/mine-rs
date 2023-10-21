@@ -7,8 +7,6 @@ use crate::helpers::{decrypt, AsyncCancelled};
 #[cfg(feature = "workpool")]
 use crate::DEFAULT_UNBLOCK_THRESHOLD;
 
-use super::INITIAL_BUF_SIZE;
-
 use aes::cipher::{InvalidLength, KeyIvInit};
 use futures_lite::ready;
 use futures_lite::{AsyncRead, AsyncReadExt};

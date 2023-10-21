@@ -3,15 +3,16 @@ use {
     miners_encoding::{decode, encode, Decode, Encode},
 };
 
-use miners_packet::RawPacket;
-use miners_util::bufpool::{request_buf, BufGuard};
+use miners_packet::{Packet, RawPacket};
+use miners_util::bufpool::{request_buf, request_largest_buf, BufGuard};
+use miners_version::ProtocolVersion;
 
-use crate::packing::{Compression, Compressor, PackedData};
+use crate::packing::{Compression, PackedData};
 
 /// Holds a mutable reference to a buffer with the following layout
-///
+/// ```
 /// | marker | id | encoded data |
-///
+/// ```
 /// where marker is a single `0` byte, id a varint spanning 1-5 bytes
 /// and encoded data the packet data
 ///
@@ -73,23 +74,22 @@ impl EncodedData {
 }
 
 impl EncodedData {
-    pub(crate) fn split_pack<'compressed, 'ret>(
+    pub fn split_pack<'compressed, 'ret>(
         self,
-        compressor: Option<&mut Compression>,
-        buf: &'compressed mut Vec<u8>,
+        compression: Option<&mut Compression>,
     ) -> PackedData
     where
         'compressed: 'ret,
     {
-        match compressor {
+        match compression {
             Some(compression) => compression.maybe_compress(self),
             None => self.stripped_marker(),
         }
     }
 
-    pub(crate) fn pack<'compression, 'ret>(
+    pub fn pack<'compression, 'ret>(
         self,
-        compression: Option<&'compression mut Compressor>,
+        compression: Option<&'compression mut Compression>,
     ) -> PackedData
     where
         'compression: 'ret,
@@ -101,45 +101,30 @@ impl EncodedData {
     }
 }
 
-#[derive(Default)]
-pub struct Encoder {}
+impl<T: Encode> TryFrom<(i32, T)> for EncodedData {
+    type Error = encode::Error;
 
-impl From<Vec<u8>> for Encoder {
-    fn from(encodebuf: Vec<u8>) -> Self {
-        Encoder {}
-    }
-}
-
-impl Encoder {
-    pub fn new() -> Self {
-        Encoder {}
-    }
-}
-
-impl Encoder {
-    pub fn encode(&mut self, id: i32, data: impl Encode) -> encode::Result<EncodedData> {
-        let mut buf = request_buf(1024); // TODO: Set this to something else, or add a way to request the largest currently held buf to prevent reallocs.
+    fn try_from(value: (i32, T)) -> Result<Self, Self::Error> {
+        let mut buf = request_largest_buf();
         buf.clear();
         buf.push(0);
-        varint_vec(id as u32, &mut buf);
-        data.encode(&mut buf as &mut Vec<u8>)?;
+        varint_vec(value.0 as u32, &mut buf);
+        value.1.encode(&mut buf as &mut Vec<u8>)?;
         Ok(EncodedData(buf))
     }
-    pub fn encode_packet<P>(
-        &mut self,
-        version: miners_version::ProtocolVersion,
-        packet: P,
-    ) -> Option<encode::Result<EncodedData>>
-    where
-        P: miners_packet::Packet,
-    {
+}
+
+pub trait PacketEncodeExt: Packet {
+    fn encode_packet(&mut self, pv: ProtocolVersion) -> Option<encode::Result<EncodedData>> {
         let mut buf = request_buf(1024);
         buf.clear();
         buf.push(0);
-        match packet.encode_for_version(version, &mut buf as &mut Vec<u8>) {
+        match self.encode_for_version(pv, &mut buf as &mut Vec<u8>) {
             Some(Ok(())) => Some(Ok(EncodedData(buf))),
             Some(Err(e)) => Some(Err(e)),
             None => None,
         }
     }
 }
+
+impl<P: Packet> PacketEncodeExt for P {}
